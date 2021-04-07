@@ -41,9 +41,9 @@ class myObject : public ISO22133::TestObject {
 		return dynamic_cast<ISO22133::Running*>(new myRunning);
 	}
     
-   // ISO22133::Disarmed* createDisarmed() override {
-	//	return dynamic_cast<ISO22133::Disarmed*>(new myDisarmed);
-	//}
+    ISO22133::Disarmed* createDisarmed() override {
+		return dynamic_cast<ISO22133::Disarmed*>(new myDisarmed);
+	}
 
     ISO22133::PreArming* createPreArming() override {
 		return dynamic_cast<ISO22133::PreArming*>(new myPreArming);
@@ -61,7 +61,7 @@ int main(int c, char** argv ) {
         usleep(1000);
 
         while(obj.isUdpOk()){
-            obj.sendMONR(1);
+            obj.sendMONR(0);
             usleep(1000);
         }
     }

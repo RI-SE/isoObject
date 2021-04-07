@@ -125,6 +125,7 @@ private:
     const static int processChannelPort_ = 53240; // UDP
     bool udpOk_ = false;
     bool on_ = true;
+    bool firstHeab_ = true;
     std::thread tcpReceiveThread_;
     std::thread udpReceiveThread_;
     ISO22133::State* state;

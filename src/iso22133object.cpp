@@ -9,7 +9,7 @@
 #include "iso22133.h"
 #include "maestroTime.h"
 
-
+#define ALLOWED_HEAB_DIFF_MS 50
 #define TCP_BUFFER_SIZE 1024
 #define UDP_BUFFER_SIZE 1024
 #define ERROR -1
@@ -49,6 +49,7 @@ void TestObject::receiveTCP(){
 		}
 		std::cout << "Connection to control center lost" << std::endl;
 		this->udpOk_ = false;
+		this->firstHeab_ = true;
 		this->state->handleEvent(*this, ISO22133::Events::L);
 		this->controlChannel_.TCPHandlerclose();
 		this->udpReceiveThread_.join();
@@ -142,7 +143,8 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 		case MESSAGE_ID_HEAB:
 			HeabMessageDataType HEABdata;
 			struct timeval currentTime;
-
+			static struct timeval lastHeabTime; 
+			
 			TimeSetToCurrentSystemTime(&currentTime);
 			bytesHandled = decodeHEABMessage(dataBuffer->data(),dataBuffer->size(),currentTime,&HEABdata,debug);
 			if(bytesHandled < 0){
@@ -154,8 +156,17 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 			if(HEABdata.controlCenterStatus == CONTROL_CENTER_STATUS_ABORT) {
 				this->handleAbort();
 			}
-			this->state->_handleHEAB(*this, HEABdata);
+
+			if(!this->firstHeab_ && TimeGetTimeDifferenceMS(&currentTime, &lastHeabTime) > ALLOWED_HEAB_DIFF_MS) {
+				std::cerr << "Did not recevie HEAB in time, differance is " << TimeGetTimeDifferenceMS(&currentTime, &lastHeabTime) << " ms" << std::endl;
+				this->handleAbort();
+				HEABdata.controlCenterStatus = CONTROL_CENTER_STATUS_ABORT;
+			}
 			
+			this->state->_handleHEAB(*this, HEABdata);
+
+			lastHeabTime = HEABdata.dataTimestamp;
+			this->firstHeab_ = false;
 			break;
 
 		default:
