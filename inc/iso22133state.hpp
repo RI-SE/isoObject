@@ -219,7 +219,7 @@ private:
 class RemoteControlled : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_REMOTE_CONTROLLED; }
-	virtual void executeBehaviour(TestObject&) override{};
+	virtual void executeBehaviour(TestObject&) override {};
 private:
 	void _handleOSTM(TestObject& obj, ObjectCommandType& msg) final override;
 	void _handleHEAB(TestObject& obj, HeabMessageDataType& msg) final override { State::_handleHEAB(obj, msg); }
