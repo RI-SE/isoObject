@@ -230,7 +230,7 @@ private:
 class Aborting : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_ABORTING; }
-	virtual void executeBehaviour(TestObject&) override{};
+	virtual void executeBehaviour(TestObject&) override {};
 private:
 	void _handleHEAB(TestObject& obj, HeabMessageDataType& msg) final override;
 	void _handleOSTM(TestObject& obj, ObjectCommandType& msg) final override { State::_handleOSTM(obj, msg); }
