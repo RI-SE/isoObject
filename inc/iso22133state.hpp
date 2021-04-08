@@ -269,8 +269,6 @@ typedef struct {
 	ObjectStateID target;
 } Transition;
 
-
-
 inline bool operator< (const Transition &lhs, const Transition &rhs){
 	return std::tie(lhs.source, lhs.event, lhs.target) < std::tie(rhs.source, rhs.event, rhs.target);
 }
