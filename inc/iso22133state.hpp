@@ -104,7 +104,7 @@ public:
 	virtual ObjectStateID getStateID() const = 0;
 	std::string getName() const { return stateNames.at(getStateID()); }
 
-	// Handles events according to ISO22133 state change description
+	//! Handle events according to ISO22133 state change description
 	void handleEvent(TestObject&, const Events::EventType);
 protected:
 	//! Will be called on transition, indended to be
