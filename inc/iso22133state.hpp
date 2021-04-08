@@ -173,7 +173,7 @@ private:
 class Armed : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_ARMED; }
-	virtual void executeBehaviour(TestObject&) override{};
+	virtual void executeBehaviour(TestObject&) override {};
 private:
 	void _handleSTRT(TestObject&, strt&) final override;
 	void _handleOSTM(TestObject&, ObjectCommandType&) final override;
