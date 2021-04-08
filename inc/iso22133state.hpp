@@ -162,7 +162,7 @@ private:
 class Init : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_INIT; }
-	virtual void executeBehaviour(TestObject&) override{};
+	virtual void executeBehaviour(TestObject&) override {};
 private:
 	void _handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageError("HEAB"); }
 	void _handleTRAJ(TestObject&, traj&) final override { unexpectedMessageError("TRAJ"); }
