@@ -184,7 +184,7 @@ private:
 class Disarmed : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_DISARMED; }
-	virtual void executeBehaviour(TestObject&) override{};
+	virtual void executeBehaviour(TestObject&) override {};
 	virtual void onEnter(TestObject& obj);
 	virtual void onExit(TestObject& obj);
 private:
