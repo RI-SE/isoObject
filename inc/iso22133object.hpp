@@ -83,12 +83,12 @@ protected:
     //! Pure virtual safety function that must be implemented by the user.
     virtual void handleAbort() = 0;
     
-    void setPosition(CartesianPosition& pos) {position_ = pos;}
-    void setSpeed(SpeedType& spd) {speed_ = spd;}
-    void setAcceleration(AccelerationType& acc) {acceleration_ = acc;}
-    void setDriveDirection(DriveDirectionType& drd) {driveDirection_ = drd;}
-    void setObjectState(ObjectStateID& ost) {objectState_ = ost;}
-    void setName(std::string name) {name_ = name;}
+    void setPosition(CartesianPosition& pos) { position_ = pos; }
+    void setSpeed(SpeedType& spd) { speed_ = spd; }
+    void setAcceleration(AccelerationType& acc) { acceleration_ = acc; }
+    void setDriveDirection(DriveDirectionType& drd) { driveDirection_ = drd; }
+    void setObjectState(ObjectStateID& ost) { objectState_ = ost; }
+    void setName(std::string name) { name_ = name; }
     void setReadyToArm(const int& rdy) {readyToArm_ = rdy;}
     void setErrorState(const char& err) {errorState_ = err;}      
 
@@ -146,4 +146,3 @@ private:
 
 };
 } // namespace ISO22133
-
