@@ -114,8 +114,8 @@ private:
     void receiveUDP();
     //! TCP receiver loop that should be run in its own thread.
     void receiveTCP();
-    void startHandleTCP(){tcpReceiveThread_ = std::thread(&TestObject::receiveTCP, this);};
-    void startHandleUDP(){udpReceiveThread_ = std::thread(&TestObject::receiveUDP, this);};
+    void startHandleTCP() { tcpReceiveThread_ = std::thread(&TestObject::receiveTCP, this); }
+    void startHandleUDP() { udpReceiveThread_ = std::thread(&TestObject::receiveUDP, this); }
     //! Function for handling received ISO messages. Calls corresponding 
     //! handler in the current state.
     int handleMessage(std::vector<char>*);
