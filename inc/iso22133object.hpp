@@ -67,14 +67,14 @@ public:
      */
     void sendMONR(char debug);
     
-    bool isServerConnected(){return controlChannel_.isConnected();}
-    bool isUdpOk(){ return udpOk_;};
-    std::string getCurrentStateName() { return state->getName();}
-    std::string getName() { return name_; }
-    CartesianPosition getPosition() { return position_;}
-    SpeedType getSpeed() { return speed_;}
-    AccelerationType getAcceleration() { return acceleration_;}
-    DriveDirectionType getDriveDirection() { return driveDirection_;}
+    bool isServerConnected() const { return controlChannel_.isConnected(); }
+    bool isUdpOk() const { return udpOk_; }
+    std::string getCurrentStateName() const { return state->getName(); }
+    std::string getName() const { return name_; }
+    CartesianPosition getPosition() const { return position_; }
+    SpeedType getSpeed() const { return speed_; }
+    AccelerationType getAcceleration() const { return acceleration_; }
+    DriveDirectionType getDriveDirection() const { return driveDirection_; }
 
 
 
