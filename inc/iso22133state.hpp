@@ -208,7 +208,7 @@ private:
 class PostRun : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_POSTRUN; }
-	virtual void executeBehaviour(TestObject&) override{};
+	virtual void executeBehaviour(TestObject&) override {};
 private:
 	void _handleHEAB(TestObject& obj, HeabMessageDataType& msg) final override { State::_handleHEAB(obj, msg); }
 	void _handleSTRT(TestObject& obj, strt& msg) final override { State::_handleSTRT(obj, msg); }
