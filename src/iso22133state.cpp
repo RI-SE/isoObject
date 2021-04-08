@@ -6,7 +6,7 @@ void ISO22133::State::handleEvent(
 		TestObject& obj,
 		const ISO22133::Events::EventType event) {
 	auto transition = std::find_if(language.begin(), language.end(),
-								   [&event, this](const ISO22133::Transition& tr){
+								   [&event, this](const ISO22133::Transition& tr) {
 		return event == tr.event && this->getStateID() == tr.source;
 	});
 	if (transition == language.end()) {
@@ -202,4 +202,3 @@ void ISO22133::Aborting::_handleHEAB(TestObject& obj,HeabMessageDataType& heab) 
 	}
 	return;
 }
-
