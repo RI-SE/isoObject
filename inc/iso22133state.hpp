@@ -69,6 +69,8 @@ static const std::map<EventType, std::string> descriptions = {
 
 }
 
+// TODO move to iso22133.h
+// and get rid of the std::map :(
 static const std::map<ObjectStateID, std::string> stateNames = {
 	{ISO_OBJECT_STATE_UNKNOWN, "Unknown"},
 	{ISO_OBJECT_STATE_OFF, "Off"},
@@ -307,4 +309,3 @@ static const std::set<Transition> language = {
 };
 
 } // end namespace
-
