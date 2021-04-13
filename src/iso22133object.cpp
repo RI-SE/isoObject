@@ -17,9 +17,9 @@
 
 namespace ISO22133 {
 void TestObject::receiveTCP(){
-	while(this->on_) {
+	while(this->on) {
 		std::cout << "Awaiting connection to server..." << std::endl;
-		if(this->controlChannel_.CreateServer(53241, "") < 0) {
+		if(this->controlChannel.CreateServer(ISO_22133_DEFAULT_OBJECT_TCP_PORT, "") < 0) {
 			continue;
 		}
 		std::cout << "Connected to server..." << std::endl;
@@ -31,7 +31,7 @@ void TestObject::receiveTCP(){
 		int nBytesReceived, nBytesHandled;
 		while(this->isServerConnected()){
 			std::fill(TCPReceiveBuffer.begin(), TCPReceiveBuffer.end(), 0);
-			nBytesReceived = this->controlChannel_.receiveTCP(TCPReceiveBuffer,0);
+			nBytesReceived = this->controlChannel.receiveTCP(TCPReceiveBuffer,0);
 			
 			if (nBytesReceived > 0) {
 				TCPReceiveBuffer.resize(static_cast<size_t>(nBytesReceived));
@@ -48,26 +48,26 @@ void TestObject::receiveTCP(){
 			TCPReceiveBuffer.resize(TCP_BUFFER_SIZE);
 		}
 		std::cout << "Connection to control center lost" << std::endl;
-		this->udpOk_ = false;
-		this->firstHeab_ = true;
+		this->udpOk = false;
+		this->firstHeab = true;
 		this->state->handleEvent(*this, ISO22133::Events::L);
-		this->controlChannel_.TCPHandlerclose();
-		this->udpReceiveThread_.join();
+		this->controlChannel.TCPHandlerclose();
+		this->udpReceiveThread.join();
 	}
 }
 
 void TestObject::receiveUDP(){
-	this->processChannel_.CreateServer(processChannelPort_,"",0);
+	this->processChannel.CreateServer(ISO_22133_OBJECT_UDP_PORT,"",0);
 	std::vector<char> UDPReceiveBuffer(UDP_BUFFER_SIZE);
-	while(this->processChannel_.receiveUDP(UDPReceiveBuffer) < 0){ // Would prefer blocking behavior on UDPhandler..
+	while(this->processChannel.receiveUDP(UDPReceiveBuffer) < 0){ // Would prefer blocking behavior on UDPhandler..
 		usleep(10000);
 	}
-	this->udpOk_ = true;
+	this->udpOk = true;
 	int nBytesReceived, nBytesHandled;
 
-	while(this->isServerConnected() && this->udpOk_){
+	while(this->isServerConnected() && this->udpOk){
 		std::fill(UDPReceiveBuffer.begin(), UDPReceiveBuffer.end(), 0);
-		nBytesReceived = this->processChannel_.receiveUDP(UDPReceiveBuffer);
+		nBytesReceived = this->processChannel.receiveUDP(UDPReceiveBuffer);
 		if (nBytesReceived > 0) {
 			UDPReceiveBuffer.resize(static_cast<size_t>(nBytesReceived));
 			do{
@@ -83,12 +83,12 @@ void TestObject::receiveUDP(){
 		UDPReceiveBuffer.resize(UDP_BUFFER_SIZE);
 		usleep(1000); // Would prefer blocking behavior on UDPhandler..
 	}
-	this->udpOk_ = false;
-	this->processChannel_.UDPHandlerclose();
+	this->udpOk = false;
+	this->processChannel.UDPHandlerclose();
 }
 
 void TestObject::sendMONR(char debug = 0){
-	if(!this->udpOk_) {
+	if(!this->udpOk) {
 		std::cout << "UDP communication not set up yet. Can't send MONR" << std::endl;
 		return;
 	}
@@ -96,14 +96,14 @@ void TestObject::sendMONR(char debug = 0){
 	struct timeval time;
 
 	TimeSetToCurrentSystemTime(&time);
-	encodeMONRMessage(&time, this->position_, this->speed_, this->acceleration_,
-					this->driveDirection_, this->state->getStateID(), this->readyToArm_,
-					this->errorState_, buffer.data(), buffer.size(),debug);
-	this->processChannel_.sendUDP(buffer);
+	encodeMONRMessage(&time, this->position, this->speed, this->acceleration,
+					this->driveDirection, this->state->getStateID(), this->readyToArm,
+					this->errorState, buffer.data(), buffer.size(),debug);
+	this->processChannel.sendUDP(buffer);
 }
 
 int TestObject::handleMessage(std::vector<char>* dataBuffer){
-	std::lock_guard<std::mutex> lock(this->recvMutex_); // Both TCP and UDP threads end up in here
+	std::lock_guard<std::mutex> lock(this->recvMutex); // Both TCP and UDP threads end up in here
 	int bytesHandled = 0;
 	int debug = 0;
 
@@ -151,13 +151,13 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 				std::cerr << "Error decoding HEAB" << std::endl;
 				return ERROR;
 			}
-			this->ccStatus_ = HEABdata.controlCenterStatus;
+			this->ccStatus = HEABdata.controlCenterStatus;
 
 			if(HEABdata.controlCenterStatus == CONTROL_CENTER_STATUS_ABORT) {
 				this->handleAbort();
 			}
 
-			if(!this->firstHeab_ && TimeGetTimeDifferenceMS(&currentTime, &lastHeabTime) > ALLOWED_HEAB_DIFF_MS) {
+			if(!this->firstHeab && TimeGetTimeDifferenceMS(&currentTime, &lastHeabTime) > ALLOWED_HEAB_DIFF_MS) {
 				std::cerr << "Did not recevie HEAB in time, differance is " << TimeGetTimeDifferenceMS(&currentTime, &lastHeabTime) << " ms" << std::endl;
 				this->handleAbort();
 				HEABdata.controlCenterStatus = CONTROL_CENTER_STATUS_ABORT;
@@ -167,7 +167,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 			this->state->handleHEAB(*this, HEABdata);
 
 			lastHeabTime = HEABdata.dataTimestamp;
-			this->firstHeab_ = false;
+			this->firstHeab = false;
 			break;
 
 		default:

@@ -177,9 +177,6 @@ public:
 private:
 	void _handleSTRT(TestObject&, strt&) final override;
 	void _handleOSTM(TestObject&, ObjectCommandType&) final override;
-	void _handleTRAJ(TestObject& obj, traj& msg) final override { State::_handleTRAJ(obj, msg); }
-	void _handleOSEM(TestObject& obj, ObjectSettingsType& msg) final override { State::_handleOSEM(obj, msg); }
-	void _handleHEAB(TestObject& obj, HeabMessageDataType& msg) final override { State::_handleHEAB(obj, msg); }
 };
 class Disarmed : public State {
 public:

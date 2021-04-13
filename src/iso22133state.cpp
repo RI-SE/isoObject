@@ -119,8 +119,8 @@ void ISO22133::Disarmed::_handleTRAJ(TestObject&,traj&) {
 }
 
 void ISO22133::Disarmed::_handleOSEM(TestObject& obj,ObjectSettingsType& osem) {
-	obj.origin_ = osem.coordinateSystemOrigin;
-	obj.transmitterID_ = osem.desiredTransmitterID;
+	obj.origin = osem.coordinateSystemOrigin;
+	obj.transmitterID = osem.desiredTransmitterID;
 	std::cout << "Got OSEM - set transmitter ID to " << osem.desiredTransmitterID << std::endl;
 	setTransmitterID(osem.desiredTransmitterID);
 	return; 

@@ -48,15 +48,15 @@ class TestObject {
     friend class PreRunning;
 
 public:
-    TestObject() : name_("myTestObject"), controlChannel_(), processChannel_() {
+    TestObject() : name("myTestObject"), controlChannel(), processChannel() {
         this->state = this->createInit();
         this->startHandleTCP();
     }
 
     virtual ~TestObject() {
-        on_ = false;
-        tcpReceiveThread_.join();
-        udpReceiveThread_.join();
+        on = false;
+        tcpReceiveThread.join();
+        udpReceiveThread.join();
     }; 
     
     /**
@@ -67,14 +67,14 @@ public:
      */
     void sendMONR(char debug);
     
-    bool isServerConnected() const { return controlChannel_.isConnected(); }
-    bool isUdpOk() const { return udpOk_; }
+    bool isServerConnected() const { return controlChannel.isConnected(); }
+    bool isUdpOk() const { return udpOk; }
     std::string getCurrentStateName() const { return state->getName(); }
-    std::string getName() const { return name_; }
-    CartesianPosition getPosition() const { return position_; }
-    SpeedType getSpeed() const { return speed_; }
-    AccelerationType getAcceleration() const { return acceleration_; }
-    DriveDirectionType getDriveDirection() const { return driveDirection_; }
+    std::string getName() const { return name; }
+    CartesianPosition getPosition() const { return position; }
+    SpeedType getSpeed() const { return speed; }
+    AccelerationType getAcceleration() const { return acceleration; }
+    DriveDirectionType getDriveDirection() const { return driveDirection; }
 
 
 
@@ -83,14 +83,14 @@ protected:
     //! Pure virtual safety function that must be implemented by the user.
     virtual void handleAbort() = 0;
     
-    void setPosition(CartesianPosition& pos) { position_ = pos; }
-    void setSpeed(SpeedType& spd) { speed_ = spd; }
-    void setAcceleration(AccelerationType& acc) { acceleration_ = acc; }
-    void setDriveDirection(DriveDirectionType& drd) { driveDirection_ = drd; }
-    void setObjectState(ObjectStateID& ost) { objectState_ = ost; }
-    void setName(std::string name) { name_ = name; }
-    void setReadyToArm(const int& rdy) {readyToArm_ = rdy;}
-    void setErrorState(const char& err) {errorState_ = err;}      
+    void setPosition(CartesianPosition& pos) { position = pos; }
+    void setSpeed(SpeedType& spd) { speed = spd; }
+    void setAcceleration(AccelerationType& acc) { acceleration = acc; }
+    void setDriveDirection(DriveDirectionType& drd) { driveDirection = drd; }
+    void setObjectState(ObjectStateID& ost) { objectState = ost; }
+    void setName(std::string name) { name = name; }
+    void setReadyToArm(const int& rdy) {readyToArm = rdy;}
+    void setErrorState(const char& err) {errorState = err;}      
 
     // These should be overridden if extending one of the states
     // Example of override:
@@ -114,34 +114,32 @@ private:
     void receiveUDP();
     //! TCP receiver loop that should be run in its own thread.
     void receiveTCP();
-    void startHandleTCP() { tcpReceiveThread_ = std::thread(&TestObject::receiveTCP, this); }
-    void startHandleUDP() { udpReceiveThread_ = std::thread(&TestObject::receiveUDP, this); }
+    void startHandleTCP() { tcpReceiveThread = std::thread(&TestObject::receiveTCP, this); }
+    void startHandleUDP() { udpReceiveThread = std::thread(&TestObject::receiveUDP, this); }
     //! Function for handling received ISO messages. Calls corresponding 
     //! handler in the current state.
     int handleMessage(std::vector<char>*);
 
-    std::mutex recvMutex_;
-    const static int controlChannelPort_ = 53241; // TCP
-    const static int processChannelPort_ = 53240; // UDP
-    bool udpOk_ = false;
-    bool on_ = true;
-    bool firstHeab_ = true;
-    std::thread tcpReceiveThread_;
-    std::thread udpReceiveThread_;
+    std::mutex recvMutex;
+    bool udpOk = false;
+    bool on = true;
+    bool firstHeab = true;
+    std::thread tcpReceiveThread;
+    std::thread udpReceiveThread;
     ISO22133::State* state;
-    std::string name_;        
-    TCPHandler controlChannel_ ;
-    UDPHandler processChannel_ ;        
-    GeographicPositionType origin_; 
-    ControlCenterStatusType ccStatus_;
-    CartesianPosition position_;
-    SpeedType speed_;
-    AccelerationType acceleration_;
-    DriveDirectionType driveDirection_ = OBJECT_DRIVE_DIRECTION_UNAVAILABLE;
-    ObjectStateID objectState_ = ISO_OBJECT_STATE_UNKNOWN;
-    int readyToArm_ = OBJECT_READY_TO_ARM_UNAVAILABLE;
-    int transmitterID_;
-    char errorState_ = 0;
+    std::string name;        
+    TCPHandler controlChannel ;
+    UDPHandler processChannel ;        
+    GeographicPositionType origin; 
+    ControlCenterStatusType ccStatus;
+    CartesianPosition position;
+    SpeedType speed;
+    AccelerationType acceleration;
+    DriveDirectionType driveDirection = OBJECT_DRIVE_DIRECTION_UNAVAILABLE;
+    ObjectStateID objectState = ISO_OBJECT_STATE_UNKNOWN;
+    int readyToArm = OBJECT_READY_TO_ARM_UNAVAILABLE;
+    int transmitterID;
+    char errorState = 0;
 
 
 };
