@@ -90,7 +90,7 @@ int main(int c, char** argv ) {
         usleep(1000);
 
         while(obj.isUdpOk()){
-            obj.sendMONR(0);
+            obj.sendMONR();
             usleep(1000);
         }
     }

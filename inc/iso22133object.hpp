@@ -65,7 +65,7 @@ public:
      * 
      * @param debug 1 = debug, 0 = no debug
      */
-    void sendMONR(char debug);
+    void sendMONR(char debug = 0);
     
     bool isServerConnected() const { return controlChannel.isConnected(); }
     bool isUdpOk() const { return udpOk; }

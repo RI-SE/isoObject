@@ -109,7 +109,8 @@ protected:
 	virtual void onExit(TestObject&) {}
 
 	//! When a message arrives, these methods are
-	//! the 'front line' handlers
+	//! the 'front line' handlers.
+	//! Handles ISO22133 required actions from contorl center
 	virtual void _handleHEAB(TestObject&,HeabMessageDataType&);
 	virtual void _handleTRAJ(TestObject&,traj&);
 	virtual void _handleOSEM(TestObject&,ObjectSettingsType&);
@@ -117,7 +118,9 @@ protected:
 	virtual void _handleSTRT(TestObject&,strt&);
 
 	//! Will be called asynchronously, indended to be
-	//! overridden by the inheriting class if necessary
+	//! overridden by the inheriting class if necessary.
+	//! Can contain test object specific actions for
+	//! messages.
 	virtual void handleHEAB(TestObject&,HeabMessageDataType&) {}
 	virtual void handleTRAJ(TestObject&,traj&) {}
 	virtual void handleOSEM(TestObject&,ObjectSettingsType&) {}
@@ -143,6 +146,7 @@ private:
 	void _handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageError("OSTM"); }
 	void _handleSTRT(TestObject&, strt&) final override { unexpectedMessageError("STRT"); }
 };
+
 class Off : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_OFF; }
@@ -153,6 +157,7 @@ private:
 	void _handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageError("OSTM"); }
 	void _handleSTRT(TestObject&, strt&) final override { unexpectedMessageError("STRT"); }
 };
+
 class Init : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_INIT; }
@@ -207,6 +212,7 @@ public:
 	virtual void onEnter(TestObject& obj) {this->handleEvent(obj, Events::T);}
 };
 
+
 typedef struct {
 	ObjectStateID source;
 	Events::EventType event;
@@ -250,4 +256,4 @@ static const std::set<Transition> language = {
 	{ISO_OBJECT_STATE_PRE_RUNNING,			Events::W,		ISO_OBJECT_STATE_ABORTING}
 };
 
-} // end namespace
+} // end namespace ISO22133

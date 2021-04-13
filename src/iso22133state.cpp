@@ -2,6 +2,12 @@
 #include "iso22133state.hpp"
 #include <algorithm>
 
+/**
+ * @brief Handle events according to ISO22133 state change description
+ * 
+ * @param obj TestObject reference
+ * @param event Event according to ISO22133::EventType
+ */
 void ISO22133::State::handleEvent(
 		TestObject& obj,
 		const ISO22133::Events::EventType event) {
@@ -60,6 +66,12 @@ void ISO22133::State::handleEvent(
 	obj.state->onEnter(obj);
 }
 
+/**
+ * @brief Generates state changes based on control center status
+ * 
+ * @param obj TestObject reference
+ * @param heab struct HeabMessageDataType
+ */
 void ISO22133::State::_handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
 	switch (heab.controlCenterStatus) {
 	case CONTROL_CENTER_STATUS_NORMAL_STOP:
@@ -79,6 +91,12 @@ void ISO22133::State::_handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
 	return;
 }
 
+/**
+ * @brief Handles state change requests from Control center
+ * 
+ * @param obj TestObject reference
+ * @param ostm struct ObjectCommandType
+ */
 void ISO22133::State::_handleOSTM(TestObject& obj,ObjectCommandType& ostm) {
 	switch (ostm) {
 	case OBJECT_COMMAND_ARM:
@@ -95,6 +113,12 @@ void ISO22133::State::_handleOSTM(TestObject& obj,ObjectCommandType& ostm) {
 	}
 }
 
+/**
+ * @brief Changes object settings
+ * 
+ * @param obj TestObject reference
+ * @param osem struct ObjectSettingsType
+ */
 void ISO22133::State::_handleOSEM(TestObject& obj,ObjectSettingsType& osem) {
 	obj.origin = osem.coordinateSystemOrigin;
 	obj.transmitterID = osem.desiredTransmitterID;
@@ -103,18 +127,40 @@ void ISO22133::State::_handleOSEM(TestObject& obj,ObjectSettingsType& osem) {
 	return; 
 }
 
-void ISO22133::State::_handleSTRT(TestObject&,strt&) {
+/**
+ * @brief Handles start request from Control center
+ * 
+ * @param obj TestObject reference
+ * @param strt struct TODO
+ */
+void ISO22133::State::_handleSTRT(TestObject& obj,strt& strt) {
 	return; // TODO
 }
 
-void ISO22133::State::_handleTRAJ(TestObject&,traj&) {
+/**
+ * @brief TODO
+ * 
+ * @param obj 
+ * @param traj 
+ */
+void ISO22133::State::_handleTRAJ(TestObject& obj,traj& traj) {
 	return; // TODO
 }
 
+/**
+ * @brief Sets TestObject ready to arm flag
+ * 
+ * @param obj TestObject reference
+ */
 void ISO22133::Disarmed::onEnter(TestObject& obj) {
 	obj.setReadyToArm(OBJECT_READY_TO_ARM);
 }
 
+/**
+ * @brief Resets TestObject ready to arm flag
+ * 
+ * @param obj TestObject reference
+ */
 void ISO22133::Disarmed::onExit(TestObject& obj) {
 	obj.setReadyToArm(OBJECT_NOT_READY_TO_ARM);
 }

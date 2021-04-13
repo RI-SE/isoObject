@@ -102,7 +102,7 @@ void TestObject::receiveUDP(){
 	this->processChannel.UDPHandlerclose();
 }
 
-void TestObject::sendMONR(char debug = 0){
+void TestObject::sendMONR(char debug){
 	if(!this->udpOk) {
 		std::cout << "UDP communication not set up yet. Can't send MONR" << std::endl;
 		return;
