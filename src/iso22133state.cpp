@@ -15,6 +15,7 @@ void ISO22133::State::handleEvent(
 								 + "' in state " + this->getName());
 	}
 
+	std::cout << "Leaving state: " << obj.state->getName() << std::endl;
 	obj.state->onExit(obj);
 	State* temp = obj.state;
 
@@ -55,6 +56,7 @@ void ISO22133::State::handleEvent(
 		break;
 	}
 	delete temp;
+	std::cout << "Entering state: " << obj.state->getName() << std::endl;
 	obj.state->onEnter(obj);
 }
 

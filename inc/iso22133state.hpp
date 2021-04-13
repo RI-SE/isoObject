@@ -97,10 +97,6 @@ public:
 	State() {}
 	virtual ~State() {}
 
-	//! Intended to be called by user, and implemented by the
-	//! inheriting class
-	virtual void executeBehaviour(TestObject&) = 0;
-
 	virtual ObjectStateID getStateID() const = 0;
 	std::string getName() const { return stateNames.at(getStateID()); }
 
@@ -109,8 +105,8 @@ public:
 protected:
 	//! Will be called on transition, indended to be
 	//! overridden by the inheriting class if necessary
-	virtual void onEnter(TestObject&) {std::cout << "Entering state: " << this->getName() << std::endl;}
-	virtual void onExit(TestObject&) {std::cout << "Leaving state: " << this->getName() << std::endl;}
+	virtual void onEnter(TestObject&) {}
+	virtual void onExit(TestObject&) {}
 
 	//! When a message arrives, these methods are
 	//! the 'front line' handlers
@@ -140,7 +136,6 @@ protected:
 class Unknown : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_UNKNOWN; }
-	virtual void executeBehaviour(TestObject&) override{};
 private:
 	void _handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageError("HEAB"); }
 	void _handleTRAJ(TestObject&, traj&) final override { unexpectedMessageError("TRAJ"); }
@@ -151,7 +146,6 @@ private:
 class Off : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_OFF; }
-	virtual void executeBehaviour(TestObject&) override{};
 private:
 	void _handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageError("HEAB"); }
 	void _handleTRAJ(TestObject&, traj&) final override { unexpectedMessageError("TRAJ"); }
@@ -162,7 +156,6 @@ private:
 class Init : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_INIT; }
-	virtual void executeBehaviour(TestObject&) override {};
 private:
 	void _handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageError("HEAB"); }
 	void _handleTRAJ(TestObject&, traj&) final override { unexpectedMessageError("TRAJ"); }
@@ -173,7 +166,6 @@ private:
 class Armed : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_ARMED; }
-	virtual void executeBehaviour(TestObject&) override {};
 private:
 	void _handleSTRT(TestObject&, strt&) final override;
 	void _handleOSTM(TestObject&, ObjectCommandType&) final override;
@@ -181,7 +173,6 @@ private:
 class Disarmed : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_DISARMED; }
-	virtual void executeBehaviour(TestObject&) override {};
 	virtual void onEnter(TestObject& obj);
 	virtual void onExit(TestObject& obj);
 private:
@@ -194,7 +185,6 @@ private:
 class Running : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_RUNNING; }
-	virtual void executeBehaviour(TestObject&) override {};
 private:
 	void _handleHEAB(TestObject& obj, HeabMessageDataType& msg) final override;
 	void _handleSTRT(TestObject& obj, strt& msg) final override { State::_handleSTRT(obj, msg); }
@@ -205,7 +195,6 @@ private:
 class PostRun : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_POSTRUN; }
-	virtual void executeBehaviour(TestObject&) override {};
 private:
 	void _handleHEAB(TestObject& obj, HeabMessageDataType& msg) final override { State::_handleHEAB(obj, msg); }
 	void _handleSTRT(TestObject& obj, strt& msg) final override { State::_handleSTRT(obj, msg); }
@@ -216,7 +205,6 @@ private:
 class RemoteControlled : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_REMOTE_CONTROLLED; }
-	virtual void executeBehaviour(TestObject&) override {};
 private:
 	void _handleOSTM(TestObject& obj, ObjectCommandType& msg) final override;
 	void _handleHEAB(TestObject& obj, HeabMessageDataType& msg) final override { State::_handleHEAB(obj, msg); }
@@ -227,7 +215,6 @@ private:
 class Aborting : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_ABORTING; }
-	virtual void executeBehaviour(TestObject&) override {};
 private:
 	void _handleHEAB(TestObject& obj, HeabMessageDataType& msg) final override;
 	void _handleOSTM(TestObject& obj, ObjectCommandType& msg) final override { State::_handleOSTM(obj, msg); }
@@ -238,7 +225,6 @@ private:
 class PreArming : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_PRE_ARMING; }
-	virtual void executeBehaviour(TestObject&) override{};
 	virtual void onEnter(TestObject& obj) {this->handleEvent(obj, Events::N);}
 private:
 	void _handleHEAB(TestObject& obj, HeabMessageDataType& msg) final override { State::_handleHEAB(obj, msg); }
@@ -250,7 +236,6 @@ private:
 class PreRunning : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_PRE_RUNNING; }
-	virtual void executeBehaviour(TestObject&) override{};
 	virtual void onEnter(TestObject& obj) {this->handleEvent(obj, Events::T);}
 private:
 	void _handleHEAB(TestObject& obj, HeabMessageDataType& msg) final override { State::_handleHEAB(obj, msg); }

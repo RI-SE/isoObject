@@ -1,8 +1,6 @@
-#ifdef _WIN32
-#include <Windows.h>
-#else
-#include <unistd.h>
-#endif
+#include <chrono>
+#include <thread>
+
 
 #include "iso22133object.hpp"
 #include "iso22133state.hpp"
@@ -60,7 +58,7 @@ void TestObject::receiveUDP(){
 	this->processChannel.CreateServer(ISO_22133_OBJECT_UDP_PORT,"",0);
 	std::vector<char> UDPReceiveBuffer(UDP_BUFFER_SIZE);
 	while(this->processChannel.receiveUDP(UDPReceiveBuffer) < 0){ // Would prefer blocking behavior on UDPhandler..
-		usleep(10000);
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 	this->udpOk = true;
 	int nBytesReceived, nBytesHandled;
@@ -81,7 +79,7 @@ void TestObject::receiveUDP(){
 			break;
 		}
 		UDPReceiveBuffer.resize(UDP_BUFFER_SIZE);
-		usleep(1000); // Would prefer blocking behavior on UDPhandler..
+		std::this_thread::sleep_for(std::chrono::milliseconds(5)); // Would prefer blocking behavior on UDPhandler..
 	}
 	this->udpOk = false;
 	this->processChannel.UDPHandlerclose();
@@ -123,6 +121,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 			}		
 			std::cout << "Received OSEM " << std::endl;
 			this->state->_handleOSEM(*this, OSEMstruct);
+			this->state->handleOSEM(*this, OSEMstruct);
 			break;
 
 		case MESSAGE_ID_OSTM:
@@ -133,6 +132,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 				return ERROR;
 			}
 			this->state->_handleOSTM(*this, OSTMdata);
+			this->state->handleOSTM(*this, OSTMdata);
 			break;
 
 		case MESSAGE_ID_STRT:

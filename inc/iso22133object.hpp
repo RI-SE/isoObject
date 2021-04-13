@@ -95,18 +95,29 @@ protected:
     // These should be overridden if extending one of the states
     // Example of override:
     // return dynamic_cast<ISO22133::PreArming*>(new myPreArming);
+    //! Must be overridden if modifying the Unknown state
     virtual Unknown* createUnknown() const { return new Unknown; }
+    //! Must be overridden id modifying the Off state
     virtual Off* createOff() const { return new Off; }
+    //! Must be overridden id modifying the Init state
     virtual Init* createInit() const { return new Init; }
+    //! Must be overridden id modifying the Armed state
     virtual Armed* createArmed() const { return new Armed; }
+    //! Must be overridden id modifying the Disarmed state
     virtual Disarmed* createDisarmed() const { return new Disarmed; }
+    //! Must be overridden id modifying the Running state
     virtual Running* createRunning() const { return new Running; }
+    //! Must be overridden id modifying the Postrun state
     virtual PostRun* createPostRun() const { return new PostRun; }
+    //! Must be overridden id modifying the Remote Controlled state
     virtual RemoteControlled* createRemoteControlled() const { return new RemoteControlled; }
+    //! Must be overridden id modifying the Abort state
     virtual Aborting* createAborting() const { return new Aborting; }
+    //! Must be overridden id modifying the Pre-Arm state
     virtual PreArming* createPreArming() const { return new PreArming; }
+    //! Must be overridden id modifying the Pre-Running state
     virtual PreRunning* createPreRunning() const { return new PreRunning; }
-    
+
     
 private:
     
