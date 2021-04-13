@@ -35,7 +35,7 @@ public:
      * 
      */
     void handleHEAB(ISO22133::TestObject&,HeabMessageDataType&) override {
-        std::cout << "Got HEAB in overridden function" << std::endl;
+        //std::cout << "Got HEAB in overridden function" << std::endl;
     }
 };
 
@@ -43,7 +43,12 @@ class myPreArming : public ISO22133::PreArming {
 public:
     void onEnter(ISO22133::TestObject& obj) override{
         std::cout << "Entering Pre-Arming" << std::endl;
-        this->handleEvent(obj, ISO22133::Events::N);
+        try {
+            this->handleEvent(obj, ISO22133::Events::N);
+        }
+        catch(const std::runtime_error& e) {
+            std::cerr << e.what() << '\n';
+        }
     }
 };
 

@@ -10,8 +10,6 @@
 #define ALLOWED_HEAB_DIFF_MS 50
 #define TCP_BUFFER_SIZE 1024
 #define UDP_BUFFER_SIZE 1024
-#define ERROR -1
-
 
 namespace ISO22133 {
 void TestObject::receiveTCP(){
@@ -22,7 +20,12 @@ void TestObject::receiveTCP(){
 		}
 		std::cout << "Connected to server..." << std::endl;
 
-		this->state->handleEvent(*this, ISO22133::Events::B);
+		try {
+			this->state->handleEvent(*this, ISO22133::Events::B);
+		}
+		catch(const std::runtime_error& e) {
+			std::cerr << e.what() << '\n';
+		}
 		this->startHandleUDP();
 
 		std::vector<char> TCPReceiveBuffer(TCP_BUFFER_SIZE);
@@ -33,10 +36,14 @@ void TestObject::receiveTCP(){
 			
 			if (nBytesReceived > 0) {
 				TCPReceiveBuffer.resize(static_cast<size_t>(nBytesReceived));
-				do{
-					nBytesHandled = this->handleMessage(&TCPReceiveBuffer);
-					nBytesReceived -= nBytesHandled;
-					TCPReceiveBuffer.erase(TCPReceiveBuffer.begin(), TCPReceiveBuffer.begin() + nBytesHandled);
+				do {
+					try {
+						nBytesHandled = this->handleMessage(&TCPReceiveBuffer);
+						nBytesReceived -= nBytesHandled;
+						TCPReceiveBuffer.erase(TCPReceiveBuffer.begin(), TCPReceiveBuffer.begin() + nBytesHandled);					}
+					catch(const std::exception& e) {
+						std::cerr << e.what() << '\n';
+					}
 				}
 				while(nBytesReceived > 0);
 			}
@@ -48,7 +55,12 @@ void TestObject::receiveTCP(){
 		std::cout << "Connection to control center lost" << std::endl;
 		this->udpOk = false;
 		this->firstHeab = true;
-		this->state->handleEvent(*this, ISO22133::Events::L);
+		try {
+			this->state->handleEvent(*this, ISO22133::Events::L);
+		}
+		catch(const std::runtime_error& e) {
+			std::cerr << e.what() << '\n';
+		}		
 		this->controlChannel.TCPHandlerclose();
 		this->udpReceiveThread.join();
 	}
@@ -69,9 +81,14 @@ void TestObject::receiveUDP(){
 		if (nBytesReceived > 0) {
 			UDPReceiveBuffer.resize(static_cast<size_t>(nBytesReceived));
 			do{
-				nBytesHandled = this->handleMessage(&UDPReceiveBuffer);
-				nBytesReceived -= nBytesHandled;
-				UDPReceiveBuffer.erase(UDPReceiveBuffer.begin(), UDPReceiveBuffer.begin() + nBytesHandled);
+				try {
+					nBytesHandled = this->handleMessage(&UDPReceiveBuffer);
+					nBytesReceived -= nBytesHandled;
+					UDPReceiveBuffer.erase(UDPReceiveBuffer.begin(), UDPReceiveBuffer.begin() + nBytesHandled);
+				}
+				catch(const std::exception& e) {
+					std::cerr << e.what() << '\n';
+				}
 			}
 			while (nBytesReceived > 0);
 		}
@@ -116,8 +133,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 			ObjectSettingsType OSEMstruct;
 			bytesHandled = decodeOSEMMessage(&OSEMstruct,dataBuffer->data(),dataBuffer->size(),nullptr,debug);
 			if(bytesHandled < 0){
-				std::cerr << "Error decoding OSEM" << std::endl;
-				return ERROR;
+				throw std::invalid_argument("Error decoding OSEM");
 			}		
 			std::cout << "Received OSEM " << std::endl;
 			this->state->_handleOSEM(*this, OSEMstruct);
@@ -128,8 +144,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 			ObjectCommandType OSTMdata;
 			bytesHandled = decodeOSTMMessage(dataBuffer->data(),dataBuffer->size(),&OSTMdata,debug);
 			if(bytesHandled < 0){
-				std::cerr << "Error decoding OSTM" << std::endl;
-				return ERROR;
+				throw std::invalid_argument("Error decoding OSTM");
 			}
 			this->state->_handleOSTM(*this, OSTMdata);
 			this->state->handleOSTM(*this, OSTMdata);
@@ -148,8 +163,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 			TimeSetToCurrentSystemTime(&currentTime);
 			bytesHandled = decodeHEABMessage(dataBuffer->data(),dataBuffer->size(),currentTime,&HEABdata,debug);
 			if(bytesHandled < 0){
-				std::cerr << "Error decoding HEAB" << std::endl;
-				return ERROR;
+				throw std::invalid_argument("Error decoding HEAB");
 			}
 			this->ccStatus = HEABdata.controlCenterStatus;
 
