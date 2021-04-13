@@ -111,10 +111,10 @@ protected:
 	//! When a message arrives, these methods are
 	//! the 'front line' handlers
 	virtual void _handleHEAB(TestObject&,HeabMessageDataType&);
-	virtual void _handleTRAJ(TestObject&,traj&) { unexpectedMessageWarning("TRAJ"); }
-	virtual void _handleOSEM(TestObject&,ObjectSettingsType&) { unexpectedMessageWarning("OSEM"); }
-	virtual void _handleOSTM(TestObject&,ObjectCommandType&) { unexpectedMessageWarning("OSTM"); }
-	virtual void _handleSTRT(TestObject&,strt&) { unexpectedMessageWarning("STRT"); }
+	virtual void _handleTRAJ(TestObject&,traj&);
+	virtual void _handleOSEM(TestObject&,ObjectSettingsType&);
+	virtual void _handleOSTM(TestObject&,ObjectCommandType&);
+	virtual void _handleSTRT(TestObject&,strt&);
 
 	//! Will be called asynchronously, indended to be
 	//! overridden by the inheriting class if necessary
@@ -163,86 +163,48 @@ private:
 	void _handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageError("OSTM"); }
 	void _handleSTRT(TestObject&, strt&) final override { unexpectedMessageError("STRT"); }
 };
+
 class Armed : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_ARMED; }
-private:
-	void _handleSTRT(TestObject&, strt&) final override;
-	void _handleOSTM(TestObject&, ObjectCommandType&) final override;
 };
+
 class Disarmed : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_DISARMED; }
 	virtual void onEnter(TestObject& obj);
 	virtual void onExit(TestObject& obj);
-private:
-	void _handleHEAB(TestObject&, HeabMessageDataType&) final override;
-	void _handleTRAJ(TestObject&, traj&) final override;
-	void _handleOSEM(TestObject&, ObjectSettingsType&) final override;
-	void _handleOSTM(TestObject&, ObjectCommandType&) final override;
-	void _handleSTRT(TestObject& obj, strt& msg) final override { State::_handleSTRT(obj, msg); }
 };
+
 class Running : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_RUNNING; }
-private:
-	void _handleHEAB(TestObject& obj, HeabMessageDataType& msg) final override;
-	void _handleSTRT(TestObject& obj, strt& msg) final override { State::_handleSTRT(obj, msg); }
-	void _handleOSTM(TestObject& obj, ObjectCommandType& msg) final override { State::_handleOSTM(obj, msg); }
-	void _handleTRAJ(TestObject& obj, traj& msg) final override { State::_handleTRAJ(obj, msg); }
-	void _handleOSEM(TestObject& obj, ObjectSettingsType& msg) final override { State::_handleOSEM(obj, msg); }
 };
+
 class PostRun : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_POSTRUN; }
-private:
-	void _handleHEAB(TestObject& obj, HeabMessageDataType& msg) final override { State::_handleHEAB(obj, msg); }
-	void _handleSTRT(TestObject& obj, strt& msg) final override { State::_handleSTRT(obj, msg); }
-	void _handleOSTM(TestObject& obj, ObjectCommandType& msg) final override { State::_handleOSTM(obj, msg); }
-	void _handleTRAJ(TestObject& obj, traj& msg) final override { State::_handleTRAJ(obj, msg); }
-	void _handleOSEM(TestObject& obj, ObjectSettingsType& msg) final override { State::_handleOSEM(obj, msg); }
 };
+
 class RemoteControlled : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_REMOTE_CONTROLLED; }
-private:
-	void _handleOSTM(TestObject& obj, ObjectCommandType& msg) final override;
-	void _handleHEAB(TestObject& obj, HeabMessageDataType& msg) final override { State::_handleHEAB(obj, msg); }
-	void _handleSTRT(TestObject& obj, strt& msg) final override { State::_handleSTRT(obj, msg); }
-	void _handleTRAJ(TestObject& obj, traj& msg) final override { State::_handleTRAJ(obj, msg); }
-	void _handleOSEM(TestObject& obj, ObjectSettingsType& msg) final override { State::_handleOSEM(obj, msg); }
 };
 class Aborting : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_ABORTING; }
-private:
-	void _handleHEAB(TestObject& obj, HeabMessageDataType& msg) final override;
-	void _handleOSTM(TestObject& obj, ObjectCommandType& msg) final override { State::_handleOSTM(obj, msg); }
-	void _handleSTRT(TestObject& obj, strt& msg) final override { State::_handleSTRT(obj, msg); }
-	void _handleTRAJ(TestObject& obj, traj& msg) final override { State::_handleTRAJ(obj, msg); }
-	void _handleOSEM(TestObject& obj, ObjectSettingsType& msg) final override { State::_handleOSEM(obj, msg); }
 };
+
 class PreArming : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_PRE_ARMING; }
 	virtual void onEnter(TestObject& obj) {this->handleEvent(obj, Events::N);}
-private:
-	void _handleHEAB(TestObject& obj, HeabMessageDataType& msg) final override { State::_handleHEAB(obj, msg); }
-	void _handleSTRT(TestObject& obj, strt& msg) final override { State::_handleSTRT(obj, msg); }
-	void _handleOSTM(TestObject& obj, ObjectCommandType& msg) final override { State::_handleOSTM(obj, msg); }
-	void _handleTRAJ(TestObject& obj, traj& msg) final override { State::_handleTRAJ(obj, msg); }
-	void _handleOSEM(TestObject& obj, ObjectSettingsType& msg) final override { State::_handleOSEM(obj, msg); }
 };
+
 class PreRunning : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_PRE_RUNNING; }
 	virtual void onEnter(TestObject& obj) {this->handleEvent(obj, Events::T);}
-private:
-	void _handleHEAB(TestObject& obj, HeabMessageDataType& msg) final override { State::_handleHEAB(obj, msg); }
-	void _handleSTRT(TestObject& obj, strt& msg) final override { State::_handleSTRT(obj, msg); }
-	void _handleOSTM(TestObject& obj, ObjectCommandType& msg) final override { State::_handleOSTM(obj, msg); }
-	void _handleTRAJ(TestObject& obj, traj& msg) final override { State::_handleTRAJ(obj, msg); }
-	void _handleOSEM(TestObject& obj, ObjectSettingsType& msg) final override { State::_handleOSEM(obj, msg); }
 };
 
 typedef struct {
