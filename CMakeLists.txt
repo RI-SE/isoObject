@@ -10,6 +10,7 @@ set(CMAKE_BUILD_TYPE Debug)
 
 # Manage namespace of the project
 set(ISOOBJECT_TARGET ${PARENT_TARGET_NAMESPACE}${PROJECT_NAME})
+set(ISOOBJECT_LIBRARY ${PARENT_TARGET_NAMESPACE}ISOobject)
 
 set(ISO22133_LIBRARY ${TARGET_NAMESPACE}ISO22133)
 set(SOCKET_LIBRARY ${TARGET_NAMESPACE}TCPUDPSocket)
@@ -20,10 +21,17 @@ include(GNUInstallDirs)
 
 get_target_property(ISO22133_HEADERS ${ISO22133_LIBRARY} INCLUDE_DIRECTORIES)
 
-add_executable(${ISOOBJECT_TARGET} testIsoObject.cpp
-src/iso22133object.cpp
-src/iso22133state.cpp
+add_library(${ISOOBJECT_LIBRARY} SHARED
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/iso22133object.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/iso22133state.cpp
 )
+
+target_include_directories(${ISOOBJECT_LIBRARY} PUBLIC
+	${CMAKE_CURRENT_SOURCE_DIR}/inc
+	${ISO22133_HEADERS}
+)
+
+add_executable(${ISOOBJECT_TARGET} testIsoObject.cpp)
 
 target_include_directories(${ISOOBJECT_TARGET} PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}/inc
@@ -31,6 +39,7 @@ target_include_directories(${ISOOBJECT_TARGET} PUBLIC
 )
 
 target_link_libraries(${ISOOBJECT_TARGET} LINK_PUBLIC
+	${ISOOBJECT_LIBRARY}
 	${SOCKET_LIBRARY}
 	${ISO22133_LIBRARY}
 	${TIME_LIBRARY}

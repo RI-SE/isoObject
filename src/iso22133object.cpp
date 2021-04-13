@@ -164,6 +164,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 			}
 			
 			this->state->_handleHEAB(*this, HEABdata);
+			this->state->handleHEAB(*this, HEABdata);
 
 			lastHeabTime = HEABdata.dataTimestamp;
 			this->firstHeab_ = false;

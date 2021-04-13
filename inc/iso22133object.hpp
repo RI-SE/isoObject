@@ -53,11 +53,11 @@ public:
         this->startHandleTCP();
     }
 
-    virtual ~TestObject(){
+    virtual ~TestObject() {
         on_ = false;
         tcpReceiveThread_.join();
         udpReceiveThread_.join();
-        }; 
+    }; 
     
     /**
      * @brief The user is responsible for calling this function
@@ -95,17 +95,17 @@ protected:
     // These should be overridden if extending one of the states
     // Example of override:
     // return dynamic_cast<ISO22133::PreArming*>(new myPreArming);
-    virtual Unknown* createUnknown() { return new Unknown; }
-    virtual Off* createOff() { return new Off; }
-    virtual Init* createInit() { return new Init; }
-    virtual Armed* createArmed() { return new Armed; }
-    virtual Disarmed* createDisarmed() { return new Disarmed; }
-    virtual Running* createRunning() { return new Running; }
-    virtual PostRun* createPostRun() { return new PostRun; }
-    virtual RemoteControlled* createRemoteControlled() { return new RemoteControlled; }
-    virtual Aborting* createAborting() { return new Aborting; }
-    virtual PreArming* createPreArming() { return new PreArming; }
-    virtual PreRunning* createPreRunning() { return new PreRunning; }
+    virtual Unknown* createUnknown() const { return new Unknown; }
+    virtual Off* createOff() const { return new Off; }
+    virtual Init* createInit() const { return new Init; }
+    virtual Armed* createArmed() const { return new Armed; }
+    virtual Disarmed* createDisarmed() const { return new Disarmed; }
+    virtual Running* createRunning() const { return new Running; }
+    virtual PostRun* createPostRun() const { return new PostRun; }
+    virtual RemoteControlled* createRemoteControlled() const { return new RemoteControlled; }
+    virtual Aborting* createAborting() const { return new Aborting; }
+    virtual PreArming* createPreArming() const { return new PreArming; }
+    virtual PreRunning* createPreRunning() const { return new PreRunning; }
     
     
 private:
