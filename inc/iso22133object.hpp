@@ -4,14 +4,15 @@
 #include <iostream>
 #include <thread> 
 #include <mutex>
+#include <chrono>
 
 #include <optional>
 
 #include "iso22133.h"
 #include "iso22133state.hpp"
-
 #include "tcphandler.hpp"
 #include "udphandler.hpp"
+#include "sigslot/signal.hpp"
 
 namespace ISO22133 {
 class State;
@@ -51,6 +52,12 @@ public:
     TestObject() : name("myTestObject"), controlChannel(), processChannel() {
         this->state = this->createInit();
         this->startHandleTCP();
+        this->stateChangeSig.connect(&TestObject::onStateChange, this);
+        this->osemSig.connect(&TestObject::onOSEM, this);
+        this->heabSig.connect(&TestObject::onHEAB, this);
+        this->ostmSig.connect(&TestObject::onOSTM, this);
+        this->trajSig.connect(&TestObject::onTRAJ, this);
+        this->strtSig.connect(&TestObject::onSTRT, this);
     }
 
     virtual ~TestObject() {
@@ -82,7 +89,7 @@ protected:
     
     //! Pure virtual safety function that must be implemented by the user.
     virtual void handleAbort() = 0;
-    
+
     void setPosition(CartesianPosition& pos) { position = pos; }
     void setSpeed(SpeedType& spd) { speed = spd; }
     void setAcceleration(AccelerationType& acc) { acceleration = acc; }
@@ -117,6 +124,28 @@ protected:
     virtual PreArming* createPreArming() const { return new PreArming; }
     //! Must be overridden id modifying the Pre-Running state
     virtual PreRunning* createPreRunning() const { return new PreRunning; }
+
+
+    //! Signals for events
+    sigslot::signal<> stateChangeSig;
+    sigslot::signal<ObjectSettingsType&> osemSig;
+	sigslot::signal<HeabMessageDataType&> heabSig;
+    sigslot::signal<> trajSig; // TODO type
+    sigslot::signal<ObjectCommandType&> ostmSig;
+    sigslot::signal<> strtSig; // TODO type
+
+    //! These funcitons are called asynchronously as
+    //! events occur. The user is responsible for 
+    //! overriding and implementing them if needed.
+    //! Preferable using threads as to not slow down 
+    //! the main thread.
+    virtual void onStateChange() {};
+    virtual void onOSEM(ObjectSettingsType&) {};
+    virtual void onHEAB(HeabMessageDataType&) {};
+    virtual void onTRAJ() {};
+    virtual void onOSTM(ObjectCommandType&) {};
+    virtual void onSTRT() {};
+
 
     
 private:

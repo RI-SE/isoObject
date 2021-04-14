@@ -39,11 +39,13 @@ void TestObject::receiveTCP(){
 				do {
 					try {
 						nBytesHandled = this->handleMessage(&TCPReceiveBuffer);
-						nBytesReceived -= nBytesHandled;
-						TCPReceiveBuffer.erase(TCPReceiveBuffer.begin(), TCPReceiveBuffer.begin() + nBytesHandled);					}
+					}
 					catch(const std::exception& e) {
 						std::cerr << e.what() << '\n';
+						nBytesHandled = nBytesReceived;
 					}
+					nBytesReceived -= nBytesHandled;
+					TCPReceiveBuffer.erase(TCPReceiveBuffer.begin(), TCPReceiveBuffer.begin() + nBytesHandled);
 				}
 				while(nBytesReceived > 0);
 			}
@@ -166,10 +168,6 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 				throw std::invalid_argument("Error decoding HEAB");
 			}
 			this->ccStatus = HEABdata.controlCenterStatus;
-
-			if(HEABdata.controlCenterStatus == CONTROL_CENTER_STATUS_ABORT) {
-				this->handleAbort();
-			}
 
 			if(!this->firstHeab && TimeGetTimeDifferenceMS(&currentTime, &lastHeabTime) > ALLOWED_HEAB_DIFF_MS) {
 				std::cerr << "Did not recevie HEAB in time, differance is " << TimeGetTimeDifferenceMS(&currentTime, &lastHeabTime) << " ms" << std::endl;

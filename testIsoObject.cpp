@@ -1,11 +1,6 @@
 
-#include <iostream>
-#include <thread>
-#ifdef _WIN32
-#include <Windows.h>
-#else
-#include <unistd.h>
-#endif
+#include <chrono>
+
 
 #include "iso22133object.hpp"
 
@@ -55,7 +50,8 @@ public:
 
 
 class myObject : public ISO22133::TestObject {
-
+public:
+    myObject() : dummyMember(0) {}
     /**
      * @brief User must override this function for handling internal
      * abort prerequisites of the test object
@@ -78,6 +74,21 @@ class myObject : public ISO22133::TestObject {
 		return dynamic_cast<ISO22133::PreArming*>(new myPreArming);
 	}
 
+    //! overridden on*message* function.
+    void onOSEM(ObjectSettingsType&) override {
+        std::cout << "overridden onOSEM, inc private member" << std::endl;
+        dummyMember++;
+        std::cout << "dummyMember is now " << dummyMember << std::endl;
+        std::cout << "We can now also add arbitrary functions: " << std::endl;
+        dummyFunc();
+
+    }
+private:
+    int dummyMember;
+    void dummyFunc() {
+        std::cout << "I am printed in a useless function" << std::endl;
+    };
+
 };
 
 
@@ -87,11 +98,11 @@ int main(int c, char** argv ) {
 
 	myObject obj;
     while (true) {
-        usleep(1000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         while(obj.isUdpOk()){
             obj.sendMONR();
-            usleep(1000);
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }
     

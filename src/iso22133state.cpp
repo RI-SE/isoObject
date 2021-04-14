@@ -63,6 +63,7 @@ void ISO22133::State::handleEvent(
 	}
 	delete temp;
 	std::cout << "Entering state: " << obj.state->getName() << std::endl;
+	obj.stateChangeSig();
 	obj.state->onEnter(obj);
 }
 
@@ -73,6 +74,7 @@ void ISO22133::State::handleEvent(
  * @param heab struct HeabMessageDataType
  */
 void ISO22133::State::_handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
+	obj.heabSig(heab);
 	switch (heab.controlCenterStatus) {
 	case CONTROL_CENTER_STATUS_NORMAL_STOP:
 		this->handleEvent(obj, ISO22133::Events::U);
@@ -80,6 +82,7 @@ void ISO22133::State::_handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
 	case CONTROL_CENTER_STATUS_ABORT:
 		if(this->getStateID() != ISO_OBJECT_STATE_ABORTING) {
 			this->handleEvent(obj, ISO22133::Events::W);
+			obj.handleAbort();
 		}
 		break;
 	case CONTROL_CENTER_STATUS_TEST_DONE:
@@ -98,6 +101,7 @@ void ISO22133::State::_handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
  * @param ostm struct ObjectCommandType
  */
 void ISO22133::State::_handleOSTM(TestObject& obj,ObjectCommandType& ostm) {
+	obj.ostmSig(ostm); // Order matters here, below may change state
 	switch (ostm) {
 	case OBJECT_COMMAND_ARM:
 		this->handleEvent(obj, ISO22133::Events::M);
@@ -110,6 +114,7 @@ void ISO22133::State::_handleOSTM(TestObject& obj,ObjectCommandType& ostm) {
 		break;
 	default:
 		break;
+
 	}
 }
 
@@ -124,6 +129,8 @@ void ISO22133::State::_handleOSEM(TestObject& obj,ObjectSettingsType& osem) {
 	obj.transmitterID = osem.desiredTransmitterID;
 	std::cout << "Got OSEM - set transmitter ID to " << osem.desiredTransmitterID << std::endl;
 	setTransmitterID(osem.desiredTransmitterID);
+
+	obj.osemSig(osem);
 	return; 
 }
 
@@ -134,6 +141,7 @@ void ISO22133::State::_handleOSEM(TestObject& obj,ObjectSettingsType& osem) {
  * @param strt struct TODO
  */
 void ISO22133::State::_handleSTRT(TestObject& obj,strt& strt) {
+	obj.strtSig();
 	return; // TODO
 }
 
@@ -144,6 +152,7 @@ void ISO22133::State::_handleSTRT(TestObject& obj,strt& strt) {
  * @param traj 
  */
 void ISO22133::State::_handleTRAJ(TestObject& obj,traj& traj) {
+	obj.trajSig();
 	return; // TODO
 }
 
