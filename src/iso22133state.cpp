@@ -74,6 +74,9 @@ void ISO22133::State::handleEvent(
  * @param heab struct HeabMessageDataType
  */
 void ISO22133::State::_handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
+	// Order matters here, below may change state
+	// causing the signal to not be triggered if placed
+	// after the handleEvent() calls
 	obj.heabSig(heab);
 	switch (heab.controlCenterStatus) {
 	case CONTROL_CENTER_STATUS_NORMAL_STOP:
@@ -101,7 +104,10 @@ void ISO22133::State::_handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
  * @param ostm struct ObjectCommandType
  */
 void ISO22133::State::_handleOSTM(TestObject& obj,ObjectCommandType& ostm) {
-	obj.ostmSig(ostm); // Order matters here, below may change state
+	// Order matters here, below may change state
+	// causing the signal to not be triggered if placed
+	// after the handleEvent() calls
+	obj.ostmSig(ostm); 
 	switch (ostm) {
 	case OBJECT_COMMAND_ARM:
 		this->handleEvent(obj, ISO22133::Events::M);
@@ -140,8 +146,12 @@ void ISO22133::State::_handleOSEM(TestObject& obj,ObjectSettingsType& osem) {
  * @param obj TestObject reference
  * @param strt struct TODO
  */
-void ISO22133::State::_handleSTRT(TestObject& obj,strt& strt) {
-	obj.strtSig();
+void ISO22133::State::_handleSTRT(TestObject& obj,StartMessageType& strt) {
+	// Order matters here, below changes state
+	// causing the signal to not be triggered if placed
+	// after the handleEvent() calls
+	obj.strtSig(strt);
+	this->handleEvent(obj, ISO22133::Events::S);
 	return; // TODO
 }
 

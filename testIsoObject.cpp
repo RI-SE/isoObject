@@ -83,6 +83,10 @@ public:
         dummyFunc();
 
     }
+
+    void onSTRT(StartMessageType&) override {
+        std::cout << "Object Starting" << std::endl;
+    }
 private:
     int dummyMember;
     void dummyFunc() {

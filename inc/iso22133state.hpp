@@ -7,7 +7,6 @@
 #include "iso22133.h"
 
 // TODO replace these with the ISO structs
-typedef struct {int a;} strt;
 typedef struct {int a;} traj;
 
 namespace ISO22133 {
@@ -115,7 +114,7 @@ protected:
 	virtual void _handleTRAJ(TestObject&,traj&);
 	virtual void _handleOSEM(TestObject&,ObjectSettingsType&);
 	virtual void _handleOSTM(TestObject&,ObjectCommandType&);
-	virtual void _handleSTRT(TestObject&,strt&);
+	virtual void _handleSTRT(TestObject&,StartMessageType&);
 
 	//! Will be called asynchronously, indended to be
 	//! overridden by the inheriting class if necessary.
@@ -125,7 +124,7 @@ protected:
 	virtual void handleTRAJ(TestObject&,traj&) {}
 	virtual void handleOSEM(TestObject&,ObjectSettingsType&) {}
 	virtual void handleOSTM(TestObject&,ObjectCommandType&) {}
-	virtual void handleSTRT(TestObject&,strt&) {}
+	virtual void handleSTRT(TestObject&,StartMessageType&) {}
 
 
 	[[noreturn]]
@@ -145,7 +144,7 @@ private:
 	void _handleTRAJ(TestObject&, traj&) final override { unexpectedMessageError("TRAJ"); }
 	void _handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageError("OSEM"); }
 	void _handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageError("OSTM"); }
-	void _handleSTRT(TestObject&, strt&) final override { unexpectedMessageError("STRT"); }
+	void _handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageError("STRT"); }
 };
 
 class Off : public State {
@@ -156,7 +155,7 @@ private:
 	void _handleTRAJ(TestObject&, traj&) final override { unexpectedMessageError("TRAJ"); }
 	void _handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageError("OSEM"); }
 	void _handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageError("OSTM"); }
-	void _handleSTRT(TestObject&, strt&) final override { unexpectedMessageError("STRT"); }
+	void _handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageError("STRT"); }
 };
 
 class Init : public State {
@@ -167,7 +166,7 @@ private:
 	void _handleTRAJ(TestObject&, traj&) final override { unexpectedMessageError("TRAJ"); }
 	void _handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageError("OSEM"); }
 	void _handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageError("OSTM"); }
-	void _handleSTRT(TestObject&, strt&) final override { unexpectedMessageError("STRT"); }
+	void _handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageError("STRT"); }
 };
 
 class Armed : public State {

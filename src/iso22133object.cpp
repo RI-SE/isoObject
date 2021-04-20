@@ -7,7 +7,7 @@
 #include "iso22133.h"
 #include "maestroTime.h"
 
-#define ALLOWED_HEAB_DIFF_MS 50
+#define ALLOWED_HEAB_DIFF_MS 50 // Time before aborting due to missing HEAB
 #define TCP_BUFFER_SIZE 1024
 #define UDP_BUFFER_SIZE 1024
 
@@ -104,7 +104,7 @@ void TestObject::receiveUDP(){
 	this->processChannel.UDPHandlerclose();
 }
 
-void TestObject::sendMONR(char debug){
+void TestObject::sendMONR(bool debug){
 	if(!this->udpOk) {
 		std::cout << "UDP communication not set up yet. Can't send MONR" << std::endl;
 		return;
@@ -153,8 +153,14 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 			break;
 
 		case MESSAGE_ID_STRT:
-			//TODO. Needs STRT decoder
-			bytesHandled = static_cast<int>(dataBuffer->size());
+			StartMessageType STRTdata;
+			uint32_t senderID;
+			bytesHandled = decodeSTRTMessage(dataBuffer->data(), dataBuffer->size(), &senderID, &STRTdata, debug);
+			if(bytesHandled < 0){
+				throw std::invalid_argument("Error decoding STRT");
+			}
+			this->state->_handleSTRT(*this, STRTdata);
+			this->state->handleSTRT(*this, STRTdata);
 			break;
 
 		case MESSAGE_ID_HEAB:

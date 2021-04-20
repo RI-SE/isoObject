@@ -4,7 +4,6 @@
 #include <iostream>
 #include <thread> 
 #include <mutex>
-#include <chrono>
 
 #include <optional>
 
@@ -70,9 +69,9 @@ public:
      * @brief The user is responsible for calling this function
      *          at 100Hz to send MONR messages.
      * 
-     * @param debug 1 = debug, 0 = no debug
+     * @param debug true / false
      */
-    void sendMONR(char debug = 0);
+    void sendMONR(bool debug = false);
     
     bool isServerConnected() const { return controlChannel.isConnected(); }
     bool isUdpOk() const { return udpOk; }
@@ -132,7 +131,7 @@ protected:
 	sigslot::signal<HeabMessageDataType&> heabSig;
     sigslot::signal<> trajSig; // TODO type
     sigslot::signal<ObjectCommandType&> ostmSig;
-    sigslot::signal<> strtSig; // TODO type
+    sigslot::signal<StartMessageType&> strtSig; 
 
     //! These funcitons are called asynchronously as
     //! events occur. The user is responsible for 
@@ -144,7 +143,7 @@ protected:
     virtual void onHEAB(HeabMessageDataType&) {};
     virtual void onTRAJ() {};
     virtual void onOSTM(ObjectCommandType&) {};
-    virtual void onSTRT() {};
+    virtual void onSTRT(StartMessageType&) {};
 
 
     
@@ -168,8 +167,8 @@ private:
     std::thread udpReceiveThread;
     ISO22133::State* state;
     std::string name;        
-    TCPHandler controlChannel ;
-    UDPHandler processChannel ;        
+    TCPHandler controlChannel;
+    UDPHandler processChannel;        
     GeographicPositionType origin; 
     ControlCenterStatusType ccStatus;
     CartesianPosition position;
