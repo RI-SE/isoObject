@@ -168,8 +168,8 @@ private:
     std::thread udpReceiveThread;
     ISO22133::State* state;
     std::string name;        
-    TCPHandler controlChannel ;
-    UDPHandler processChannel ;        
+    TCPHandler controlChannel;
+    UDPHandler processChannel;        
     GeographicPositionType origin; 
     ControlCenterStatusType ccStatus;
     CartesianPosition position;
