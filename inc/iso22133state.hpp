@@ -110,21 +110,11 @@ protected:
 	//! When a message arrives, these methods are
 	//! the 'front line' handlers.
 	//! Handles ISO22133 required actions from contorl center
-	virtual void _handleHEAB(TestObject&,HeabMessageDataType&);
-	virtual void _handleTRAJ(TestObject&,traj&);
-	virtual void _handleOSEM(TestObject&,ObjectSettingsType&);
-	virtual void _handleOSTM(TestObject&,ObjectCommandType&);
-	virtual void _handleSTRT(TestObject&,StartMessageType&);
-
-	//! Will be called asynchronously, indended to be
-	//! overridden by the inheriting class if necessary.
-	//! Can contain test object specific actions for
-	//! messages.
-	virtual void handleHEAB(TestObject&,HeabMessageDataType&) {}
-	virtual void handleTRAJ(TestObject&,traj&) {}
-	virtual void handleOSEM(TestObject&,ObjectSettingsType&) {}
-	virtual void handleOSTM(TestObject&,ObjectCommandType&) {}
-	virtual void handleSTRT(TestObject&,StartMessageType&) {}
+	virtual void handleHEAB(TestObject&,HeabMessageDataType&);
+	virtual void handleTRAJ(TestObject&,traj&);
+	virtual void handleOSEM(TestObject&,ObjectSettingsType&);
+	virtual void handleOSTM(TestObject&,ObjectCommandType&);
+	virtual void handleSTRT(TestObject&,StartMessageType&);
 
 
 	[[noreturn]]
@@ -140,33 +130,33 @@ class Unknown : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_UNKNOWN; }
 private:
-	void _handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageError("HEAB"); }
-	void _handleTRAJ(TestObject&, traj&) final override { unexpectedMessageError("TRAJ"); }
-	void _handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageError("OSEM"); }
-	void _handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageError("OSTM"); }
-	void _handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageError("STRT"); }
+	void handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageError("HEAB"); }
+	void handleTRAJ(TestObject&, traj&) final override { unexpectedMessageError("TRAJ"); }
+	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageError("OSEM"); }
+	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageError("OSTM"); }
+	void handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageError("STRT"); }
 };
 
 class Off : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_OFF; }
 private:
-	void _handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageError("HEAB"); }
-	void _handleTRAJ(TestObject&, traj&) final override { unexpectedMessageError("TRAJ"); }
-	void _handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageError("OSEM"); }
-	void _handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageError("OSTM"); }
-	void _handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageError("STRT"); }
+	void handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageError("HEAB"); }
+	void handleTRAJ(TestObject&, traj&) final override { unexpectedMessageError("TRAJ"); }
+	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageError("OSEM"); }
+	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageError("OSTM"); }
+	void handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageError("STRT"); }
 };
 
 class Init : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_INIT; }
 private:
-	void _handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageError("HEAB"); }
-	void _handleTRAJ(TestObject&, traj&) final override { unexpectedMessageError("TRAJ"); }
-	void _handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageError("OSEM"); }
-	void _handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageError("OSTM"); }
-	void _handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageError("STRT"); }
+	void handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageError("HEAB"); }
+	void handleTRAJ(TestObject&, traj&) final override { unexpectedMessageError("TRAJ"); }
+	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageError("OSEM"); }
+	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageError("OSTM"); }
+	void handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageError("STRT"); }
 };
 
 class Armed : public State {

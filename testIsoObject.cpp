@@ -24,14 +24,6 @@ public:
         std::cout << "Leaving disarmed" << std::endl;
     }
 
-    /**
-     * @brief Overridden function handleHEAB() will be called every time a new
-     * HEAB message is reveived
-     * 
-     */
-    void handleHEAB(ISO22133::TestObject&,HeabMessageDataType&) override {
-        //std::cout << "Got HEAB in overridden function" << std::endl;
-    }
 };
 
 class myPreArming : public ISO22133::PreArming {

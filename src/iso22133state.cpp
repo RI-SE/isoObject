@@ -73,7 +73,7 @@ void ISO22133::State::handleEvent(
  * @param obj TestObject reference
  * @param heab struct HeabMessageDataType
  */
-void ISO22133::State::_handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
+void ISO22133::State::handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
 	// Order matters here, below may change state
 	// causing the signal to not be triggered if placed
 	// after the handleEvent() calls
@@ -103,7 +103,7 @@ void ISO22133::State::_handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
  * @param obj TestObject reference
  * @param ostm struct ObjectCommandType
  */
-void ISO22133::State::_handleOSTM(TestObject& obj,ObjectCommandType& ostm) {
+void ISO22133::State::handleOSTM(TestObject& obj,ObjectCommandType& ostm) {
 	// Order matters here, below may change state
 	// causing the signal to not be triggered if placed
 	// after the handleEvent() calls
@@ -130,7 +130,7 @@ void ISO22133::State::_handleOSTM(TestObject& obj,ObjectCommandType& ostm) {
  * @param obj TestObject reference
  * @param osem struct ObjectSettingsType
  */
-void ISO22133::State::_handleOSEM(TestObject& obj,ObjectSettingsType& osem) {
+void ISO22133::State::handleOSEM(TestObject& obj,ObjectSettingsType& osem) {
 	obj.origin = osem.coordinateSystemOrigin;
 	obj.transmitterID = osem.desiredTransmitterID;
 	std::cout << "Got OSEM - set transmitter ID to " << osem.desiredTransmitterID << std::endl;
@@ -146,7 +146,7 @@ void ISO22133::State::_handleOSEM(TestObject& obj,ObjectSettingsType& osem) {
  * @param obj TestObject reference
  * @param strt struct TODO
  */
-void ISO22133::State::_handleSTRT(TestObject& obj,StartMessageType& strt) {
+void ISO22133::State::handleSTRT(TestObject& obj,StartMessageType& strt) {
 	// Order matters here, below changes state
 	// causing the signal to not be triggered if placed
 	// after the handleEvent() calls
@@ -161,7 +161,7 @@ void ISO22133::State::_handleSTRT(TestObject& obj,StartMessageType& strt) {
  * @param obj 
  * @param traj 
  */
-void ISO22133::State::_handleTRAJ(TestObject& obj,traj& traj) {
+void ISO22133::State::handleTRAJ(TestObject& obj,traj& traj) {
 	obj.trajSig();
 	return; // TODO
 }

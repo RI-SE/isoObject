@@ -138,7 +138,6 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 				throw std::invalid_argument("Error decoding OSEM");
 			}		
 			std::cout << "Received OSEM " << std::endl;
-			this->state->_handleOSEM(*this, OSEMstruct);
 			this->state->handleOSEM(*this, OSEMstruct);
 			break;
 
@@ -148,7 +147,6 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 			if(bytesHandled < 0){
 				throw std::invalid_argument("Error decoding OSTM");
 			}
-			this->state->_handleOSTM(*this, OSTMdata);
 			this->state->handleOSTM(*this, OSTMdata);
 			break;
 
@@ -159,7 +157,6 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 			if(bytesHandled < 0){
 				throw std::invalid_argument("Error decoding STRT");
 			}
-			this->state->_handleSTRT(*this, STRTdata);
 			this->state->handleSTRT(*this, STRTdata);
 			break;
 
@@ -181,7 +178,6 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 				HEABdata.controlCenterStatus = CONTROL_CENTER_STATUS_ABORT;
 			}
 			
-			this->state->_handleHEAB(*this, HEABdata);
 			this->state->handleHEAB(*this, HEABdata);
 
 			lastHeabTime = HEABdata.dataTimestamp;
