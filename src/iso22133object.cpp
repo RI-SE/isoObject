@@ -124,6 +124,9 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 	int bytesHandled = 0;
 	int debug = 0;
 
+	struct timeval currentTime;
+	TimeSetToCurrentSystemTime(&currentTime);
+
 	switch(getISOMessageType(dataBuffer->data(), dataBuffer->size(), 0)){
 		case MESSAGE_ID_TRAJ:
 			//TODO. Needs TRAJ deoder
@@ -152,8 +155,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 
 		case MESSAGE_ID_STRT:
 			StartMessageType STRTdata;
-			uint32_t senderID;
-			bytesHandled = decodeSTRTMessage(dataBuffer->data(), dataBuffer->size(), &senderID, &STRTdata, debug);
+			bytesHandled = decodeSTRTMessage(dataBuffer->data(),dataBuffer->size(),&currentTime,&STRTdata,debug);
 			if(bytesHandled < 0){
 				throw std::invalid_argument("Error decoding STRT");
 			}
@@ -162,10 +164,8 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 
 		case MESSAGE_ID_HEAB:
 			HeabMessageDataType HEABdata;
-			struct timeval currentTime;
 			static struct timeval lastHeabTime; 
-			
-			TimeSetToCurrentSystemTime(&currentTime);
+	
 			bytesHandled = decodeHEABMessage(dataBuffer->data(),dataBuffer->size(),currentTime,&HEABdata,debug);
 			if(bytesHandled < 0){
 				throw std::invalid_argument("Error decoding HEAB");
