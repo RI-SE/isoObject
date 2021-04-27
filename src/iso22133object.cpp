@@ -155,7 +155,6 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 
 		case MESSAGE_ID_STRT:
 			StartMessageType STRTdata;
-			uint32_t senderID;
 			bytesHandled = decodeSTRTMessage(dataBuffer->data(),dataBuffer->size(),&currentTime,&STRTdata,debug);
 			if(bytesHandled < 0){
 				throw std::invalid_argument("Error decoding STRT");
