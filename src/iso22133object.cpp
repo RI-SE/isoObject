@@ -137,13 +137,14 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 	switch(msgType) {
 		case MESSAGE_ID_TRAJ:
 			std::cout << "Receiving TRAJ" << std::endl;
+			int nPointsRemaining;
 			static int nPointsHandled = 0;
 			static std::vector<char> unhandledBytes; 
 			copiedData = *dataBuffer;
 
 			// Decode TRAJ Header
 			if(!expectingTRAJPoints) {
-				bytesHandled = decodeTRAJMessageHeader(&this->trajectoryHeader, copiedData.data(), copiedData.size(), 1);
+				bytesHandled = decodeTRAJMessageHeader(&this->trajectoryHeader, copiedData.data(), copiedData.size(), 0);
 				if(bytesHandled < 0) {
 					throw std::invalid_argument("Error decoding TRAJ Header");	
 				}
@@ -153,14 +154,15 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 			}
 
 			// Decode TRAJ waypoints
-			int tmpByteCounter;
 			TrajectorWaypointType waypoint;
 			if(expectingTRAJPoints) {
 				std::cout << "inserting " << unhandledBytes.size() << " unhandled bytes " << std::endl;
 				copiedData.insert(copiedData.begin(), unhandledBytes.begin(), unhandledBytes.end());
 			}
 
-			for(int i = 0; i < this->trajectoryHeader.wayPoints - nPointsHandled; i++) {
+			int tmpByteCounter;
+			nPointsRemaining = this->trajectoryHeader.wayPoints - nPointsHandled;
+			for(int i = 0; i < nPointsRemaining; i++) {
 				if(copiedData.size() < ISO_TRAJ_WAYPOINT_SIZE) { // Save the bytes remaining and return
 					unhandledBytes.resize(copiedData.size());
 					unhandledBytes = copiedData; 	
@@ -169,7 +171,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 					break;
 				}
 
-				tmpByteCounter = decodeTRAJMessagePoint(&waypoint, copiedData.data(), 1);
+				tmpByteCounter = decodeTRAJMessagePoint(&waypoint, copiedData.data(), 0);
 				if(tmpByteCounter < 0) {
 					std::cout << "\nbyteshandled " << bytesHandled << std::endl;
 					std::cout << "buffer size " << dataBuffer->size() << std::endl;
