@@ -145,6 +145,8 @@ protected:
     virtual void onOSTM(ObjectCommandType&) {};
     virtual void onSTRT(StartMessageType&) {};
 
+    TrajectorHeaderType trajectoryHeader;
+    std::vector<TrajectorWaypointType> trajectory;
 
     
 private:

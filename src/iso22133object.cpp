@@ -12,7 +12,7 @@
 #define UDP_BUFFER_SIZE 1024
 
 namespace ISO22133 {
-void TestObject::receiveTCP(){
+void TestObject::receiveTCP() {
 	while(this->on) {
 		std::cout << "Awaiting connection to server..." << std::endl;
 		if(this->controlChannel.CreateServer(ISO_22133_DEFAULT_OBJECT_TCP_PORT, "") < 0) {
@@ -30,7 +30,7 @@ void TestObject::receiveTCP(){
 
 		std::vector<char> TCPReceiveBuffer(TCP_BUFFER_SIZE);
 		int nBytesReceived, nBytesHandled;
-		while(this->isServerConnected()){
+		while(this->isServerConnected()) {
 			std::fill(TCPReceiveBuffer.begin(), TCPReceiveBuffer.end(), 0);
 			nBytesReceived = this->controlChannel.receiveTCP(TCPReceiveBuffer,0);
 			
@@ -77,12 +77,12 @@ void TestObject::receiveUDP(){
 	this->udpOk = true;
 	int nBytesReceived, nBytesHandled;
 
-	while(this->isServerConnected() && this->udpOk){
+	while(this->isServerConnected() && this->udpOk) {
 		std::fill(UDPReceiveBuffer.begin(), UDPReceiveBuffer.end(), 0);
 		nBytesReceived = this->processChannel.receiveUDP(UDPReceiveBuffer);
 		if (nBytesReceived > 0) {
 			UDPReceiveBuffer.resize(static_cast<size_t>(nBytesReceived));
-			do{
+			do {
 				try {
 					nBytesHandled = this->handleMessage(&UDPReceiveBuffer);
 					nBytesReceived -= nBytesHandled;
@@ -90,6 +90,7 @@ void TestObject::receiveUDP(){
 				}
 				catch(const std::exception& e) {
 					std::cerr << e.what() << '\n';
+					nBytesHandled = nBytesReceived;
 				}
 			}
 			while (nBytesReceived > 0);
@@ -104,7 +105,7 @@ void TestObject::receiveUDP(){
 	this->processChannel.UDPHandlerclose();
 }
 
-void TestObject::sendMONR(bool debug){
+void TestObject::sendMONR(bool debug) {
 	if(!this->udpOk) {
 		std::cout << "UDP communication not set up yet. Can't send MONR" << std::endl;
 		return;
@@ -119,25 +120,82 @@ void TestObject::sendMONR(bool debug){
 	this->processChannel.sendUDP(buffer);
 }
 
-int TestObject::handleMessage(std::vector<char>* dataBuffer){
+int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 	std::lock_guard<std::mutex> lock(this->recvMutex); // Both TCP and UDP threads end up in here
 	int bytesHandled = 0;
 	int debug = 0;
-
+	static bool expectingTRAJPoints = false;
 	struct timeval currentTime;
 	TimeSetToCurrentSystemTime(&currentTime);
+	std::vector<char> copiedData; // Needed for TRAJ
 
-	switch(getISOMessageType(dataBuffer->data(), dataBuffer->size(), 0)){
+	ISOMessageID msgType = getISOMessageType(dataBuffer->data(), dataBuffer->size(), 0);
+	if(msgType == MESSAGE_ID_INVALID && expectingTRAJPoints) {
+		msgType = MESSAGE_ID_TRAJ;
+	}
+
+	switch(msgType) {
 		case MESSAGE_ID_TRAJ:
-			//TODO. Needs TRAJ deoder
-			std::cout << "Discarding TRAJ" << std::endl;
+			std::cout << "Receiving TRAJ" << std::endl;
+			static int nPointsHandled = 0;
+			static std::vector<char> unhandledBytes; 
+			copiedData = *dataBuffer;
+
+			// Decode TRAJ Header
+			if(!expectingTRAJPoints) {
+				bytesHandled = decodeTRAJMessageHeader(&this->trajectoryHeader, copiedData.data(), copiedData.size(), 1);
+				if(bytesHandled < 0) {
+					throw std::invalid_argument("Error decoding TRAJ Header");	
+				}
+				copiedData.erase(copiedData.begin(), copiedData.begin()+bytesHandled);	
+				expectingTRAJPoints = true;
+				this->trajectory.resize(this->trajectoryHeader.wayPoints);
+			}
+
+			// Decode TRAJ waypoints
+			int tmpByteCounter;
+			TrajectorWaypointType waypoint;
+			if(expectingTRAJPoints) {
+				std::cout << "inserting " << unhandledBytes.size() << " unhandled bytes " << std::endl;
+				copiedData.insert(copiedData.begin(), unhandledBytes.begin(), unhandledBytes.end());
+			}
+
+			for(int i = 0; i < this->trajectoryHeader.wayPoints - nPointsHandled; i++) {
+				if(copiedData.size() < ISO_TRAJ_WAYPOINT_SIZE) { // Save the bytes remaining and return
+					unhandledBytes.resize(copiedData.size());
+					unhandledBytes = copiedData; 	
+					std::cout << "saving remaing bytes: " << unhandledBytes.size() << std::endl;
+					std::cout << "copied buffer size " << copiedData.size() << std::endl;
+					break;
+				}
+
+				tmpByteCounter = decodeTRAJMessagePoint(&waypoint, copiedData.data(), 1);
+				if(tmpByteCounter < 0) {
+					std::cout << "\nbyteshandled " << bytesHandled << std::endl;
+					std::cout << "buffer size " << dataBuffer->size() << std::endl;
+					std::cout << "copied buffer size " << copiedData.size() << std::endl;
+					throw std::invalid_argument("Error decoding TRAJ Waypoint");
+				}
+				copiedData.erase(copiedData.begin(), copiedData.begin()+tmpByteCounter);	
+				std::cout << "buffer size after erase: " << copiedData.size() << std::endl;	
+				this->trajectory[i+nPointsHandled] = waypoint;
+				bytesHandled += tmpByteCounter;
+				nPointsHandled += 1;
+			}	
+
+			if(nPointsHandled == this->trajectoryHeader.wayPoints) {
+				expectingTRAJPoints = false; // Complete TRAJ received
+			}
+
+			std::cout << "nPointsHandled " << nPointsHandled << std::endl;
+			std::cout << "nPointsExpected " << this->trajectoryHeader.wayPoints << std::endl;
 			bytesHandled = static_cast<int>(dataBuffer->size());
 			break;
 
 		case MESSAGE_ID_OSEM:
 			ObjectSettingsType OSEMstruct;
 			bytesHandled = decodeOSEMMessage(&OSEMstruct,dataBuffer->data(),dataBuffer->size(),nullptr,debug);
-			if(bytesHandled < 0){
+			if(bytesHandled < 0) {
 				throw std::invalid_argument("Error decoding OSEM");
 			}		
 			std::cout << "Received OSEM " << std::endl;
@@ -147,7 +205,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 		case MESSAGE_ID_OSTM:
 			ObjectCommandType OSTMdata;
 			bytesHandled = decodeOSTMMessage(dataBuffer->data(),dataBuffer->size(),&OSTMdata,debug);
-			if(bytesHandled < 0){
+			if(bytesHandled < 0) {
 				throw std::invalid_argument("Error decoding OSTM");
 			}
 			this->state->handleOSTM(*this, OSTMdata);
@@ -156,7 +214,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 		case MESSAGE_ID_STRT:
 			StartMessageType STRTdata;
 			bytesHandled = decodeSTRTMessage(dataBuffer->data(),dataBuffer->size(),&currentTime,&STRTdata,debug);
-			if(bytesHandled < 0){
+			if(bytesHandled < 0) {
 				throw std::invalid_argument("Error decoding STRT");
 			}
 			this->state->handleSTRT(*this, STRTdata);
@@ -167,7 +225,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 			static struct timeval lastHeabTime; 
 	
 			bytesHandled = decodeHEABMessage(dataBuffer->data(),dataBuffer->size(),currentTime,&HEABdata,debug);
-			if(bytesHandled < 0){
+			if(bytesHandled < 0) {
 				throw std::invalid_argument("Error decoding HEAB");
 			}
 			this->ccStatus = HEABdata.controlCenterStatus;
@@ -191,4 +249,4 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 
 	return bytesHandled;
 }
-}
+} //namespace ISO22133
