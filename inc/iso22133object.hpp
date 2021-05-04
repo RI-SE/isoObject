@@ -9,6 +9,7 @@
 
 #include "iso22133.h"
 #include "iso22133state.hpp"
+#include "trajDecoder.hpp"
 #include "tcphandler.hpp"
 #include "udphandler.hpp"
 #include "sigslot/signal.hpp"
@@ -48,9 +49,13 @@ class TestObject {
     friend class PreRunning;
 
 public:
-    TestObject() : name("myTestObject"), controlChannel(), processChannel() {
+    TestObject() :  name("myTestObject"), 
+                    controlChannel(), 
+                    processChannel(), 
+                    trajDecoder() {
         this->state = this->createInit();
         this->startHandleTCP();
+        this->startSendMONR();
         this->stateChangeSig.connect(&TestObject::onStateChange, this);
         this->osemSig.connect(&TestObject::onOSEM, this);
         this->heabSig.connect(&TestObject::onHEAB, this);
@@ -61,17 +66,10 @@ public:
 
     virtual ~TestObject() {
         on = false;
+        monrThread.join();
         tcpReceiveThread.join();
         udpReceiveThread.join();
     }; 
-    
-    /**
-     * @brief The user is responsible for calling this function
-     *          at 100Hz to send MONR messages.
-     * 
-     * @param debug true / false
-     */
-    void sendMONR(bool debug = false);
     
     bool isServerConnected() const { return controlChannel.isConnected(); }
     bool isUdpOk() const { return udpOk; }
@@ -81,6 +79,9 @@ public:
     SpeedType getSpeed() const { return speed; }
     AccelerationType getAcceleration() const { return acceleration; }
     DriveDirectionType getDriveDirection() const { return driveDirection; }
+    TrajectorHeaderType getTrajectoryHeader() const { return trajectoryHeader; }
+    std::vector<TrajectorWaypointType> getTrajectory() const { return trajectory; }
+
 
 
 
@@ -155,11 +156,16 @@ private:
     void receiveUDP();
     //! TCP receiver loop that should be run in its own thread.
     void receiveTCP();
+    //! MONR sending loop that should be run in its own thread.
+    void monrLoop();
     void startHandleTCP() { tcpReceiveThread = std::thread(&TestObject::receiveTCP, this); }
     void startHandleUDP() { udpReceiveThread = std::thread(&TestObject::receiveUDP, this); }
+    void startSendMONR() {monrThread = std::thread(&TestObject::monrLoop, this);}
     //! Function for handling received ISO messages. Calls corresponding 
     //! handler in the current state.
     int handleMessage(std::vector<char>*);
+    //! Sends MONR message on process channel
+    void sendMONR(bool debug = false);
 
     std::mutex recvMutex;
     bool udpOk = false;
@@ -167,10 +173,12 @@ private:
     bool firstHeab = true;
     std::thread tcpReceiveThread;
     std::thread udpReceiveThread;
+    std::thread monrThread;
     ISO22133::State* state;
     std::string name;        
     TCPHandler controlChannel;
-    UDPHandler processChannel;        
+    UDPHandler processChannel;   
+    TrajDecoder trajDecoder;     
     GeographicPositionType origin; 
     ControlCenterStatusType ccStatus;
     CartesianPosition position;

@@ -152,7 +152,7 @@ void ISO22133::State::handleSTRT(TestObject& obj,StartMessageType& strt) {
 	// after the handleEvent() calls
 	obj.strtSig(strt);
 	this->handleEvent(obj, ISO22133::Events::S);
-	return; // TODO
+	return; 
 }
 
 /**
@@ -161,9 +161,10 @@ void ISO22133::State::handleSTRT(TestObject& obj,StartMessageType& strt) {
  * @param obj 
  * @param traj 
  */
-void ISO22133::State::handleTRAJ(TestObject& obj,traj& traj) {
+void ISO22133::State::handleTRAJ(TestObject& obj,std::vector<TrajectorWaypointType>& traj) {
+	// Signal TRAJ is now available
 	obj.trajSig();
-	return; // TODO
+	return; 
 }
 
 /**

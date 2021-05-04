@@ -2,6 +2,7 @@
 #include <thread>
 
 
+
 #include "iso22133object.hpp"
 #include "iso22133state.hpp"
 #include "iso22133.h"
@@ -103,6 +104,7 @@ void TestObject::receiveUDP(){
 	}
 	this->udpOk = false;
 	this->processChannel.UDPHandlerclose();
+	this->monrThread.join();
 }
 
 void TestObject::sendMONR(bool debug) {
@@ -120,78 +122,39 @@ void TestObject::sendMONR(bool debug) {
 	this->processChannel.sendUDP(buffer);
 }
 
+void TestObject::monrLoop() {
+	while(!this->udpOk) {
+		// Wait for UDP connection
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+	while(this->udpOk) {
+		this->sendMONR();
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+}
+
 int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 	std::lock_guard<std::mutex> lock(this->recvMutex); // Both TCP and UDP threads end up in here
 	int bytesHandled = 0;
 	int debug = 0;
-	static bool expectingTRAJPoints = false;
 	struct timeval currentTime;
 	TimeSetToCurrentSystemTime(&currentTime);
-	std::vector<char> copiedData; // Needed for TRAJ
 
+	// Ugly check here since we don't know if it is UDP or the rest of TRAJ
 	ISOMessageID msgType = getISOMessageType(dataBuffer->data(), dataBuffer->size(), 0);
-	if(msgType == MESSAGE_ID_INVALID && expectingTRAJPoints) {
+	if(msgType == MESSAGE_ID_INVALID && this->trajDecoder.ExpectingTrajPoints()) {
 		msgType = MESSAGE_ID_TRAJ;
 	}
 
 	switch(msgType) {
 		case MESSAGE_ID_TRAJ:
 			std::cout << "Receiving TRAJ" << std::endl;
-			int nPointsRemaining;
-			static int nPointsHandled = 0;
-			static std::vector<char> unhandledBytes; 
-			copiedData = *dataBuffer;
-
-			// Decode TRAJ Header
-			if(!expectingTRAJPoints) {
-				bytesHandled = decodeTRAJMessageHeader(&this->trajectoryHeader, copiedData.data(), copiedData.size(), 0);
-				if(bytesHandled < 0) {
-					throw std::invalid_argument("Error decoding TRAJ Header");	
-				}
-				copiedData.erase(copiedData.begin(), copiedData.begin()+bytesHandled);	
-				expectingTRAJPoints = true;
-				this->trajectory.resize(this->trajectoryHeader.wayPoints);
-			}
-
-			// Decode TRAJ waypoints
-			TrajectorWaypointType waypoint;
-			if(expectingTRAJPoints) {
-				std::cout << "inserting " << unhandledBytes.size() << " unhandled bytes " << std::endl;
-				copiedData.insert(copiedData.begin(), unhandledBytes.begin(), unhandledBytes.end());
-			}
-
-			int tmpByteCounter;
-			nPointsRemaining = this->trajectoryHeader.wayPoints - nPointsHandled;
-			for(int i = 0; i < nPointsRemaining; i++) {
-				if(copiedData.size() < ISO_TRAJ_WAYPOINT_SIZE) { // Save the bytes remaining and return
-					unhandledBytes.resize(copiedData.size());
-					unhandledBytes = copiedData; 	
-					std::cout << "saving remaing bytes: " << unhandledBytes.size() << std::endl;
-					std::cout << "copied buffer size " << copiedData.size() << std::endl;
-					break;
-				}
-
-				tmpByteCounter = decodeTRAJMessagePoint(&waypoint, copiedData.data(), 0);
-				if(tmpByteCounter < 0) {
-					std::cout << "\nbyteshandled " << bytesHandled << std::endl;
-					std::cout << "buffer size " << dataBuffer->size() << std::endl;
-					std::cout << "copied buffer size " << copiedData.size() << std::endl;
-					throw std::invalid_argument("Error decoding TRAJ Waypoint");
-				}
-				copiedData.erase(copiedData.begin(), copiedData.begin()+tmpByteCounter);	
-				std::cout << "buffer size after erase: " << copiedData.size() << std::endl;	
-				this->trajectory[i+nPointsHandled] = waypoint;
-				bytesHandled += tmpByteCounter;
-				nPointsHandled += 1;
-			}	
-
-			if(nPointsHandled == this->trajectoryHeader.wayPoints) {
-				expectingTRAJPoints = false; // Complete TRAJ received
-			}
-
-			std::cout << "nPointsHandled " << nPointsHandled << std::endl;
-			std::cout << "nPointsExpected " << this->trajectoryHeader.wayPoints << std::endl;
-			bytesHandled = static_cast<int>(dataBuffer->size());
+			bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer);
+			if(bytesHandled < 0) {
+				throw std::invalid_argument("Error decoding TRAJ");
+			};
+			this->trajectoryHeader = this->trajDecoder.getTrajHeader();
+			this->trajectory = this->trajDecoder.getTraj();
 			break;
 
 		case MESSAGE_ID_OSEM:

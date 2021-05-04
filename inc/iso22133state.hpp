@@ -4,10 +4,8 @@
 #include <map>
 #include <iostream>
 #include <functional>
+#include <vector>
 #include "iso22133.h"
-
-// TODO replace these with the ISO structs
-typedef struct {int a;} traj;
 
 namespace ISO22133 {
 class TestObject;
@@ -111,7 +109,7 @@ protected:
 	//! the 'front line' handlers.
 	//! Handles ISO22133 required actions from contorl center
 	virtual void handleHEAB(TestObject&,HeabMessageDataType&);
-	virtual void handleTRAJ(TestObject&,traj&);
+	virtual void handleTRAJ(TestObject&,std::vector<TrajectorWaypointType>&);
 	virtual void handleOSEM(TestObject&,ObjectSettingsType&);
 	virtual void handleOSTM(TestObject&,ObjectCommandType&);
 	virtual void handleSTRT(TestObject&,StartMessageType&);
@@ -131,7 +129,7 @@ public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_UNKNOWN; }
 private:
 	void handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageError("HEAB"); }
-	void handleTRAJ(TestObject&, traj&) final override { unexpectedMessageError("TRAJ"); }
+	void handleTRAJ(TestObject&, std::vector<TrajectorWaypointType>&) final override { unexpectedMessageError("TRAJ"); }
 	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageError("OSEM"); }
 	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageError("OSTM"); }
 	void handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageError("STRT"); }
@@ -142,7 +140,7 @@ public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_OFF; }
 private:
 	void handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageError("HEAB"); }
-	void handleTRAJ(TestObject&, traj&) final override { unexpectedMessageError("TRAJ"); }
+	void handleTRAJ(TestObject&, std::vector<TrajectorWaypointType>&) final override { unexpectedMessageError("TRAJ"); }
 	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageError("OSEM"); }
 	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageError("OSTM"); }
 	void handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageError("STRT"); }
@@ -153,7 +151,7 @@ public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_INIT; }
 private:
 	void handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageError("HEAB"); }
-	void handleTRAJ(TestObject&, traj&) final override { unexpectedMessageError("TRAJ"); }
+	void handleTRAJ(TestObject&, std::vector<TrajectorWaypointType>&) final override { unexpectedMessageError("TRAJ"); }
 	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageError("OSEM"); }
 	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageError("OSTM"); }
 	void handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageError("STRT"); }
