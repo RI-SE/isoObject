@@ -14,11 +14,11 @@ public:
     TrajDecoder(bool debug) : debug(debug), expectingTRAJPoints(false) {};
     TrajDecoder() : debug(false), expectingTRAJPoints(false) {};
     ssize_t DecodeTRAJ(std::vector<char>*);
-    bool ExpectingTrajPoints() { return this->expectingTRAJPoints; }
-    std::vector<TrajectorWaypointType> getTraj() { 
+    bool ExpectingTrajPoints() const { return this->expectingTRAJPoints; }
+    std::vector<TrajectorWaypointType> getTraj() const { 
         return this->trajectoryWaypoints; 
     }
-    TrajectorHeaderType getTrajHeader() { return this->trajecoryHeader; }
+    TrajectorHeaderType getTrajHeader() const { return this->trajecoryHeader; }
 private:
     bool debug, expectingTRAJPoints;
     int nPointsHandled = 0;

@@ -79,8 +79,8 @@ public:
     SpeedType getSpeed() const { return speed; }
     AccelerationType getAcceleration() const { return acceleration; }
     DriveDirectionType getDriveDirection() const { return driveDirection; }
-    TrajectorHeaderType getTrajectoryHeader() const { return trajectoryHeader; }
-    std::vector<TrajectorWaypointType> getTrajectory() const { return trajectory; }
+    TrajectorHeaderType getTrajectoryHeader() const { return trajDecoder.getTrajHeader(); }
+    std::vector<TrajectorWaypointType> getTrajectory() const { return trajDecoder.getTraj(); }
 
 
 
@@ -96,8 +96,8 @@ protected:
     void setDriveDirection(DriveDirectionType& drd) { driveDirection = drd; }
     void setObjectState(ObjectStateID& ost) { objectState = ost; }
     void setName(std::string name) { name = name; }
-    void setReadyToArm(const int& rdy) {readyToArm = rdy;}
-    void setErrorState(const char& err) {errorState = err;}      
+    void setReadyToArm(const int& rdy) { readyToArm = rdy; }
+    void setErrorState(const char& err) { errorState = err; }      
 
     // These should be overridden if extending one of the states
     // Example of override:
@@ -130,7 +130,7 @@ protected:
     sigslot::signal<> stateChangeSig;
     sigslot::signal<ObjectSettingsType&> osemSig;
 	sigslot::signal<HeabMessageDataType&> heabSig;
-    sigslot::signal<> trajSig; // TODO type
+    sigslot::signal<> trajSig;
     sigslot::signal<ObjectCommandType&> ostmSig;
     sigslot::signal<StartMessageType&> strtSig; 
 
@@ -145,10 +145,6 @@ protected:
     virtual void onTRAJ() {};
     virtual void onOSTM(ObjectCommandType&) {};
     virtual void onSTRT(StartMessageType&) {};
-
-    TrajectorHeaderType trajectoryHeader;
-    std::vector<TrajectorWaypointType> trajectory;
-
     
 private:
     
@@ -160,7 +156,7 @@ private:
     void monrLoop();
     void startHandleTCP() { tcpReceiveThread = std::thread(&TestObject::receiveTCP, this); }
     void startHandleUDP() { udpReceiveThread = std::thread(&TestObject::receiveUDP, this); }
-    void startSendMONR() {monrThread = std::thread(&TestObject::monrLoop, this);}
+    void startSendMONR() { monrThread = std::thread(&TestObject::monrLoop, this); }
     //! Function for handling received ISO messages. Calls corresponding 
     //! handler in the current state.
     int handleMessage(std::vector<char>*);

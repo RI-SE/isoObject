@@ -127,9 +127,15 @@ void TestObject::monrLoop() {
 		// Wait for UDP connection
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
+	std::chrono::time_point<std::chrono::system_clock> monrTime;
 	while(this->udpOk) {
+		monrTime = std::chrono::system_clock::now();
 		this->sendMONR();
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		std::this_thread::sleep_for(
+			std::chrono::milliseconds(10) - 
+			monrTime.time_since_epoch() +
+			std::chrono::system_clock::now().time_since_epoch()
+			);
 	}
 }
 
@@ -140,8 +146,8 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 	struct timeval currentTime;
 	TimeSetToCurrentSystemTime(&currentTime);
 
-	// Ugly check here since we don't know if it is UDP or the rest of TRAJ
 	ISOMessageID msgType = getISOMessageType(dataBuffer->data(), dataBuffer->size(), 0);
+	// Ugly check here since we don't know if it is UDP or the rest of TRAJ
 	if(msgType == MESSAGE_ID_INVALID && this->trajDecoder.ExpectingTrajPoints()) {
 		msgType = MESSAGE_ID_TRAJ;
 	}
@@ -153,8 +159,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 			if(bytesHandled < 0) {
 				throw std::invalid_argument("Error decoding TRAJ");
 			};
-			this->trajectoryHeader = this->trajDecoder.getTrajHeader();
-			this->trajectory = this->trajDecoder.getTraj();
+			this->state->handleTRAJ(*this);
 			break;
 
 		case MESSAGE_ID_OSEM:

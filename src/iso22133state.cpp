@@ -161,7 +161,7 @@ void ISO22133::State::handleSTRT(TestObject& obj,StartMessageType& strt) {
  * @param obj 
  * @param traj 
  */
-void ISO22133::State::handleTRAJ(TestObject& obj,std::vector<TrajectorWaypointType>& traj) {
+void ISO22133::State::handleTRAJ(TestObject& obj) {
 	// Signal TRAJ is now available
 	obj.trajSig();
 	return; 
