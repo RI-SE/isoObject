@@ -128,7 +128,7 @@ protected:
     //! Signals for events
     sigslot::signal<> stateChangeSig;
     sigslot::signal<ObjectSettingsType&> osemSig;
-	sigslot::signal<HeabMessageDataType&> heabSig;
+    sigslot::signal<HeabMessageDataType&> heabSig;
     sigslot::signal<> trajSig;
     sigslot::signal<ObjectCommandType&> ostmSig;
     sigslot::signal<StartMessageType&> strtSig; 
