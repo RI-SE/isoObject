@@ -127,33 +127,33 @@ class Unknown : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_UNKNOWN; }
 private:
-	void handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageError("HEAB"); }
-	void handleTRAJ(TestObject&) final override { unexpectedMessageError("TRAJ"); }
-	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageError("OSEM"); }
-	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageError("OSTM"); }
-	void handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageError("STRT"); }
+	void handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageWarning("HEAB"); }
+	void handleTRAJ(TestObject&) final override { unexpectedMessageWarning("TRAJ"); }
+	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageWarning("OSEM"); }
+	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageWarning("OSTM"); }
+	void handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageWarning("STRT"); }
 };
 
 class Off : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_OFF; }
 private:
-	void handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageError("HEAB"); }
-	void handleTRAJ(TestObject&) final override { unexpectedMessageError("TRAJ"); }
-	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageError("OSEM"); }
-	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageError("OSTM"); }
-	void handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageError("STRT"); }
+	void handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageWarning("HEAB"); }
+	void handleTRAJ(TestObject&) final override { unexpectedMessageWarning("TRAJ"); }
+	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageWarning("OSEM"); }
+	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageWarning("OSTM"); }
+	void handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageWarning("STRT"); }
 };
 
 class Init : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_INIT; }
 private:
-	void handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageError("HEAB"); }
-	void handleTRAJ(TestObject&) final override { unexpectedMessageError("TRAJ"); }
-	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageError("OSEM"); }
-	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageError("OSTM"); }
-	void handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageError("STRT"); }
+	void handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageWarning("HEAB"); }
+	void handleTRAJ(TestObject&) final override { unexpectedMessageWarning("TRAJ"); }
+	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageWarning("OSEM"); }
+	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageWarning("OSTM"); }
+	void handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageWarning("STRT"); }
 };
 
 class Armed : public State {

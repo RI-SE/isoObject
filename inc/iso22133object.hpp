@@ -55,7 +55,6 @@ public:
                     trajDecoder() {
         this->state = this->createInit();
         this->startHandleTCP();
-        this->startSendMONR();
         this->stateChangeSig.connect(&TestObject::onStateChange, this);
         this->osemSig.connect(&TestObject::onOSEM, this);
         this->heabSig.connect(&TestObject::onHEAB, this);

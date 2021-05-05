@@ -16,7 +16,7 @@ void ISO22133::State::handleEvent(
 		return event == tr.event && this->getStateID() == tr.source;
 	});
 	if (transition == language.end()) {
-		throw std::runtime_error(std::string("Unexpected event '")
+		throw std::runtime_error(std::string("Unexpected event '") 
 								 + Events::descriptions.at(event)
 								 + "' in state " + this->getName());
 	}

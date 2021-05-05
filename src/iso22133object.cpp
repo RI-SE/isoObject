@@ -65,7 +65,12 @@ void TestObject::receiveTCP() {
 			std::cerr << e.what() << '\n';
 		}		
 		this->controlChannel.TCPHandlerclose();
-		this->udpReceiveThread.join();
+		try {
+			this->udpReceiveThread.join();
+		}
+		catch (const std::system_error& e) {
+			std::cerr << e.what() << '\n';
+		}		
 	}
 }
 
@@ -77,6 +82,8 @@ void TestObject::receiveUDP(){
 	}
 	this->udpOk = true;
 	int nBytesReceived, nBytesHandled;
+
+	this->startSendMONR();
 
 	while(this->isServerConnected() && this->udpOk) {
 		std::fill(UDPReceiveBuffer.begin(), UDPReceiveBuffer.end(), 0);
@@ -104,12 +111,17 @@ void TestObject::receiveUDP(){
 	}
 	this->udpOk = false;
 	this->processChannel.UDPHandlerclose();
-	this->monrThread.join();
+	try {
+		this->monrThread.join();
+	}
+	catch (const std::system_error& e) {
+		std::cerr << e.what() << '\n';
+	}
 }
 
 void TestObject::sendMONR(bool debug) {
 	if(!this->udpOk) {
-		std::cout << "UDP communication not set up yet. Can't send MONR" << std::endl;
+		std::cout << "UDP communication not set up. Can't send MONR" << std::endl;
 		return;
 	}
 	std::vector<char> buffer(UDP_BUFFER_SIZE);
@@ -128,7 +140,7 @@ void TestObject::monrLoop() {
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 	std::chrono::time_point<std::chrono::system_clock> monrTime;
-	while(this->udpOk) {
+	while(this->isServerConnected() && this->udpOk) {
 		monrTime = std::chrono::system_clock::now();
 		this->sendMONR();
 		std::this_thread::sleep_for(
