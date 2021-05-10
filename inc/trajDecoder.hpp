@@ -15,17 +15,17 @@ public:
     TrajDecoder() : debug(false), expectingTRAJPoints(false) {};
     ssize_t DecodeTRAJ(std::vector<char>*);
     bool ExpectingTrajPoints() const { return this->expectingTRAJPoints; }
-    std::vector<TrajectorWaypointType> getTraj() const { 
+    TrajectoryHeaderType getTrajHeader() const { return this->trajecoryHeader; }
+    std::vector<TrajectoryWaypointType> getTraj() const { 
         return this->trajectoryWaypoints; 
     }
-    TrajectorHeaderType getTrajHeader() const { return this->trajecoryHeader; }
 private:
     bool debug, expectingTRAJPoints;
     int nPointsHandled = 0;
     std::vector<char> unhandledBytes;
     std::vector<char> copiedData;
-    std::vector<TrajectorWaypointType> trajectoryWaypoints;
-    TrajectorHeaderType trajecoryHeader;
+    std::vector<TrajectoryWaypointType> trajectoryWaypoints;
+    TrajectoryHeaderType trajecoryHeader;
 };
 
 
