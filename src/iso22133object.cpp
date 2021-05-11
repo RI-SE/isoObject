@@ -2,6 +2,7 @@
 #include <thread>
 
 
+
 #include "iso22133object.hpp"
 #include "iso22133state.hpp"
 #include "iso22133.h"
@@ -12,7 +13,7 @@
 #define UDP_BUFFER_SIZE 1024
 
 namespace ISO22133 {
-void TestObject::receiveTCP(){
+void TestObject::receiveTCP() {
 	while(this->on) {
 		std::cout << "Awaiting connection to server..." << std::endl;
 		if(this->controlChannel.CreateServer(ISO_22133_DEFAULT_OBJECT_TCP_PORT, "") < 0) {
@@ -30,7 +31,7 @@ void TestObject::receiveTCP(){
 
 		std::vector<char> TCPReceiveBuffer(TCP_BUFFER_SIZE);
 		int nBytesReceived, nBytesHandled;
-		while(this->isServerConnected()){
+		while(this->isServerConnected()) {
 			std::fill(TCPReceiveBuffer.begin(), TCPReceiveBuffer.end(), 0);
 			nBytesReceived = this->controlChannel.receiveTCP(TCPReceiveBuffer,0);
 			
@@ -64,7 +65,12 @@ void TestObject::receiveTCP(){
 			std::cerr << e.what() << '\n';
 		}		
 		this->controlChannel.TCPHandlerclose();
-		this->udpReceiveThread.join();
+		try {
+			this->udpReceiveThread.join();
+		}
+		catch (const std::system_error& e) {
+			std::cerr << e.what() << '\n';
+		}		
 	}
 }
 
@@ -77,12 +83,14 @@ void TestObject::receiveUDP(){
 	this->udpOk = true;
 	int nBytesReceived, nBytesHandled;
 
-	while(this->isServerConnected() && this->udpOk){
+	this->startSendMONR();
+
+	while(this->isServerConnected() && this->udpOk) {
 		std::fill(UDPReceiveBuffer.begin(), UDPReceiveBuffer.end(), 0);
 		nBytesReceived = this->processChannel.receiveUDP(UDPReceiveBuffer);
 		if (nBytesReceived > 0) {
 			UDPReceiveBuffer.resize(static_cast<size_t>(nBytesReceived));
-			do{
+			do {
 				try {
 					nBytesHandled = this->handleMessage(&UDPReceiveBuffer);
 					nBytesReceived -= nBytesHandled;
@@ -90,6 +98,7 @@ void TestObject::receiveUDP(){
 				}
 				catch(const std::exception& e) {
 					std::cerr << e.what() << '\n';
+					nBytesHandled = nBytesReceived;
 				}
 			}
 			while (nBytesReceived > 0);
@@ -102,11 +111,17 @@ void TestObject::receiveUDP(){
 	}
 	this->udpOk = false;
 	this->processChannel.UDPHandlerclose();
+	try {
+		this->monrThread.join();
+	}
+	catch (const std::system_error& e) {
+		std::cerr << e.what() << '\n';
+	}
 }
 
-void TestObject::sendMONR(bool debug){
+void TestObject::sendMONR(bool debug) {
 	if(!this->udpOk) {
-		std::cout << "UDP communication not set up yet. Can't send MONR" << std::endl;
+		std::cout << "UDP communication not set up. Can't send MONR" << std::endl;
 		return;
 	}
 	std::vector<char> buffer(UDP_BUFFER_SIZE);
@@ -119,25 +134,50 @@ void TestObject::sendMONR(bool debug){
 	this->processChannel.sendUDP(buffer);
 }
 
-int TestObject::handleMessage(std::vector<char>* dataBuffer){
+void TestObject::monrLoop() {
+	while(!this->udpOk) {
+		// Wait for UDP connection
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+	std::chrono::time_point<std::chrono::system_clock> monrTime;
+	while(this->isServerConnected() && this->udpOk) {
+		monrTime = std::chrono::system_clock::now();
+		this->sendMONR();
+		std::this_thread::sleep_for(
+			std::chrono::milliseconds(10) - 
+			monrTime.time_since_epoch() +
+			std::chrono::system_clock::now().time_since_epoch()
+			);
+	}
+}
+
+int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 	std::lock_guard<std::mutex> lock(this->recvMutex); // Both TCP and UDP threads end up in here
 	int bytesHandled = 0;
 	int debug = 0;
-
 	struct timeval currentTime;
 	TimeSetToCurrentSystemTime(&currentTime);
 
-	switch(getISOMessageType(dataBuffer->data(), dataBuffer->size(), 0)){
+	ISOMessageID msgType = getISOMessageType(dataBuffer->data(), dataBuffer->size(), 0);
+	// Ugly check here since we don't know if it is UDP or the rest of TRAJ
+	if(msgType == MESSAGE_ID_INVALID && this->trajDecoder.ExpectingTrajPoints()) {
+		msgType = MESSAGE_ID_TRAJ;
+	}
+
+	switch(msgType) {
 		case MESSAGE_ID_TRAJ:
-			//TODO. Needs TRAJ deoder
-			std::cout << "Discarding TRAJ" << std::endl;
-			bytesHandled = static_cast<int>(dataBuffer->size());
+			std::cout << "Receiving TRAJ" << std::endl;
+			bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer);
+			if(bytesHandled < 0) {
+				throw std::invalid_argument("Error decoding TRAJ");
+			};
+			this->state->handleTRAJ(*this);
 			break;
 
 		case MESSAGE_ID_OSEM:
 			ObjectSettingsType OSEMstruct;
 			bytesHandled = decodeOSEMMessage(&OSEMstruct,dataBuffer->data(),dataBuffer->size(),nullptr,debug);
-			if(bytesHandled < 0){
+			if(bytesHandled < 0) {
 				throw std::invalid_argument("Error decoding OSEM");
 			}		
 			std::cout << "Received OSEM " << std::endl;
@@ -147,7 +187,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 		case MESSAGE_ID_OSTM:
 			ObjectCommandType OSTMdata;
 			bytesHandled = decodeOSTMMessage(dataBuffer->data(),dataBuffer->size(),&OSTMdata,debug);
-			if(bytesHandled < 0){
+			if(bytesHandled < 0) {
 				throw std::invalid_argument("Error decoding OSTM");
 			}
 			this->state->handleOSTM(*this, OSTMdata);
@@ -156,7 +196,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 		case MESSAGE_ID_STRT:
 			StartMessageType STRTdata;
 			bytesHandled = decodeSTRTMessage(dataBuffer->data(),dataBuffer->size(),&currentTime,&STRTdata,debug);
-			if(bytesHandled < 0){
+			if(bytesHandled < 0) {
 				throw std::invalid_argument("Error decoding STRT");
 			}
 			this->state->handleSTRT(*this, STRTdata);
@@ -167,7 +207,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 			static struct timeval lastHeabTime; 
 	
 			bytesHandled = decodeHEABMessage(dataBuffer->data(),dataBuffer->size(),currentTime,&HEABdata,debug);
-			if(bytesHandled < 0){
+			if(bytesHandled < 0) {
 				throw std::invalid_argument("Error decoding HEAB");
 			}
 			this->ccStatus = HEABdata.controlCenterStatus;
@@ -191,4 +231,4 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer){
 
 	return bytesHandled;
 }
-}
+} //namespace ISO22133

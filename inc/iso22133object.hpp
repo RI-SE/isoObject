@@ -9,6 +9,7 @@
 
 #include "iso22133.h"
 #include "iso22133state.hpp"
+#include "trajDecoder.hpp"
 #include "tcphandler.hpp"
 #include "udphandler.hpp"
 #include "sigslot/signal.hpp"
@@ -48,7 +49,10 @@ class TestObject {
     friend class PreRunning;
 
 public:
-    TestObject() : name("myTestObject"), controlChannel(), processChannel() {
+    TestObject() :  name("myTestObject"), 
+                    controlChannel(), 
+                    processChannel(), 
+                    trajDecoder() {
         this->state = this->createInit();
         this->startHandleTCP();
         this->stateChangeSig.connect(&TestObject::onStateChange, this);
@@ -61,17 +65,10 @@ public:
 
     virtual ~TestObject() {
         on = false;
+        monrThread.join();
         tcpReceiveThread.join();
         udpReceiveThread.join();
     }; 
-    
-    /**
-     * @brief The user is responsible for calling this function
-     *          at 100Hz to send MONR messages.
-     * 
-     * @param debug true / false
-     */
-    void sendMONR(bool debug = false);
     
     bool isServerConnected() const { return controlChannel.isConnected(); }
     bool isUdpOk() const { return udpOk; }
@@ -81,6 +78,9 @@ public:
     SpeedType getSpeed() const { return speed; }
     AccelerationType getAcceleration() const { return acceleration; }
     DriveDirectionType getDriveDirection() const { return driveDirection; }
+    TrajectoryHeaderType getTrajectoryHeader() const { return trajDecoder.getTrajHeader(); }
+    std::vector<TrajectoryWaypointType> getTrajectory() const { return trajDecoder.getTraj(); }
+
 
 
 
@@ -95,8 +95,8 @@ protected:
     void setDriveDirection(DriveDirectionType& drd) { driveDirection = drd; }
     void setObjectState(ObjectStateID& ost) { objectState = ost; }
     void setName(std::string name) { name = name; }
-    void setReadyToArm(const int& rdy) {readyToArm = rdy;}
-    void setErrorState(const char& err) {errorState = err;}      
+    void setReadyToArm(const int& rdy) { readyToArm = rdy; }
+    void setErrorState(const char& err) { errorState = err; }      
 
     // These should be overridden if extending one of the states
     // Example of override:
@@ -128,8 +128,8 @@ protected:
     //! Signals for events
     sigslot::signal<> stateChangeSig;
     sigslot::signal<ObjectSettingsType&> osemSig;
-	sigslot::signal<HeabMessageDataType&> heabSig;
-    sigslot::signal<> trajSig; // TODO type
+    sigslot::signal<HeabMessageDataType&> heabSig;
+    sigslot::signal<> trajSig;
     sigslot::signal<ObjectCommandType&> ostmSig;
     sigslot::signal<StartMessageType&> strtSig; 
 
@@ -144,8 +144,6 @@ protected:
     virtual void onTRAJ() {};
     virtual void onOSTM(ObjectCommandType&) {};
     virtual void onSTRT(StartMessageType&) {};
-
-
     
 private:
     
@@ -153,11 +151,16 @@ private:
     void receiveUDP();
     //! TCP receiver loop that should be run in its own thread.
     void receiveTCP();
+    //! MONR sending loop that should be run in its own thread.
+    void monrLoop();
     void startHandleTCP() { tcpReceiveThread = std::thread(&TestObject::receiveTCP, this); }
     void startHandleUDP() { udpReceiveThread = std::thread(&TestObject::receiveUDP, this); }
+    void startSendMONR() { monrThread = std::thread(&TestObject::monrLoop, this); }
     //! Function for handling received ISO messages. Calls corresponding 
     //! handler in the current state.
     int handleMessage(std::vector<char>*);
+    //! Sends MONR message on process channel
+    void sendMONR(bool debug = false);
 
     std::mutex recvMutex;
     bool udpOk = false;
@@ -165,10 +168,12 @@ private:
     bool firstHeab = true;
     std::thread tcpReceiveThread;
     std::thread udpReceiveThread;
+    std::thread monrThread;
     ISO22133::State* state;
     std::string name;        
     TCPHandler controlChannel;
-    UDPHandler processChannel;        
+    UDPHandler processChannel;   
+    TrajDecoder trajDecoder;     
     GeographicPositionType origin; 
     ControlCenterStatusType ccStatus;
     CartesianPosition position;

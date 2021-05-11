@@ -94,13 +94,9 @@ int main(int c, char** argv ) {
 
 	myObject obj;
     while (true) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-        while(obj.isUdpOk()){
-            obj.sendMONR();
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));  
     }
     
     std::cout << "done\n";
 }
+

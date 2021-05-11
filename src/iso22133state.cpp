@@ -16,7 +16,7 @@ void ISO22133::State::handleEvent(
 		return event == tr.event && this->getStateID() == tr.source;
 	});
 	if (transition == language.end()) {
-		throw std::runtime_error(std::string("Unexpected event '")
+		throw std::runtime_error(std::string("Unexpected event '") 
 								 + Events::descriptions.at(event)
 								 + "' in state " + this->getName());
 	}
@@ -152,7 +152,7 @@ void ISO22133::State::handleSTRT(TestObject& obj,StartMessageType& strt) {
 	// after the handleEvent() calls
 	obj.strtSig(strt);
 	this->handleEvent(obj, ISO22133::Events::S);
-	return; // TODO
+	return; 
 }
 
 /**
@@ -161,9 +161,10 @@ void ISO22133::State::handleSTRT(TestObject& obj,StartMessageType& strt) {
  * @param obj 
  * @param traj 
  */
-void ISO22133::State::handleTRAJ(TestObject& obj,traj& traj) {
+void ISO22133::State::handleTRAJ(TestObject& obj) {
+	// Signal TRAJ is now available
 	obj.trajSig();
-	return; // TODO
+	return; 
 }
 
 /**
