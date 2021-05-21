@@ -12,7 +12,7 @@
 #include "trajDecoder.hpp"
 #include "tcphandler.hpp"
 #include "udphandler.hpp"
-#include "sigslot/signal.hpp"
+#include "signal.hpp"
 
 namespace ISO22133 {
 class State;
