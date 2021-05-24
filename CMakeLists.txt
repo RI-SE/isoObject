@@ -29,7 +29,7 @@ add_library(${ISOOBJECT_LIBRARY} SHARED
 
 target_include_directories(${ISOOBJECT_LIBRARY} PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}/inc
-	${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/
+	${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
 	${ISO22133_HEADERS}
 )
 
