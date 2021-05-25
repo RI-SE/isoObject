@@ -12,13 +12,15 @@ inherit the TestObject class, like so:
 `class myObject : public ISO22133::TestObject`
 
 This new class **must** implement the pure virtual function `handleAbort()`.
-This acts as a safety function and is intendet to contain necessary actions to
+This acts as a safety function and is intended to contain necessary actions to
 perform whenever an abort is requested, e.g internal safe-stop of the object.
 The minimal version needed will look something like this:
 
-`class myObject : public ISO22133::TestObject {
+```
+class myObject : public ISO22133::TestObject {
     void handleAbort() { *do abort stuff* }
-}`
+}
+```
 
 When a new TestObject instance is created there will be three threads created in
 the background doing respectively: 
@@ -35,7 +37,7 @@ special at the reception of a certain message, override the corresponding virtua
 function. Example: 
 
 ```
-void onSTRT(StartMessageType&) override {
+void myObject::onSTRT(StartMessageType&) override {
     *do special start stuff*
 }
 ```
@@ -54,18 +56,20 @@ to *Running* from *Disarmed*.
 
 Each individual state is based on this base class and can be modified and
 overridden in the same manner as the `TestObject`. This is to give another way 
-of changing the behaviour of a test object in a specific state. An example is 
-the state *Pre-Arming* which in the default implementation transitions directly
-to *Armed*. Consider an object needing to perform some preparations in this 
-state, the user would then create another version of `PreArming` like this:
+of changing the behaviour of a test object in a specific state. All states have 
+a `onEnter` and a `onExit` function to be used when the object needs to perform
+special actions on a state transition. An example is the state *Pre-Arming* 
+which in the default implementation transitions directly to *Armed*. Consider an 
+object needing to perform some preparations in this state, the user would then 
+create another version of `PreArming` like this:
 
 ```
 class myPreArming : public ISO22133::PreArming {
 public:
     void onEnter(ISO22133::TestObject& obj) override{
-        DoPreArmStuff();
-        try {
-            this->handleEvent(obj, ISO22133::Events::N); // Transition to Armed
+        DoPreArmStuff(); // Do preparations ...
+        try { //... Then transition to Armed
+            this->handleEvent(obj, ISO22133::Events::N); 
         }
         catch(const std::runtime_error& e) {
             std::cerr << e.what() << '\n';
@@ -80,3 +84,5 @@ ISO22133::PreArming* myObject::createPreArming() const override {
     return dynamic_cast<ISO22133::PreArming*>(new myPreArming);
 }
 ```
+
+
