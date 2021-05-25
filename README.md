@@ -16,9 +16,9 @@ This acts as a safety function and is intended to contain necessary actions to
 perform whenever an abort is requested, e.g internal safe-stop of the object.
 The minimal version needed will look something like this:
 
-```
+```c++
 class myObject : public ISO22133::TestObject {
-    void handleAbort() { *do abort stuff* }
+    void handleAbort() { /* do abort stuff */ }
 }
 ```
 
@@ -36,9 +36,9 @@ called every time a message arrives. If your test object needs to to anything
 special at the reception of a certain message, override the corresponding virtual
 function. Example: 
 
-```
+```c++
 void myObject::onSTRT(StartMessageType&) override {
-    *do special start stuff*
+    /* do special start stuff /*
 }
 ```
 
@@ -63,7 +63,7 @@ which in the default implementation transitions directly to *Armed*. Consider an
 object needing to perform some preparations in this state, the user would then 
 create another version of `PreArming` like this:
 
-```
+```c++
 class myPreArming : public ISO22133::PreArming {
 public:
     void onEnter(ISO22133::TestObject& obj) override{
@@ -79,7 +79,7 @@ public:
 ```
 To use this in the `TestObject` override the corresponding state creation 
 function in your new test object class:
-```
+```c++
 ISO22133::PreArming* myObject::createPreArming() const override {
     return dynamic_cast<ISO22133::PreArming*>(new myPreArming);
 }
