@@ -9,7 +9,9 @@ you only need to create a new object instance and the rest takes care of itself.
 Since this is an abstract base class the first step is to create a new class and 
 inherit the TestObject class, like so:
 
-`class myObject : public ISO22133::TestObject`
+```c++
+class myObject : public ISO22133::TestObject
+```
 
 This new class **must** implement the pure virtual function `handleAbort()`.
 This acts as a safety function and is intended to contain necessary actions to
@@ -38,7 +40,7 @@ function. Example:
 
 ```c++
 void myObject::onSTRT(StartMessageType&) override {
-    /* do special start stuff /*
+    /* do special start stuff */
 }
 ```
 
