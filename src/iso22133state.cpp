@@ -84,8 +84,8 @@ void ISO22133::State::handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
 		break;
 	case CONTROL_CENTER_STATUS_ABORT:
 		if(this->getStateID() != ISO_OBJECT_STATE_ABORTING) {
-			this->handleEvent(obj, ISO22133::Events::W);
 			obj.handleAbort();
+			this->handleEvent(obj, ISO22133::Events::W);			
 		}
 		break;
 	case CONTROL_CENTER_STATUS_TEST_DONE:
