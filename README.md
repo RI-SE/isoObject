@@ -30,11 +30,11 @@ the background doing respectively:
 * Receive and handle messages on UDP from test server
 * Periodically send MONR messages to the test server
 
-The user is responsible for updating the values populating the MONR message
-using the various setters.
+The values populating the MONR message must be continously updated using the corresponding 
+setters, all values are per default 0.
 
 For each ISO22133 message there is a signal/callback function associated that is
-called every time a message arrives. If your test object needs to to anything 
+called every time a message arrives. If your test object needs to do anything 
 special at the reception of a certain message, override the corresponding virtual
 function. Example: 
 
