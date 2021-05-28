@@ -9,8 +9,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_BUILD_TYPE Debug)
 
 # Manage namespace of the project
-set(ISOOBJECT_TARGET ${PARENT_TARGET_NAMESPACE}${PROJECT_NAME})
-set(ISOOBJECT_LIBRARY ${PARENT_TARGET_NAMESPACE}ISOobject)
+set(ISOOBJECT_LIBRARY ${PARENT_TARGET_NAMESPACE}${PROJECT_NAME})
+set(ISOOBJECT_TEST ${ISOOBJECT_LIBRARY}Test)
 
 set(ISO22133_LIBRARY ${TARGET_NAMESPACE}ISO22133)
 set(SOCKET_LIBRARY ${TARGET_NAMESPACE}TCPUDPSocket)
@@ -21,6 +21,7 @@ include(GNUInstallDirs)
 
 get_target_property(ISO22133_HEADERS ${ISO22133_LIBRARY} INCLUDE_DIRECTORIES)
 
+# Library target
 add_library(${ISOOBJECT_LIBRARY} SHARED
         ${CMAKE_CURRENT_SOURCE_DIR}/src/iso22133object.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/iso22133state.cpp
@@ -33,15 +34,7 @@ target_include_directories(${ISOOBJECT_LIBRARY} PUBLIC
 	${ISO22133_HEADERS}
 )
 
-add_executable(${ISOOBJECT_TARGET} testIsoObject.cpp)
-
-target_include_directories(${ISOOBJECT_TARGET} PUBLIC
-	${CMAKE_CURRENT_SOURCE_DIR}/inc
-	${ISO22133_HEADERS}
-)
-
-target_link_libraries(${ISOOBJECT_TARGET} LINK_PUBLIC
-	${ISOOBJECT_LIBRARY}
+target_link_libraries(${ISOOBJECT_LIBRARY} LINK_PUBLIC
 	${SOCKET_LIBRARY}
 	${ISO22133_LIBRARY}
 	${TIME_LIBRARY}
@@ -62,6 +55,17 @@ set_property(TARGET ${ISOOBJECT_LIBRARY} APPEND PROPERTY
 
 set_property(TARGET ${ISOOBJECT_LIBRARY} APPEND PROPERTY
 	PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot/signal.hpp
+)
+
+# Test target
+add_executable(${ISOOBJECT_TEST} testIsoObject.cpp)
+
+target_include_directories(${ISOOBJECT_TEST} PUBLIC
+	${CMAKE_CURRENT_SOURCE_DIR}/inc
+)
+
+target_link_libraries(${ISOOBJECT_TEST} LINK_PUBLIC
+	${ISOOBJECT_LIBRARY}
 )
 
 install(CODE "MESSAGE(STATUS \"Installing target ${ISOOBJECT_LIBRARY}\")")
