@@ -152,7 +152,7 @@ void TestObject::monrLoop() {
 			" ms" << std::endl;
 
 			this->handleAbort();
-			this->firstHeab = false;
+			this->firstHeab = true;
 			this->state->handleEvent(*this, ISO22133::Events::W);
 			break;
 		}
