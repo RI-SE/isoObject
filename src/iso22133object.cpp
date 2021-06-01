@@ -54,7 +54,7 @@ void TestObject::receiveTCP() {
 		}
 		std::cout << "Connection to control center lost" << std::endl;
 		this->udpOk = false;
-		this->firstHeab = true;
+		this->setFirstHeab(true);
 		try {
 			this->state->handleEvent(*this, ISO22133::Events::L);
 		}
@@ -231,7 +231,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 			this->ccStatus = HEABdata.controlCenterStatus;			
 			this->state->handleHEAB(*this, HEABdata);
 			this->lastHeabTime = currentTime;
-			this->firstHeab = false;
+			this->setFirstHeab(false);
 			break;
 
 		default:
@@ -253,14 +253,14 @@ void TestObject::initializeValues() {
 
 void TestObject::checkHeabTimeout() {
 	while(this->on) {
-		if(!this->firstHeab) {
+		if(!this->checkFirstHeab()) {
 			struct timeval currentTime;
 			TimeSetToCurrentSystemTime(&currentTime);
 			uint64_t timeDiff = TimeGetTimeDifferenceMS(&currentTime, &this->lastHeabTime);
 			if(timeDiff >= maxAllowedHeabTimeout_ms) {
 				std::cerr << "Did not recevie HEAB in time, differance is " << 
 				timeDiff << " ms" << std::endl;
-				this->firstHeab = true;
+				this->setFirstHeab(true);
 				this->heabTimeout();
 			}
 			else {
@@ -269,6 +269,16 @@ void TestObject::checkHeabTimeout() {
 			}
 		}
 	}
+}
+
+bool TestObject::checkFirstHeab() {
+	std::lock_guard<std::mutex> lock(this->heabGuard); 
+	return this->firstHeab;
+}
+
+bool TestObject::setFirstHeab(bool first) {
+	std::lock_guard<std::mutex> lock(this->heabGuard); 
+	this->firstHeab = first;
 }
 
 } //namespace ISO22133

@@ -169,9 +169,11 @@ private:
     void onHeabTimeout() { this->state->handleEvent(*this, Events::W); }
     //! Loop function that checks if HEABs arrive on time
     void checkHeabTimeout();
+    bool checkFirstHeab();
+    bool setFirstHeab(bool);
 
     sigslot::signal<>heabTimeout;
-    std::mutex recvMutex;
+    std::mutex recvMutex, heabGuard;
     bool udpOk = false;
     bool on = true;
     bool firstHeab = true;
