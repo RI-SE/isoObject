@@ -1,14 +1,11 @@
 #include <chrono>
 #include <thread>
 
-
-
 #include "iso22133object.hpp"
 #include "iso22133state.hpp"
 #include "iso22133.h"
 #include "maestroTime.h"
 
-#define ALLOWED_HEAB_DIFF_MS 50 // Time before aborting due to missing HEAB
 #define TCP_BUFFER_SIZE 1024
 #define UDP_BUFFER_SIZE 1024
 
@@ -57,7 +54,7 @@ void TestObject::receiveTCP() {
 		}
 		std::cout << "Connection to control center lost" << std::endl;
 		this->udpOk = false;
-		this->firstHeab = true;
+		this->setFirstHeab(true);
 		try {
 			this->state->handleEvent(*this, ISO22133::Events::L);
 		}
@@ -77,13 +74,16 @@ void TestObject::receiveTCP() {
 void TestObject::receiveUDP(){
 	this->processChannel.CreateServer(ISO_22133_OBJECT_UDP_PORT,"",0);
 	std::vector<char> UDPReceiveBuffer(UDP_BUFFER_SIZE);
+	
+	this->startSendMONR();
+
 	while(this->processChannel.receiveUDP(UDPReceiveBuffer) < 0){ // Would prefer blocking behavior on UDPhandler..
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 	}
 	this->udpOk = true;
 	int nBytesReceived, nBytesHandled;
 
-	this->startSendMONR();
+	
 
 	while(this->isServerConnected() && this->udpOk) {
 		std::fill(UDPReceiveBuffer.begin(), UDPReceiveBuffer.end(), 0);
@@ -137,26 +137,10 @@ void TestObject::sendMONR(bool debug) {
 void TestObject::monrLoop() {
 	while(!this->udpOk) {
 		// Wait for UDP connection
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 	}
 	std::chrono::time_point<std::chrono::system_clock> monrTime;
 	while(this->isServerConnected() && this->udpOk) {
-		struct timeval currentTime;
-		TimeSetToCurrentSystemTime(&currentTime);
-
-		if(!this->firstHeab && 
-		TimeGetTimeDifferenceMS(&currentTime, &this->lastHeabTime) > 
-		ALLOWED_HEAB_DIFF_MS) {
-			std::cerr << "MONR thread did not receive HEAB in time, difference is " <<
-			TimeGetTimeDifferenceMS(&currentTime, &this->lastHeabTime) << 
-			" ms" << std::endl;
-
-			this->handleAbort();
-			this->firstHeab = true;
-			this->state->handleEvent(*this, ISO22133::Events::W);
-			break;
-		}
-
 		monrTime = std::chrono::system_clock::now();
 		this->sendMONR();
 		std::this_thread::sleep_for(
@@ -234,7 +218,6 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 
 		case MESSAGE_ID_HEAB:
 			HeabMessageDataType HEABdata;
-			static struct timeval lastMsgTimestamp;
 	
 			bytesHandled = decodeHEABMessage(
 				dataBuffer->data(),
@@ -245,25 +228,10 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 			if(bytesHandled < 0) {
 				throw std::invalid_argument("Error decoding HEAB");
 			}
-			this->ccStatus = HEABdata.controlCenterStatus;
-
-			if(!this->firstHeab && 
-			(TimeGetTimeDifferenceMS(&currentTime, &this->lastHeabTime) > 
-			ALLOWED_HEAB_DIFF_MS ||
-			TimeGetTimeDifferenceMS(&HEABdata.dataTimestamp, &lastMsgTimestamp) >
-			ALLOWED_HEAB_DIFF_MS)) {
-				std::cerr << "Did not recevie HEAB in time, differance is " << 
-				TimeGetTimeDifferenceMS(&currentTime, &this->lastHeabTime) << 
-				" ms" << std::endl;
-
-				this->handleAbort();
-				HEABdata.controlCenterStatus = CONTROL_CENTER_STATUS_ABORT;
-			}
-			
+			this->ccStatus = HEABdata.controlCenterStatus;			
 			this->state->handleHEAB(*this, HEABdata);
-			lastMsgTimestamp = HEABdata.dataTimestamp;
 			this->lastHeabTime = currentTime;
-			this->firstHeab = false;
+			this->setFirstHeab(false);
 			break;
 
 		default:
@@ -281,6 +249,36 @@ void TestObject::initializeValues() {
 	this->speed.isLongitudinalValid = false;
 	this->acceleration.isLateralValid = false;
 	this->acceleration.isLongitudinalValid = false;
+}
+
+void TestObject::checkHeabTimeout() {
+	while(this->on) {
+		if(!this->checkFirstHeab()) {
+			struct timeval currentTime;
+			TimeSetToCurrentSystemTime(&currentTime);
+			uint64_t timeDiff = TimeGetTimeDifferenceMS(&currentTime, &this->lastHeabTime);
+			if(timeDiff >= maxAllowedHeabTimeout_ms) {
+				std::cerr << "Did not recevie HEAB in time, differance is " << 
+				timeDiff << " ms" << std::endl;
+				this->setFirstHeab(true);
+				this->heabTimeout();
+			}
+			else {
+				uint32_t sleepPeriod = maxAllowedHeabTimeout_ms - timeDiff;
+				std::this_thread::sleep_for(std::chrono::milliseconds(sleepPeriod));
+			}
+		}
+	}
+}
+
+bool TestObject::checkFirstHeab() {
+	std::lock_guard<std::mutex> lock(this->heabGuard); 
+	return this->firstHeab;
+}
+
+bool TestObject::setFirstHeab(bool first) {
+	std::lock_guard<std::mutex> lock(this->heabGuard); 
+	this->firstHeab = first;
 }
 
 } //namespace ISO22133
