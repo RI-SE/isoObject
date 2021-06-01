@@ -78,7 +78,7 @@ void TestObject::receiveUDP(){
 	this->processChannel.CreateServer(ISO_22133_OBJECT_UDP_PORT,"",0);
 	std::vector<char> UDPReceiveBuffer(UDP_BUFFER_SIZE);
 	while(this->processChannel.receiveUDP(UDPReceiveBuffer) < 0){ // Would prefer blocking behavior on UDPhandler..
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 	}
 	this->udpOk = true;
 	int nBytesReceived, nBytesHandled;
@@ -147,7 +147,7 @@ void TestObject::monrLoop() {
 		if(!this->firstHeab && 
 		TimeGetTimeDifferenceMS(&currentTime, &this->lastHeabTime) > 
 		ALLOWED_HEAB_DIFF_MS) {
-			std::cerr << "Did not recevie HEAB in time, differance is " << 
+			std::cerr << "MONR thread did not receive HEAB in time, difference is " <<
 			TimeGetTimeDifferenceMS(&currentTime, &this->lastHeabTime) << 
 			" ms" << std::endl;
 
