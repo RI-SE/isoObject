@@ -1,6 +1,9 @@
+#include <algorithm>
+
 #include "iso22133object.hpp"
 #include "iso22133state.hpp"
-#include <algorithm>
+#include "maestroTime.h"
+
 
 /**
  * @brief Handle events according to ISO22133 state change description
@@ -78,6 +81,16 @@ void ISO22133::State::handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
 	// causing the signal to not be triggered if placed
 	// after the handleEvent() calls
 	obj.heabSig(heab);
+
+	static struct timeval lastMsgTimestamp;
+	if(!obj.firstHeab && 
+		TimeGetTimeDifferenceMS(&heab.dataTimestamp, &lastMsgTimestamp) >
+		obj.maxAllowedHeabTimeout_ms) {
+			obj.handleAbort();
+			this->handleEvent(obj, ISO22133::Events::W);
+	}
+	lastMsgTimestamp = heab.dataTimestamp;
+
 	switch (heab.controlCenterStatus) {
 	case CONTROL_CENTER_STATUS_NORMAL_STOP:
 		this->handleEvent(obj, ISO22133::Events::U);

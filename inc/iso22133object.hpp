@@ -62,6 +62,8 @@ public:
         this->ostmSig.connect(&TestObject::onOSTM, this);
         this->trajSig.connect(&TestObject::onTRAJ, this);
         this->strtSig.connect(&TestObject::onSTRT, this);
+        this->heabTimeout.connect(&TestObject::onHeabTimeout, this);
+        this->startHEABCheck();
     }
 
     virtual ~TestObject() {
@@ -69,6 +71,7 @@ public:
         monrThread.join();
         tcpReceiveThread.join();
         udpReceiveThread.join();
+        heabTimeoutThread.join();
     }; 
     
     bool isServerConnected() const { return controlChannel.isConnected(); }
@@ -154,14 +157,20 @@ private:
     void startHandleTCP() { tcpReceiveThread = std::thread(&TestObject::receiveTCP, this); }
     void startHandleUDP() { udpReceiveThread = std::thread(&TestObject::receiveUDP, this); }
     void startSendMONR() { monrThread = std::thread(&TestObject::monrLoop, this); }
+    void startHEABCheck() { heabTimeoutThread = std::thread(&TestObject::checkHeabTimeout, this); }
     //! Function for handling received ISO messages. Calls corresponding 
     //! handler in the current state.
     int handleMessage(std::vector<char>*);
     //! Sends MONR message on process channel
     void sendMONR(bool debug = false);
-
+    //! Initializes default values of MONR 
     void initializeValues();
+    //! Called if HEAB messages do not arrive on time
+    void onHeabTimeout() { this->state->handleEvent(*this, Events::W); }
+    //! Loop function that checks if HEABs arrive on time
+    void checkHeabTimeout();
 
+    sigslot::signal<>heabTimeout;
     std::mutex recvMutex;
     bool udpOk = false;
     bool on = true;
@@ -170,6 +179,7 @@ private:
     std::thread tcpReceiveThread;
     std::thread udpReceiveThread;
     std::thread monrThread;
+    std::thread heabTimeoutThread;
     ISO22133::State* state;
     std::string name;        
     TCPHandler controlChannel;
@@ -185,6 +195,7 @@ private:
     int readyToArm = OBJECT_READY_TO_ARM_UNAVAILABLE;
     int transmitterID;
     char errorState = 0;
+    uint32_t maxAllowedHeabTimeout_ms = 50;
 
 
 };
