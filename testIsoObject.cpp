@@ -43,7 +43,24 @@ public:
 
 class myObject : public ISO22133::TestObject {
 public:
-    myObject() : dummyMember(0) {}
+    myObject() : dummyMember(0) {
+        // Initialize required fields in MONR
+        CartesianPosition pos;
+        SpeedType spd;
+        pos.xCoord_m = 0;
+        pos.yCoord_m = 0;
+        pos.zCoord_m = 0;
+        pos.heading_rad = 0;
+        pos.isHeadingValid = true;
+        pos.isPositionValid = true;
+        spd.lateral_m_s = 0;
+        spd.longitudinal_m_s = 0;
+        spd.isLateralValid = true;
+        spd.isLongitudinalValid = true;
+
+        this->setPosition(pos);
+        this->setSpeed(spd);
+    }
     /**
      * @brief User must override this function for handling internal
      * abort prerequisites of the test object
@@ -93,6 +110,7 @@ private:
 int main(int c, char** argv ) {
 
 	myObject obj;
+    
     while (true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));  
     }

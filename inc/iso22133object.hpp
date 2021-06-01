@@ -53,6 +53,7 @@ public:
                     controlChannel(), 
                     processChannel(), 
                     trajDecoder() {
+        this->initializeValues();
         this->state = this->createInit();
         this->startHandleTCP();
         this->stateChangeSig.connect(&TestObject::onStateChange, this);
@@ -80,9 +81,6 @@ public:
     DriveDirectionType getDriveDirection() const { return driveDirection; }
     TrajectoryHeaderType getTrajectoryHeader() const { return trajDecoder.getTrajHeader(); }
     std::vector<TrajectoryWaypointType> getTrajectory() const { return trajDecoder.getTraj(); }
-
-
-
 
 protected:
     
@@ -162,10 +160,13 @@ private:
     //! Sends MONR message on process channel
     void sendMONR(bool debug = false);
 
+    void initializeValues();
+
     std::mutex recvMutex;
     bool udpOk = false;
     bool on = true;
     bool firstHeab = true;
+    struct timeval lastHeabTime;
     std::thread tcpReceiveThread;
     std::thread udpReceiveThread;
     std::thread monrThread;

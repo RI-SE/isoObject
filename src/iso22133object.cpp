@@ -141,6 +141,22 @@ void TestObject::monrLoop() {
 	}
 	std::chrono::time_point<std::chrono::system_clock> monrTime;
 	while(this->isServerConnected() && this->udpOk) {
+		struct timeval currentTime;
+		TimeSetToCurrentSystemTime(&currentTime);
+
+		if(!this->firstHeab && 
+		TimeGetTimeDifferenceMS(&currentTime, &this->lastHeabTime) > 
+		ALLOWED_HEAB_DIFF_MS) {
+			std::cerr << "Did not recevie HEAB in time, differance is " << 
+			TimeGetTimeDifferenceMS(&currentTime, &this->lastHeabTime) << 
+			" ms" << std::endl;
+
+			this->handleAbort();
+			this->firstHeab = false;
+			this->state->handleEvent(*this, ISO22133::Events::W);
+			break;
+		}
+
 		monrTime = std::chrono::system_clock::now();
 		this->sendMONR();
 		std::this_thread::sleep_for(
@@ -176,7 +192,12 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 
 		case MESSAGE_ID_OSEM:
 			ObjectSettingsType OSEMstruct;
-			bytesHandled = decodeOSEMMessage(&OSEMstruct,dataBuffer->data(),dataBuffer->size(),nullptr,debug);
+			bytesHandled = decodeOSEMMessage(
+				&OSEMstruct,
+				dataBuffer->data(),
+				dataBuffer->size(),
+				nullptr,
+				debug);
 			if(bytesHandled < 0) {
 				throw std::invalid_argument("Error decoding OSEM");
 			}		
@@ -186,7 +207,11 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 
 		case MESSAGE_ID_OSTM:
 			ObjectCommandType OSTMdata;
-			bytesHandled = decodeOSTMMessage(dataBuffer->data(),dataBuffer->size(),&OSTMdata,debug);
+			bytesHandled = decodeOSTMMessage(
+				dataBuffer->data(),
+				dataBuffer->size(),
+				&OSTMdata,
+				debug);
 			if(bytesHandled < 0) {
 				throw std::invalid_argument("Error decoding OSTM");
 			}
@@ -195,7 +220,12 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 
 		case MESSAGE_ID_STRT:
 			StartMessageType STRTdata;
-			bytesHandled = decodeSTRTMessage(dataBuffer->data(),dataBuffer->size(),&currentTime,&STRTdata,debug);
+			bytesHandled = decodeSTRTMessage(
+				dataBuffer->data(),
+				dataBuffer->size(),
+				&currentTime,
+				&STRTdata,
+				debug);
 			if(bytesHandled < 0) {
 				throw std::invalid_argument("Error decoding STRT");
 			}
@@ -204,23 +234,35 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 
 		case MESSAGE_ID_HEAB:
 			HeabMessageDataType HEABdata;
-			static struct timeval lastHeabTime; 
+			static struct timeval lastMsgTimestamp;
 	
-			bytesHandled = decodeHEABMessage(dataBuffer->data(),dataBuffer->size(),currentTime,&HEABdata,debug);
+			bytesHandled = decodeHEABMessage(
+				dataBuffer->data(),
+				dataBuffer->size(),
+				currentTime,
+				&HEABdata,
+				debug);
 			if(bytesHandled < 0) {
 				throw std::invalid_argument("Error decoding HEAB");
 			}
 			this->ccStatus = HEABdata.controlCenterStatus;
 
-			if(!this->firstHeab && TimeGetTimeDifferenceMS(&currentTime, &lastHeabTime) > ALLOWED_HEAB_DIFF_MS) {
-				std::cerr << "Did not recevie HEAB in time, differance is " << TimeGetTimeDifferenceMS(&currentTime, &lastHeabTime) << " ms" << std::endl;
+			if(!this->firstHeab && 
+			(TimeGetTimeDifferenceMS(&currentTime, &this->lastHeabTime) > 
+			ALLOWED_HEAB_DIFF_MS ||
+			TimeGetTimeDifferenceMS(&HEABdata.dataTimestamp, &lastMsgTimestamp) >
+			ALLOWED_HEAB_DIFF_MS)) {
+				std::cerr << "Did not recevie HEAB in time, differance is " << 
+				TimeGetTimeDifferenceMS(&currentTime, &this->lastHeabTime) << 
+				" ms" << std::endl;
+
 				this->handleAbort();
 				HEABdata.controlCenterStatus = CONTROL_CENTER_STATUS_ABORT;
 			}
 			
 			this->state->handleHEAB(*this, HEABdata);
-
-			lastHeabTime = HEABdata.dataTimestamp;
+			lastMsgTimestamp = HEABdata.dataTimestamp;
+			this->lastHeabTime = currentTime;
 			this->firstHeab = false;
 			break;
 
@@ -231,4 +273,14 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 
 	return bytesHandled;
 }
+
+void TestObject::initializeValues() {
+	this->position.isHeadingValid = false;
+	this->position.isPositionValid = false;
+	this->speed.isLateralValid = false;
+	this->speed.isLongitudinalValid = false;
+	this->acceleration.isLateralValid = false;
+	this->acceleration.isLongitudinalValid = false;
+}
+
 } //namespace ISO22133
