@@ -289,7 +289,8 @@ void TestObject::checkHeabTimeout() {
 				std::this_thread::sleep_for(std::chrono::milliseconds(sleepPeriod));
 			}
 		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		// Don't lock the mutex all the time
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 }
 

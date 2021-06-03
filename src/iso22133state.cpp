@@ -87,10 +87,12 @@ void ISO22133::State::handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
 	if(!obj.checkFirstHeab() && 
 		TimeGetTimeDifferenceMS(&heab.dataTimestamp, &lastMsgTimestamp) >
 		obj.maxAllowedHeabTimeout_ms) {
-			std::cerr << "HEAB message is too old. Last timestamp - current timestamp = " << 
-			TimeGetTimeDifferenceMS(&heab.dataTimestamp, &lastMsgTimestamp) << 
-			" ms." << std::endl;
-			this->handleEvent(obj, ISO22133::Events::W);
+			if(this->getStateID() != ISO_OBJECT_STATE_ABORTING) {
+				std::cerr << "HEAB message is too old. Last timestamp - current timestamp = " << 
+				TimeGetTimeDifferenceMS(&heab.dataTimestamp, &lastMsgTimestamp) << 
+				" ms." << std::endl;
+				this->handleEvent(obj, ISO22133::Events::W); 
+			}
 	}
 	lastMsgTimestamp = heab.dataTimestamp;
 
