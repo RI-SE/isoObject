@@ -49,30 +49,9 @@ class TestObject {
     friend class PreRunning;
 
 public:
-    TestObject() :  name("myTestObject"), 
-                    controlChannel(), 
-                    processChannel(), 
-                    trajDecoder() {
-        this->initializeValues();
-        this->state = this->createInit();
-        this->startHandleTCP();
-        this->stateChangeSig.connect(&TestObject::onStateChange, this);
-        this->osemSig.connect(&TestObject::onOSEM, this);
-        this->heabSig.connect(&TestObject::onHEAB, this);
-        this->ostmSig.connect(&TestObject::onOSTM, this);
-        this->trajSig.connect(&TestObject::onTRAJ, this);
-        this->strtSig.connect(&TestObject::onSTRT, this);
-        this->heabTimeout.connect(&TestObject::onHeabTimeout, this);
-        this->startHEABCheck();
-    }
+    TestObject();
 
-    virtual ~TestObject() {
-        on = false;
-        monrThread.join();
-        tcpReceiveThread.join();
-        udpReceiveThread.join();
-        heabTimeoutThread.join();
-    }; 
+    virtual ~TestObject();
     
     bool isServerConnected() const { return controlChannel.isConnected(); }
     bool isUdpOk() const { return udpOk; }
@@ -163,8 +142,6 @@ private:
     int handleMessage(std::vector<char>*);
     //! Sends MONR message on process channel
     void sendMONR(bool debug = false);
-    //! Initializes default values of MONR 
-    void initializeValues();
     //! Called if HEAB messages do not arrive on time
     void onHeabTimeout() { this->state->handleEvent(*this, Events::W); }
     //! Loop function that checks if HEABs arrive on time

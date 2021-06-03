@@ -10,6 +10,36 @@
 #define UDP_BUFFER_SIZE 1024
 
 namespace ISO22133 {
+TestObject::TestObject() : name("myTestObject"), 
+							controlChannel(), 
+							processChannel(), 
+							trajDecoder() {
+	this->position.isHeadingValid = false;
+	this->position.isPositionValid = false;
+	this->speed.isLateralValid = false;
+	this->speed.isLongitudinalValid = false;
+	this->acceleration.isLateralValid = false;
+	this->acceleration.isLongitudinalValid = false;
+	this->state = this->createInit();
+	this->startHandleTCP();
+	this->stateChangeSig.connect(&TestObject::onStateChange, this);
+	this->osemSig.connect(&TestObject::onOSEM, this);
+	this->heabSig.connect(&TestObject::onHEAB, this);
+	this->ostmSig.connect(&TestObject::onOSTM, this);
+	this->trajSig.connect(&TestObject::onTRAJ, this);
+	this->strtSig.connect(&TestObject::onSTRT, this);
+	this->heabTimeout.connect(&TestObject::onHeabTimeout, this);
+	this->startHEABCheck();
+}
+
+TestObject::~TestObject() {
+	on = false;
+	monrThread.join();
+	tcpReceiveThread.join();
+	udpReceiveThread.join();
+	heabTimeoutThread.join();
+}; 
+
 void TestObject::receiveTCP() {
 	while(this->on) {
 		std::cout << "Awaiting connection to server..." << std::endl;
@@ -240,15 +270,6 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 	}
 
 	return bytesHandled;
-}
-
-void TestObject::initializeValues() {
-	this->position.isHeadingValid = false;
-	this->position.isPositionValid = false;
-	this->speed.isLateralValid = false;
-	this->speed.isLongitudinalValid = false;
-	this->acceleration.isLateralValid = false;
-	this->acceleration.isLongitudinalValid = false;
 }
 
 void TestObject::checkHeabTimeout() {
