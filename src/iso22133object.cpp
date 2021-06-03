@@ -289,6 +289,7 @@ void TestObject::checkHeabTimeout() {
 				std::this_thread::sleep_for(std::chrono::milliseconds(sleepPeriod));
 			}
 		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 	}
 }
 
@@ -302,4 +303,10 @@ bool TestObject::setFirstHeab(bool first) {
 	this->firstHeab = first;
 }
 
+void TestObject::onHeabTimeout() { 
+	// If we are alredy in abort, stay there
+	if(this->state->getStateID() != ISO_OBJECT_STATE_ABORTING){
+		this->state->handleEvent(*this, Events::W);
+	}
+}
 } //namespace ISO22133

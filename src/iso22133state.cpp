@@ -52,6 +52,7 @@ void ISO22133::State::handleEvent(
 		break;
 	case ISO_OBJECT_STATE_ABORTING:
 		obj.state = obj.createAborting();
+		obj.handleAbort();
 		break;
 	case ISO_OBJECT_STATE_PRE_ARMING:
 		obj.state = obj.createPreArming();
@@ -89,7 +90,6 @@ void ISO22133::State::handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
 			std::cerr << "HEAB message is too old. Last timestamp - current timestamp = " << 
 			TimeGetTimeDifferenceMS(&heab.dataTimestamp, &lastMsgTimestamp) << 
 			" ms." << std::endl;
-			obj.handleAbort();
 			this->handleEvent(obj, ISO22133::Events::W);
 	}
 	lastMsgTimestamp = heab.dataTimestamp;
@@ -100,7 +100,6 @@ void ISO22133::State::handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
 		break;
 	case CONTROL_CENTER_STATUS_ABORT:
 		if(this->getStateID() != ISO_OBJECT_STATE_ABORTING) {
-			obj.handleAbort();
 			this->handleEvent(obj, ISO22133::Events::W);			
 		}
 		break;

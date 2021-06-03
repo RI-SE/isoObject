@@ -143,7 +143,7 @@ private:
     //! Sends MONR message on process channel
     void sendMONR(bool debug = false);
     //! Called if HEAB messages do not arrive on time
-    void onHeabTimeout() { this->state->handleEvent(*this, Events::W); }
+    void onHeabTimeout();
     //! Loop function that checks if HEABs arrive on time
     void checkHeabTimeout();
     bool checkFirstHeab();
