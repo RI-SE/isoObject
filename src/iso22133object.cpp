@@ -48,11 +48,12 @@ TestObject::~TestObject() {
 
 void TestObject::receiveTCP() {
 	while(this->on) {
-		std::cout << "Awaiting connection to server..." << std::endl;
+		std::cout << "Started TCP thread." << std::endl;
+		std::cout << "Awaiting TCP connection to server..." << std::endl;
 		if(this->controlChannel.CreateServer(ISO_22133_DEFAULT_OBJECT_TCP_PORT, "") < 0) {
 			continue;
 		}
-		std::cout << "Connected to server..." << std::endl;
+		std::cout << "TCP Connected to server..." << std::endl;
 
 		try {
 			this->state->handleEvent(*this, ISO22133::Events::B);
@@ -105,9 +106,11 @@ void TestObject::receiveTCP() {
 			std::cerr << e.what() << '\n';
 		}		
 	}
+	std::cout << "Exiting TCP thread." << std::endl;
 }
 
 void TestObject::receiveUDP(){
+	std::cout << "Started UDP thread." << std::endl;
 	this->processChannel.CreateServer(ISO_22133_OBJECT_UDP_PORT,"",0);
 	std::vector<char> UDPReceiveBuffer(UDP_BUFFER_SIZE);
 	
@@ -153,6 +156,7 @@ void TestObject::receiveUDP(){
 	catch (const std::system_error& e) {
 		std::cerr << e.what() << '\n';
 	}
+	std::cout << "Exiting UDP thread." << std::endl;
 }
 
 void TestObject::sendMONR(bool debug) {
@@ -171,6 +175,7 @@ void TestObject::sendMONR(bool debug) {
 }
 
 void TestObject::monrLoop() {
+	std::cout << "Started MONR thread." << std::endl;
 	while(!this->udpOk) {
 		// Wait for UDP connection
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));
@@ -185,6 +190,7 @@ void TestObject::monrLoop() {
 			std::chrono::system_clock::now().time_since_epoch()
 			);
 	}
+	std::cout << "Exiting MONR thread." << std::endl;
 }
 
 int TestObject::handleMessage(std::vector<char>* dataBuffer) {
@@ -202,7 +208,6 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 
 	switch(msgType) {
 		case MESSAGE_ID_TRAJ:
-			std::cout << "Receiving TRAJ" << std::endl;
 			bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer);
 			if(bytesHandled < 0) {
 				throw std::invalid_argument("Error decoding TRAJ");
@@ -279,6 +284,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 }
 
 void TestObject::checkHeabTimeout() {
+	std::cout << "Started HEAB thread." << std::endl;
 	while(this->on) {
 		if(!this->firstHeab) {
 			struct timeval currentTime, lastTime;
@@ -299,6 +305,7 @@ void TestObject::checkHeabTimeout() {
 		// Don't lock the mutex all the time
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
+	std::cout << "Exiting HEAB thread." << std::endl;
 }
 
 void TestObject::onHeabTimeout() { 
