@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <mutex>
 
 #include "iso22133.h"
 
@@ -20,6 +21,7 @@ public:
         return this->trajectoryWaypoints; 
     }
 private:
+    std::mutex guard;
     bool debug, expectingTRAJPoints;
     int nPointsHandled = 0;
     std::vector<char> unhandledBytes;

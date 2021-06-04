@@ -39,6 +39,7 @@ target_link_libraries(${ISOOBJECT_LIBRARY} LINK_PUBLIC
 	${ISO22133_LIBRARY}
 	${TIME_LIBRARY}
 	pthread
+	atomic
 )
 
 set_property(TARGET ${ISOOBJECT_LIBRARY} PROPERTY

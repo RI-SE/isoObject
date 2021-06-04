@@ -14,12 +14,18 @@ TestObject::TestObject() : name("myTestObject"),
 							controlChannel(), 
 							processChannel(), 
 							trajDecoder() {
-	this->position.isHeadingValid = false;
-	this->position.isPositionValid = false;
-	this->speed.isLateralValid = false;
-	this->speed.isLongitudinalValid = false;
-	this->acceleration.isLateralValid = false;
-	this->acceleration.isLongitudinalValid = false;
+	CartesianPosition initPos;
+	SpeedType initSpd;
+	AccelerationType initAcc;
+	initPos.isHeadingValid = false;
+	initPos.isPositionValid = false;
+	initSpd.isLateralValid = false;
+	initSpd.isLongitudinalValid = false;
+	initAcc.isLateralValid = false;
+	initAcc.isLongitudinalValid = false;
+	this->setPosition(initPos);
+	this->setSpeed(initSpd);
+	this->setAcceleration(initAcc);
 	this->state = this->createInit();
 	this->startHandleTCP();
 	this->stateChangeSig.connect(&TestObject::onStateChange, this);
@@ -84,7 +90,7 @@ void TestObject::receiveTCP() {
 		}
 		std::cout << "Connection to control center lost" << std::endl;
 		this->udpOk = false;
-		this->setFirstHeab(true);
+		this->firstHeab = true;
 		try {
 			this->state->handleEvent(*this, ISO22133::Events::L);
 		}
@@ -261,7 +267,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 			this->ccStatus = HEABdata.controlCenterStatus;			
 			this->state->handleHEAB(*this, HEABdata);
 			this->lastHeabTime = currentTime;
-			this->setFirstHeab(false);
+			this->firstHeab = false;
 			break;
 
 		default:
@@ -274,14 +280,15 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 
 void TestObject::checkHeabTimeout() {
 	while(this->on) {
-		if(!this->checkFirstHeab()) {
-			struct timeval currentTime;
+		if(!this->firstHeab) {
+			struct timeval currentTime, lastTime;
 			TimeSetToCurrentSystemTime(&currentTime);
-			uint64_t timeDiff = TimeGetTimeDifferenceMS(&currentTime, &this->lastHeabTime);
+			lastTime = this->lastHeabTime;
+			uint64_t timeDiff = TimeGetTimeDifferenceMS(&currentTime, &lastTime);
 			if(timeDiff >= maxAllowedHeabTimeout_ms) {
 				std::cerr << "Did not recevie HEAB in time, differance is " << 
 				timeDiff << " ms" << std::endl;
-				this->setFirstHeab(true);
+				this->firstHeab = true;
 				this->heabTimeout();
 			}
 			else {
@@ -292,16 +299,6 @@ void TestObject::checkHeabTimeout() {
 		// Don't lock the mutex all the time
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
-}
-
-bool TestObject::checkFirstHeab() {
-	std::lock_guard<std::mutex> lock(this->heabGuard); 
-	return this->firstHeab;
-}
-
-bool TestObject::setFirstHeab(bool first) {
-	std::lock_guard<std::mutex> lock(this->heabGuard); 
-	this->firstHeab = first;
 }
 
 void TestObject::onHeabTimeout() { 

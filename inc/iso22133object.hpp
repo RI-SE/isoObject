@@ -4,6 +4,7 @@
 #include <iostream>
 #include <thread> 
 #include <mutex>
+#include <atomic>
 
 #include <optional>
 
@@ -146,15 +147,9 @@ private:
     void onHeabTimeout();
     //! Loop function that checks if HEABs arrive on time
     void checkHeabTimeout();
-    bool checkFirstHeab();
-    bool setFirstHeab(bool);
 
     sigslot::signal<>heabTimeout;
-    std::mutex recvMutex, heabGuard;
-    bool udpOk = false;
-    bool on = true;
-    bool firstHeab = true;
-    struct timeval lastHeabTime;
+    std::mutex recvMutex;
     std::thread tcpReceiveThread;
     std::thread udpReceiveThread;
     std::thread monrThread;
@@ -164,16 +159,20 @@ private:
     TCPHandler controlChannel;
     UDPHandler processChannel;   
     TrajDecoder trajDecoder;     
-    GeographicPositionType origin; 
-    ControlCenterStatusType ccStatus;
-    CartesianPosition position;
-    SpeedType speed;
-    AccelerationType acceleration;
-    DriveDirectionType driveDirection = OBJECT_DRIVE_DIRECTION_UNAVAILABLE;
-    ObjectStateID objectState = ISO_OBJECT_STATE_UNKNOWN;
-    int readyToArm = OBJECT_READY_TO_ARM_UNAVAILABLE;
-    int transmitterID;
-    char errorState = 0;
+    std::atomic<bool> udpOk { false };
+    std::atomic<bool> on { true };
+    std::atomic<bool> firstHeab { true };
+    std::atomic<struct timeval> lastHeabTime;
+    std::atomic<GeographicPositionType> origin; 
+    std::atomic<ControlCenterStatusType> ccStatus;
+    std::atomic<CartesianPosition> position;
+    std::atomic<SpeedType> speed;
+    std::atomic<AccelerationType> acceleration;
+    std::atomic<DriveDirectionType> driveDirection { OBJECT_DRIVE_DIRECTION_UNAVAILABLE };
+    std::atomic<ObjectStateID> objectState  { ISO_OBJECT_STATE_UNKNOWN };
+    std::atomic<int> readyToArm { OBJECT_READY_TO_ARM_UNAVAILABLE };
+    std::atomic<int> transmitterID;
+    std::atomic<char> errorState { 0 };
     uint32_t maxAllowedHeabTimeout_ms = 50;
 
 
