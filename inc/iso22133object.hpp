@@ -62,8 +62,8 @@ public:
     SpeedType getSpeed() const { return speed; }
     AccelerationType getAcceleration() const { return acceleration; }
     DriveDirectionType getDriveDirection() const { return driveDirection; }
-    TrajectoryHeaderType getTrajectoryHeader() const { return trajDecoder.getTrajHeader(); }
-    std::vector<TrajectoryWaypointType> getTrajectory() const { return trajDecoder.getTraj(); }
+    TrajectoryHeaderType getTrajectoryHeader() { return trajDecoder.getTrajHeader(); }
+    std::vector<TrajectoryWaypointType> getTrajectory() { return trajDecoder.getTraj(); }
 
 protected:
     

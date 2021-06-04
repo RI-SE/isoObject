@@ -35,7 +35,6 @@ TestObject::TestObject() : name("myTestObject"),
 	this->trajSig.connect(&TestObject::onTRAJ, this);
 	this->strtSig.connect(&TestObject::onSTRT, this);
 	this->heabTimeout.connect(&TestObject::onHeabTimeout, this);
-	this->startHEABCheck();
 }
 
 TestObject::~TestObject() {
@@ -62,6 +61,7 @@ void TestObject::receiveTCP() {
 			std::cerr << e.what() << '\n';
 		}
 		this->startHandleUDP();
+		this->startHEABCheck();
 
 		std::vector<char> TCPReceiveBuffer(TCP_BUFFER_SIZE);
 		int nBytesReceived, nBytesHandled;

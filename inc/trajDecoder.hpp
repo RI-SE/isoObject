@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <mutex>
+#include <atomic>
 
 #include "iso22133.h"
 
@@ -16,13 +17,13 @@ public:
     TrajDecoder() : debug(false), expectingTRAJPoints(false) {};
     ssize_t DecodeTRAJ(std::vector<char>*);
     bool ExpectingTrajPoints() const { return this->expectingTRAJPoints; }
-    TrajectoryHeaderType getTrajHeader() const { return this->trajecoryHeader; }
-    std::vector<TrajectoryWaypointType> getTraj() const { 
-        return this->trajectoryWaypoints; 
-    }
+    TrajectoryHeaderType getTrajHeader();
+    std::vector<TrajectoryWaypointType> getTraj(); 
+
 private:
     std::mutex guard;
-    bool debug, expectingTRAJPoints;
+    bool debug;
+    std::atomic<bool> expectingTRAJPoints;
     int nPointsHandled = 0;
     std::vector<char> unhandledBytes;
     std::vector<char> copiedData;
