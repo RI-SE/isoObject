@@ -124,7 +124,6 @@ protected:
     virtual void onTRAJ() {};
     virtual void onOSTM(ObjectCommandType&) {};
     virtual void onSTRT(StartMessageType&) {};
-    
 private:
     
     //! UDP receiver loop that should be run in its own thread.
@@ -162,8 +161,8 @@ private:
     ISO22133::State* state;
     std::string name;        
     TCPHandler controlChannel;
-    UDPHandler processChannel;   
-    TrajDecoder trajDecoder;     
+	UDPHandler processChannel;
+	TrajDecoder trajDecoder;
     GeographicPositionType origin; 
     ControlCenterStatusType ccStatus;
     CartesianPosition position;

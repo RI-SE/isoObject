@@ -158,10 +158,16 @@ void TestObject::sendMONR(bool debug) {
 	struct timeval time;
 
 	TimeSetToCurrentSystemTime(&time);
-	encodeMONRMessage(&time, this->position, this->speed, this->acceleration,
+	auto result = encodeMONRMessage(&time, this->position, this->speed, this->acceleration,
 					this->driveDirection, this->state->getStateID(), this->readyToArm,
 					this->errorState, buffer.data(), buffer.size(),debug);
-	this->processChannel.sendUDP(buffer);
+	if (result < 0) {
+		std::cout << "Failed to encode MONR data" << std::endl;
+	}
+	else {
+		buffer.resize(static_cast<size_t>(result));
+		this->processChannel.sendUDP(buffer);
+	}
 }
 
 void TestObject::monrLoop() {
@@ -201,9 +207,10 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 			if(bytesHandled < 0) {
 				throw std::invalid_argument("Error decoding TRAJ");
 			};
-			this->state->handleTRAJ(*this);
+			if (!this->trajDecoder.ExpectingTrajPoints()) {
+				this->state->handleTRAJ(*this);
+			}
 			break;
-
 		case MESSAGE_ID_OSEM:
 			ObjectSettingsType OSEMstruct;
 			bytesHandled = decodeOSEMMessage(
