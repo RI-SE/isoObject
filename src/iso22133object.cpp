@@ -117,7 +117,7 @@ void TestObject::receiveUDP(){
 	this->startSendMONR();
 
 	while(this->processChannel.receiveUDP(UDPReceiveBuffer) < 0){ // Would prefer blocking behavior on UDPhandler..
-		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		std::this_thread::sleep_for(expectedHeartbeatPeriod / 2);
 	}
 	this->udpOk = true;
 	int nBytesReceived, nBytesHandled;
@@ -146,7 +146,7 @@ void TestObject::receiveUDP(){
 			break;
 		}
 		UDPReceiveBuffer.resize(UDP_BUFFER_SIZE);
-		std::this_thread::sleep_for(std::chrono::milliseconds(5)); // Would prefer blocking behavior on UDPhandler..
+		std::this_thread::sleep_for(expectedHeartbeatPeriod / 2); // Would prefer blocking behavior on UDPhandler..
 	}
 	this->udpOk = false;
 	this->processChannel.UDPHandlerclose();
@@ -168,24 +168,30 @@ void TestObject::sendMONR(bool debug) {
 	struct timeval time;
 
 	TimeSetToCurrentSystemTime(&time);
-	encodeMONRMessage(&time, this->position, this->speed, this->acceleration,
+	auto result = encodeMONRMessage(&time, this->position, this->speed, this->acceleration,
 					this->driveDirection, this->state->getStateID(), this->readyToArm,
 					this->errorState, buffer.data(), buffer.size(),debug);
-	this->processChannel.sendUDP(buffer);
+	if (result < 0) {
+		std::cout << "Failed to encode MONR data" << std::endl;
+	}
+	else {
+		buffer.resize(static_cast<size_t>(result));
+		this->processChannel.sendUDP(buffer);
+	}
 }
 
 void TestObject::monrLoop() {
 	std::cout << "Started MONR thread." << std::endl;
 	while(!this->udpOk) {
 		// Wait for UDP connection
-		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		std::this_thread::sleep_for(monrPeriod / 2);
 	}
 	std::chrono::time_point<std::chrono::system_clock> monrTime;
 	while(this->isServerConnected() && this->udpOk) {
 		monrTime = std::chrono::system_clock::now();
 		this->sendMONR();
 		std::this_thread::sleep_for(
-			std::chrono::milliseconds(10) - 
+			monrPeriod -
 			monrTime.time_since_epoch() +
 			std::chrono::system_clock::now().time_since_epoch()
 			);
@@ -217,9 +223,10 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 			if(bytesHandled < 0) {
 				throw std::invalid_argument("Error decoding TRAJ");
 			};
-			this->state->handleTRAJ(*this);
+			if (!this->trajDecoder.ExpectingTrajPoints()) {
+				this->state->handleTRAJ(*this);
+			}
 			break;
-
 		case MESSAGE_ID_OSEM:
 			ObjectSettingsType OSEMstruct;
 			bytesHandled = decodeOSEMMessage(
@@ -292,23 +299,22 @@ void TestObject::checkHeabTimeout() {
 	std::cout << "Started HEAB thread." << std::endl;
 	while(this->on) {
 		if(!this->firstHeab) {
-			struct timeval currentTime, lastTime;
+			struct timeval currentTime;
 			TimeSetToCurrentSystemTime(&currentTime);
-			lastTime = this->lastHeabTime;
-			uint64_t timeDiff = TimeGetTimeDifferenceMS(&currentTime, &lastTime);
-			if(timeDiff >= maxAllowedHeabTimeout_ms) {
-				std::cerr << "Did not recevie HEAB in time, differance is " << 
-				timeDiff << " ms" << std::endl;
+			auto timeDiff = std::chrono::milliseconds(TimeGetTimeDifferenceMS(&currentTime, &this->lastHeabTime));
+			if(timeDiff >= heartbeatTimeout) {
+				std::cerr << "Did not receive HEAB in time, difference is " << 
+				timeDiff.count() << " ms" << std::endl;
 				this->firstHeab = true;
 				this->heabTimeout();
 			}
 			else {
-				uint32_t sleepPeriod = maxAllowedHeabTimeout_ms - timeDiff;
-				std::this_thread::sleep_for(std::chrono::milliseconds(sleepPeriod));
+				auto sleepPeriod = heartbeatTimeout - timeDiff;
+				std::this_thread::sleep_for(sleepPeriod);
 			}
 		}
 		// Don't lock the mutex all the time
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		std::this_thread::sleep_for(expectedHeartbeatPeriod);
 	}
 	std::cout << "Exiting HEAB thread." << std::endl;
 }
