@@ -299,9 +299,10 @@ void TestObject::checkHeabTimeout() {
 	std::cout << "Started HEAB thread." << std::endl;
 	while(this->on) {
 		if(!this->firstHeab) {
-			struct timeval currentTime;
+			struct timeval currentTime, lastTime;
 			TimeSetToCurrentSystemTime(&currentTime);
-			auto timeDiff = std::chrono::milliseconds(TimeGetTimeDifferenceMS(&currentTime, &this->lastHeabTime));
+			lastTime = this->lastHeabTime;
+			auto timeDiff = std::chrono::milliseconds(TimeGetTimeDifferenceMS(&currentTime, &lastTime));
 			if(timeDiff >= heartbeatTimeout) {
 				std::cerr << "Did not receive HEAB in time, difference is " << 
 				timeDiff.count() << " ms" << std::endl;
