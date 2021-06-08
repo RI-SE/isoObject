@@ -14,12 +14,18 @@ TestObject::TestObject() : name("myTestObject"),
 							controlChannel(), 
 							processChannel(), 
 							trajDecoder() {
-	this->position.isHeadingValid = false;
-	this->position.isPositionValid = false;
-	this->speed.isLateralValid = false;
-	this->speed.isLongitudinalValid = false;
-	this->acceleration.isLateralValid = false;
-	this->acceleration.isLongitudinalValid = false;
+	CartesianPosition initPos;
+	SpeedType initSpd;
+	AccelerationType initAcc;
+	initPos.isHeadingValid = false;
+	initPos.isPositionValid = false;
+	initSpd.isLateralValid = false;
+	initSpd.isLongitudinalValid = false;
+	initAcc.isLateralValid = false;
+	initAcc.isLongitudinalValid = false;
+	this->setPosition(initPos);
+	this->setSpeed(initSpd);
+	this->setAcceleration(initAcc);
 	this->state = this->createInit();
 	this->startHandleTCP();
 	this->stateChangeSig.connect(&TestObject::onStateChange, this);
@@ -29,7 +35,6 @@ TestObject::TestObject() : name("myTestObject"),
 	this->trajSig.connect(&TestObject::onTRAJ, this);
 	this->strtSig.connect(&TestObject::onSTRT, this);
 	this->heabTimeout.connect(&TestObject::onHeabTimeout, this);
-	this->startHEABCheck();
 }
 
 TestObject::~TestObject() {
@@ -42,11 +47,12 @@ TestObject::~TestObject() {
 
 void TestObject::receiveTCP() {
 	while(this->on) {
-		std::cout << "Awaiting connection to server..." << std::endl;
+		std::cout << "Started TCP thread." << std::endl;
+		std::cout << "Awaiting TCP connection to server..." << std::endl;
 		if(this->controlChannel.CreateServer(ISO_22133_DEFAULT_OBJECT_TCP_PORT, "") < 0) {
 			continue;
 		}
-		std::cout << "Connected to server..." << std::endl;
+		std::cout << "TCP Connected to server..." << std::endl;
 
 		try {
 			this->state->handleEvent(*this, ISO22133::Events::B);
@@ -55,6 +61,7 @@ void TestObject::receiveTCP() {
 			std::cerr << e.what() << '\n';
 		}
 		this->startHandleUDP();
+		this->startHEABCheck();
 
 		std::vector<char> TCPReceiveBuffer(TCP_BUFFER_SIZE);
 		int nBytesReceived, nBytesHandled;
@@ -84,7 +91,7 @@ void TestObject::receiveTCP() {
 		}
 		std::cout << "Connection to control center lost" << std::endl;
 		this->udpOk = false;
-		this->setFirstHeab(true);
+		this->firstHeab = true;
 		try {
 			this->state->handleEvent(*this, ISO22133::Events::L);
 		}
@@ -99,9 +106,11 @@ void TestObject::receiveTCP() {
 			std::cerr << e.what() << '\n';
 		}		
 	}
+	std::cout << "Exiting TCP thread." << std::endl;
 }
 
 void TestObject::receiveUDP(){
+	std::cout << "Started UDP thread." << std::endl;
 	this->processChannel.CreateServer(ISO_22133_OBJECT_UDP_PORT,"",0);
 	std::vector<char> UDPReceiveBuffer(UDP_BUFFER_SIZE);
 	
@@ -147,6 +156,7 @@ void TestObject::receiveUDP(){
 	catch (const std::system_error& e) {
 		std::cerr << e.what() << '\n';
 	}
+	std::cout << "Exiting UDP thread." << std::endl;
 }
 
 void TestObject::sendMONR(bool debug) {
@@ -171,6 +181,7 @@ void TestObject::sendMONR(bool debug) {
 }
 
 void TestObject::monrLoop() {
+	std::cout << "Started MONR thread." << std::endl;
 	while(!this->udpOk) {
 		// Wait for UDP connection
 		std::this_thread::sleep_for(monrPeriod / 2);
@@ -185,6 +196,7 @@ void TestObject::monrLoop() {
 			std::chrono::system_clock::now().time_since_epoch()
 			);
 	}
+	std::cout << "Exiting MONR thread." << std::endl;
 }
 
 int TestObject::handleMessage(std::vector<char>* dataBuffer) {
@@ -202,8 +214,12 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 
 	switch(msgType) {
 		case MESSAGE_ID_TRAJ:
-			std::cout << "Receiving TRAJ" << std::endl;
-			bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer);
+			try {
+				bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer);
+			}
+			catch(const std::exception& e) {
+				throw e;
+			}
 			if(bytesHandled < 0) {
 				throw std::invalid_argument("Error decoding TRAJ");
 			};
@@ -268,7 +284,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 			this->ccStatus = HEABdata.controlCenterStatus;			
 			this->state->handleHEAB(*this, HEABdata);
 			this->lastHeabTime = currentTime;
-			this->setFirstHeab(false);
+			this->firstHeab = false;
 			break;
 
 		default:
@@ -280,15 +296,17 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 }
 
 void TestObject::checkHeabTimeout() {
+	std::cout << "Started HEAB thread." << std::endl;
 	while(this->on) {
-		if(!this->hasFirstHeartbeatArrived()) {
-			struct timeval currentTime;
+		if(!this->firstHeab) {
+			struct timeval currentTime, lastTime;
 			TimeSetToCurrentSystemTime(&currentTime);
-			auto timeDiff = std::chrono::milliseconds(TimeGetTimeDifferenceMS(&currentTime, &this->lastHeabTime));
+			lastTime = this->lastHeabTime;
+			auto timeDiff = std::chrono::milliseconds(TimeGetTimeDifferenceMS(&currentTime, &lastTime));
 			if(timeDiff >= heartbeatTimeout) {
-				std::cerr << "Did not recevie HEAB in time, differance is " << 
+				std::cerr << "Did not receive HEAB in time, difference is " << 
 				timeDiff.count() << " ms" << std::endl;
-				this->setFirstHeab(true);
+				this->firstHeab = true;
 				this->heabTimeout();
 			}
 			else {
@@ -299,16 +317,7 @@ void TestObject::checkHeabTimeout() {
 		// Don't lock the mutex all the time
 		std::this_thread::sleep_for(expectedHeartbeatPeriod);
 	}
-}
-
-bool TestObject::hasFirstHeartbeatArrived() {
-	std::lock_guard<std::mutex> lock(this->heabGuard); 
-	return this->firstHeab;
-}
-
-void TestObject::setFirstHeab(bool first) {
-	std::lock_guard<std::mutex> lock(this->heabGuard); 
-	this->firstHeab = first;
+	std::cout << "Exiting HEAB thread." << std::endl;
 }
 
 void TestObject::onHeabTimeout() { 

@@ -84,9 +84,9 @@ void ISO22133::State::handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
 	obj.heabSig(heab);
 
 	static struct timeval lastMsgTimestamp;
-	if(!obj.hasFirstHeartbeatArrived() && 
+	if(!obj.firstHeab && 
 		TimeGetTimeDifferenceMS(&heab.dataTimestamp, &lastMsgTimestamp) >
-		obj.maxAllowedHeabTimeout_ms) {
+		obj.heartbeatTimeout.count()) {
 			if(this->getStateID() != ISO_OBJECT_STATE_ABORTING) {
 				std::cerr << "HEAB message is too old. Last timestamp - current timestamp = " << 
 				TimeGetTimeDifferenceMS(&heab.dataTimestamp, &lastMsgTimestamp) << 

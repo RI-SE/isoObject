@@ -4,6 +4,7 @@
 #include <iostream>
 #include <thread> 
 #include <mutex>
+#include <atomic>
 
 #include <optional>
 
@@ -61,8 +62,8 @@ public:
     SpeedType getSpeed() const { return speed; }
     AccelerationType getAcceleration() const { return acceleration; }
     DriveDirectionType getDriveDirection() const { return driveDirection; }
-    TrajectoryHeaderType getTrajectoryHeader() const { return trajDecoder.getTrajHeader(); }
-    std::vector<TrajectoryWaypointType> getTrajectory() const { return trajDecoder.getTraj(); }
+    TrajectoryHeaderType getTrajectoryHeader() { return trajDecoder.getTrajHeader(); }
+    std::vector<TrajectoryWaypointType> getTrajectory() { return trajDecoder.getTraj(); }
 
 protected:
     
@@ -145,15 +146,9 @@ private:
     void onHeabTimeout();
     //! Loop function that checks if HEABs arrive on time
     void checkHeabTimeout();
-	bool hasFirstHeartbeatArrived();
-	void setFirstHeab(bool set = true);
 
     sigslot::signal<>heabTimeout;
-    std::mutex recvMutex, heabGuard;
-    bool udpOk = false;
-    bool on = true;
-    bool firstHeab = true;
-    struct timeval lastHeabTime;
+    std::mutex recvMutex;
     std::thread tcpReceiveThread;
     std::thread udpReceiveThread;
     std::thread monrThread;
@@ -161,21 +156,26 @@ private:
     ISO22133::State* state;
     std::string name;        
     TCPHandler controlChannel;
-	UDPHandler processChannel;
-	TrajDecoder trajDecoder;
-    GeographicPositionType origin; 
-    ControlCenterStatusType ccStatus;
-    CartesianPosition position;
-    SpeedType speed;
-    AccelerationType acceleration;
-    DriveDirectionType driveDirection = OBJECT_DRIVE_DIRECTION_UNAVAILABLE;
-    ObjectStateID objectState = ISO_OBJECT_STATE_UNKNOWN;
-    int readyToArm = OBJECT_READY_TO_ARM_UNAVAILABLE;
-    int transmitterID;
-	char errorState = 0;
+    UDPHandler processChannel;   
+    TrajDecoder trajDecoder;     
+    std::atomic<bool> udpOk { false };
+    std::atomic<bool> on { true };
+    std::atomic<bool> firstHeab { true };
+    std::atomic<struct timeval> lastHeabTime;
+    std::atomic<GeographicPositionType> origin; 
+    std::atomic<ControlCenterStatusType> ccStatus;
+    std::atomic<CartesianPosition> position;
+    std::atomic<SpeedType> speed;
+    std::atomic<AccelerationType> acceleration;
+    std::atomic<DriveDirectionType> driveDirection { OBJECT_DRIVE_DIRECTION_UNAVAILABLE };
+    std::atomic<ObjectStateID> objectState  { ISO_OBJECT_STATE_UNKNOWN };
+    std::atomic<int> readyToArm { OBJECT_READY_TO_ARM_UNAVAILABLE };
+    std::atomic<int> transmitterID;
+    std::atomic<char> errorState { 0 };
 	static constexpr auto expectedHeartbeatPeriod = std::chrono::milliseconds(1000 / HEAB_FREQUENCY_HZ);
 	static constexpr auto monrPeriod = std::chrono::milliseconds(1000 / MONR_EXPECTED_FREQUENCY_HZ);
 	static constexpr auto heartbeatTimeout = 5*expectedHeartbeatPeriod;
+
 
 
 };
