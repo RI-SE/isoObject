@@ -84,7 +84,7 @@ void ISO22133::State::handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
 	obj.heabSig(heab);
 
 	static struct timeval lastMsgTimestamp;
-	if(!obj.checkFirstHeab() && 
+	if(!obj.hasFirstHeartbeatArrived() && 
 		TimeGetTimeDifferenceMS(&heab.dataTimestamp, &lastMsgTimestamp) >
 		obj.maxAllowedHeabTimeout_ms) {
 			if(this->getStateID() != ISO_OBJECT_STATE_ABORTING) {

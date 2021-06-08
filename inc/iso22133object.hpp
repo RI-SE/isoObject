@@ -145,8 +145,8 @@ private:
     void onHeabTimeout();
     //! Loop function that checks if HEABs arrive on time
     void checkHeabTimeout();
-    bool checkFirstHeab();
-    bool setFirstHeab(bool);
+	bool hasFirstHeartbeatArrived();
+	void setFirstHeab(bool set = true);
 
     sigslot::signal<>heabTimeout;
     std::mutex recvMutex, heabGuard;

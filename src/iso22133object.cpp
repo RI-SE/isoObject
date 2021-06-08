@@ -281,7 +281,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 
 void TestObject::checkHeabTimeout() {
 	while(this->on) {
-		if(!this->checkFirstHeab()) {
+		if(!this->hasFirstHeartbeatArrived()) {
 			struct timeval currentTime;
 			TimeSetToCurrentSystemTime(&currentTime);
 			uint64_t timeDiff = TimeGetTimeDifferenceMS(&currentTime, &this->lastHeabTime);
@@ -301,12 +301,12 @@ void TestObject::checkHeabTimeout() {
 	}
 }
 
-bool TestObject::checkFirstHeab() {
+bool TestObject::hasFirstHeartbeatArrived() {
 	std::lock_guard<std::mutex> lock(this->heabGuard); 
 	return this->firstHeab;
 }
 
-bool TestObject::setFirstHeab(bool first) {
+void TestObject::setFirstHeab(bool first) {
 	std::lock_guard<std::mutex> lock(this->heabGuard); 
 	this->firstHeab = first;
 }
