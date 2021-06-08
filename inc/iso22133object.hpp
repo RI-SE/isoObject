@@ -172,7 +172,6 @@ private:
     std::atomic<int> readyToArm { OBJECT_READY_TO_ARM_UNAVAILABLE };
     std::atomic<int> transmitterID;
     std::atomic<char> errorState { 0 };
-    uint32_t maxAllowedHeabTimeout_ms = 50;
 	static constexpr auto expectedHeartbeatPeriod = std::chrono::milliseconds(1000 / HEAB_FREQUENCY_HZ);
 	static constexpr auto monrPeriod = std::chrono::milliseconds(1000 / MONR_EXPECTED_FREQUENCY_HZ);
 	static constexpr auto heartbeatTimeout = 5*expectedHeartbeatPeriod;
