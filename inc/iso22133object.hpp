@@ -172,8 +172,10 @@ private:
     ObjectStateID objectState = ISO_OBJECT_STATE_UNKNOWN;
     int readyToArm = OBJECT_READY_TO_ARM_UNAVAILABLE;
     int transmitterID;
-    char errorState = 0;
-    uint32_t maxAllowedHeabTimeout_ms = 50;
+	char errorState = 0;
+	static constexpr auto expectedHeartbeatPeriod = std::chrono::milliseconds(1000 / HEAB_FREQUENCY_HZ);
+	static constexpr auto monrPeriod = std::chrono::milliseconds(1000 / MONR_EXPECTED_FREQUENCY_HZ);
+	static constexpr auto heartbeatTimeout = 5*expectedHeartbeatPeriod;
 
 
 };

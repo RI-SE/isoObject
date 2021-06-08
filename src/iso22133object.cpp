@@ -108,7 +108,7 @@ void TestObject::receiveUDP(){
 	this->startSendMONR();
 
 	while(this->processChannel.receiveUDP(UDPReceiveBuffer) < 0){ // Would prefer blocking behavior on UDPhandler..
-		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		std::this_thread::sleep_for(expectedHeartbeatPeriod / 2);
 	}
 	this->udpOk = true;
 	int nBytesReceived, nBytesHandled;
@@ -137,7 +137,7 @@ void TestObject::receiveUDP(){
 			break;
 		}
 		UDPReceiveBuffer.resize(UDP_BUFFER_SIZE);
-		std::this_thread::sleep_for(std::chrono::milliseconds(5)); // Would prefer blocking behavior on UDPhandler..
+		std::this_thread::sleep_for(expectedHeartbeatPeriod / 2); // Would prefer blocking behavior on UDPhandler..
 	}
 	this->udpOk = false;
 	this->processChannel.UDPHandlerclose();
@@ -173,14 +173,14 @@ void TestObject::sendMONR(bool debug) {
 void TestObject::monrLoop() {
 	while(!this->udpOk) {
 		// Wait for UDP connection
-		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		std::this_thread::sleep_for(monrPeriod / 2);
 	}
 	std::chrono::time_point<std::chrono::system_clock> monrTime;
 	while(this->isServerConnected() && this->udpOk) {
 		monrTime = std::chrono::system_clock::now();
 		this->sendMONR();
 		std::this_thread::sleep_for(
-			std::chrono::milliseconds(10) - 
+			monrPeriod -
 			monrTime.time_since_epoch() +
 			std::chrono::system_clock::now().time_since_epoch()
 			);
@@ -284,20 +284,20 @@ void TestObject::checkHeabTimeout() {
 		if(!this->hasFirstHeartbeatArrived()) {
 			struct timeval currentTime;
 			TimeSetToCurrentSystemTime(&currentTime);
-			uint64_t timeDiff = TimeGetTimeDifferenceMS(&currentTime, &this->lastHeabTime);
-			if(timeDiff >= maxAllowedHeabTimeout_ms) {
+			auto timeDiff = std::chrono::milliseconds(TimeGetTimeDifferenceMS(&currentTime, &this->lastHeabTime));
+			if(timeDiff >= heartbeatTimeout) {
 				std::cerr << "Did not recevie HEAB in time, differance is " << 
-				timeDiff << " ms" << std::endl;
+				timeDiff.count() << " ms" << std::endl;
 				this->setFirstHeab(true);
 				this->heabTimeout();
 			}
 			else {
-				uint32_t sleepPeriod = maxAllowedHeabTimeout_ms - timeDiff;
-				std::this_thread::sleep_for(std::chrono::milliseconds(sleepPeriod));
+				auto sleepPeriod = heartbeatTimeout - timeDiff;
+				std::this_thread::sleep_for(sleepPeriod);
 			}
 		}
 		// Don't lock the mutex all the time
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		std::this_thread::sleep_for(expectedHeartbeatPeriod);
 	}
 }
 
