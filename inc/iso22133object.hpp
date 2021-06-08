@@ -125,6 +125,10 @@ protected:
     virtual void onTRAJ() {};
     virtual void onOSTM(ObjectCommandType&) {};
     virtual void onSTRT(StartMessageType&) {};
+
+	std::chrono::milliseconds expectedHeartbeatPeriod = std::chrono::milliseconds(1000 / HEAB_FREQUENCY_HZ);
+	std::chrono::milliseconds monrPeriod = std::chrono::milliseconds(1000 / MONR_EXPECTED_FREQUENCY_HZ);
+	std::chrono::milliseconds heartbeatTimeout = 5*expectedHeartbeatPeriod;
 private:
     
     //! UDP receiver loop that should be run in its own thread.
@@ -171,10 +175,7 @@ private:
     std::atomic<ObjectStateID> objectState  { ISO_OBJECT_STATE_UNKNOWN };
     std::atomic<int> readyToArm { OBJECT_READY_TO_ARM_UNAVAILABLE };
     std::atomic<int> transmitterID;
-    std::atomic<char> errorState { 0 };
-	static constexpr auto expectedHeartbeatPeriod = std::chrono::milliseconds(1000 / HEAB_FREQUENCY_HZ);
-	static constexpr auto monrPeriod = std::chrono::milliseconds(1000 / MONR_EXPECTED_FREQUENCY_HZ);
-	static constexpr auto heartbeatTimeout = 5*expectedHeartbeatPeriod;
+	std::atomic<char> errorState { 0 };
 
 
 
