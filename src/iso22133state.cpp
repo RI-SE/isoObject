@@ -152,7 +152,7 @@ void ISO22133::State::handleOSEM(TestObject& obj,ObjectSettingsType& osem) {
 	obj.transmitterID = osem.desiredTransmitterID;
 	std::cout << "Got OSEM - set transmitter ID to " << osem.desiredTransmitterID << std::endl;
 	setTransmitterID(osem.desiredTransmitterID);
-
+    std::cout << "Got OSEM - set hostname to " << obj.getServerHostname() << std::endl;
 	obj.osemSig(osem);
 	return; 
 }

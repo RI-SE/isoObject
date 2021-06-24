@@ -55,10 +55,12 @@ public:
     virtual ~TestObject();
     
     bool isServerConnected() const { return controlChannel.isConnected(); }
+    std::__cxx11::string getServerHostname () const {return controlChannel.IPaddr; }
     bool isUdpOk() const { return udpOk; }
     std::string getCurrentStateName() const { return state->getName(); }
     std::string getName() const { return name; }
     CartesianPosition getPosition() const { return position; }
+    //std::atomic<GeographicPositionType> getOrigin() const { return origin; }
     SpeedType getSpeed() const { return speed; }
     AccelerationType getAcceleration() const { return acceleration; }
     DriveDirectionType getDriveDirection() const { return driveDirection; }
