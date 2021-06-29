@@ -55,7 +55,6 @@ public:
     virtual ~TestObject();
     
     bool isServerConnected() const { return controlChannel.isConnected(); }
-    std::__cxx11::string getServerHostname () const {return controlChannel.IPaddr; }
     bool isUdpOk() const { return udpOk; }
     std::string getCurrentStateName() const { return state->getName(); }
     std::string getName() const { return name; }
