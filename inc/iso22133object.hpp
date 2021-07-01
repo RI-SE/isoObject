@@ -59,7 +59,6 @@ public:
     std::string getCurrentStateName() const { return state->getName(); }
     std::string getName() const { return name; }
     CartesianPosition getPosition() const { return position; }
-    std::atomic<GeographicPositionType> getOrigin() const { return origin; }
     SpeedType getSpeed() const { return speed; }
     AccelerationType getAcceleration() const { return acceleration; }
     DriveDirectionType getDriveDirection() const { return driveDirection; }
