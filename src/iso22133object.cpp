@@ -10,13 +10,14 @@
 #define UDP_BUFFER_SIZE 1024
 
 namespace ISO22133 {
-TestObject::TestObject() : name("myTestObject"), 
+TestObject::TestObject(const std::string& listenIP) : name("myTestObject"),
 							controlChannel(), 
 							processChannel(), 
 							trajDecoder() {
 	CartesianPosition initPos;
 	SpeedType initSpd;
 	AccelerationType initAcc;
+	localIP = listenIP;
 	initPos.isHeadingValid = false;
 	initPos.isPositionValid = false;
 	initSpd.isLateralValid = false;
@@ -49,7 +50,7 @@ void TestObject::receiveTCP() {
 	while(this->on) {
 		std::cout << "Started TCP thread." << std::endl;
 		std::cout << "Awaiting TCP connection to server..." << std::endl;
-		if(this->controlChannel.CreateServer(ISO_22133_DEFAULT_OBJECT_TCP_PORT, "") < 0) {
+		if(this->controlChannel.CreateServer(ISO_22133_DEFAULT_OBJECT_TCP_PORT, localIP) < 0) {
 			continue;
 		}
 		std::cout << "TCP Connected to server..." << std::endl;
@@ -111,7 +112,7 @@ void TestObject::receiveTCP() {
 
 void TestObject::receiveUDP(){
 	std::cout << "Started UDP thread." << std::endl;
-	this->processChannel.CreateServer(ISO_22133_OBJECT_UDP_PORT,"",0);
+	this->processChannel.CreateServer(ISO_22133_OBJECT_UDP_PORT,localIP,0);
 	std::vector<char> UDPReceiveBuffer(UDP_BUFFER_SIZE);
 	
 	this->startSendMONR();
