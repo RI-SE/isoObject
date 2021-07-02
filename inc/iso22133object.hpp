@@ -50,7 +50,7 @@ class TestObject {
     friend class PreRunning;
 
 public:
-    TestObject();
+	TestObject(const std::string& listenIP = "");
 
     virtual ~TestObject();
     
@@ -155,6 +155,7 @@ private:
     std::mutex recvMutex;
     std::thread tcpReceiveThread;
     std::thread udpReceiveThread;
+	std::string localIP;
     std::thread monrThread;
     std::thread heabTimeoutThread;
     ISO22133::State* state;
