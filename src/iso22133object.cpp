@@ -17,6 +17,7 @@ TestObject::TestObject(const std::string& listenIP) : name("myTestObject"),
 	CartesianPosition initPos;
 	SpeedType initSpd;
 	AccelerationType initAcc;
+	std::cout << "Listen IP: " << listenIP << std::endl;
 	localIP = listenIP;
 	initPos.isHeadingValid = false;
 	initPos.isPositionValid = false;
@@ -40,10 +41,18 @@ TestObject::TestObject(const std::string& listenIP) : name("myTestObject"),
 
 TestObject::~TestObject() {
 	on = false;
-	monrThread.join();
-	tcpReceiveThread.join();
-	udpReceiveThread.join();
-	heabTimeoutThread.join();
+	try {
+		monrThread.join();
+	} catch (std::system_error) {}
+	try {
+		tcpReceiveThread.join(); // This blocks forever when the receive thread has not finished accept()
+	} catch (std::system_error) {}
+	try {
+		udpReceiveThread.join();
+	} catch (std::system_error) {}
+	try {
+		heabTimeoutThread.join();
+	} catch (std::system_error) {}
 }; 
 
 void TestObject::receiveTCP() {
