@@ -68,12 +68,12 @@ ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>* dataBuffer) {
     return static_cast<int>(dataBuffer->size());
 }
 
-TrajectoryHeaderType TrajDecoder::getTrajHeader() {
+TrajectoryHeaderType TrajDecoder::getTrajHeader() const {
     std::lock_guard<std::mutex> lock(this->guard);
     return this->trajecoryHeader;
 }
 
-std::vector<TrajectoryWaypointType> TrajDecoder::getTraj() {
+std::vector<TrajectoryWaypointType> TrajDecoder::getTraj() const {
     std::lock_guard<std::mutex> lock(this->guard);
     return this->trajectoryWaypoints; 
 }

@@ -62,22 +62,27 @@ public:
     SpeedType getSpeed() const { return speed; }
     AccelerationType getAcceleration() const { return acceleration; }
     DriveDirectionType getDriveDirection() const { return driveDirection; }
-    TrajectoryHeaderType getTrajectoryHeader() { return trajDecoder.getTrajHeader(); }
-    std::vector<TrajectoryWaypointType> getTrajectory() { return trajDecoder.getTraj(); }
+	TrajectoryHeaderType getTrajectoryHeader() const { return trajDecoder.getTrajHeader(); }
+	std::vector<TrajectoryWaypointType> getTrajectory() const { return trajDecoder.getTraj(); }
+	GeographicPositionType getOrigin() const { return origin; }
+	std::string getLocalIP() const { return localIP; }
+	uint32_t getTransmitterID() const { return transmitterID; }
 
 protected:
     
     //! Pure virtual safety function that must be implemented by the user.
     virtual void handleAbort() = 0;
 
-    void setPosition(CartesianPosition& pos) { position = pos; }
-    void setSpeed(SpeedType& spd) { speed = spd; }
-    void setAcceleration(AccelerationType& acc) { acceleration = acc; }
-    void setDriveDirection(DriveDirectionType& drd) { driveDirection = drd; }
-    void setObjectState(ObjectStateID& ost) { objectState = ost; }
-    void setName(std::string name) { name = name; }
+	void setPosition(const CartesianPosition& pos) { position = pos; }
+	void setSpeed(const SpeedType& spd) { speed = spd; }
+	void setAcceleration(const AccelerationType& acc) { acceleration = acc; }
+	void setDriveDirection(const DriveDirectionType& drd) { driveDirection = drd; }
+	void setObjectState(const ObjectStateID& ost) { objectState = ost; }
+	void setName(const std::string nm) { name = nm; }
     void setReadyToArm(const int& rdy) { readyToArm = rdy; }
-    void setErrorState(const char& err) { errorState = err; }      
+	void setErrorState(const char& err) { errorState = err; }
+
+
 
     // These should be overridden if extending one of the states
     // Example of override:
