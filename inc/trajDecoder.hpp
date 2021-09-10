@@ -17,11 +17,11 @@ public:
     TrajDecoder() : debug(false), expectingTRAJPoints(false) {};
     ssize_t DecodeTRAJ(std::vector<char>*);
     bool ExpectingTrajPoints() const { return this->expectingTRAJPoints; }
-    TrajectoryHeaderType getTrajHeader();
-    std::vector<TrajectoryWaypointType> getTraj(); 
+	TrajectoryHeaderType getTrajHeader() const;
+	std::vector<TrajectoryWaypointType> getTraj() const;
 
 private:
-    std::mutex guard;
+	mutable std::mutex guard;
     bool debug;
     std::atomic<bool> expectingTRAJPoints;
     int nPointsHandled = 0;

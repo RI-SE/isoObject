@@ -88,7 +88,7 @@ static const std::map<ObjectStateID, std::string> stateNames = {
  *			iso22133object.h
  */
 class State {
-friend class TestObject;
+	friend class TestObject;
 public:
 	State() {}
 	virtual ~State() {}
