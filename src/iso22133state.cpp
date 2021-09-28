@@ -7,7 +7,7 @@
 
 /**
  * @brief Handle events according to ISO22133 state change description
- * 
+ *
  * @param obj TestObject reference
  * @param event Event according to ISO22133::EventType
  */
@@ -19,7 +19,7 @@ void ISO22133::State::handleEvent(
 		return event == tr.event && this->getStateID() == tr.source;
 	});
 	if (transition == language.end()) {
-		throw std::runtime_error(std::string("Unexpected event '") 
+		throw std::runtime_error(std::string("Unexpected event '")
 								 + Events::descriptions.at(event)
 								 + "' in state " + this->getName());
 	}
@@ -73,7 +73,7 @@ void ISO22133::State::handleEvent(
 
 /**
  * @brief Generates state changes based on control center status
- * 
+ *
  * @param obj TestObject reference
  * @param heab struct HeabMessageDataType
  */
@@ -84,15 +84,15 @@ void ISO22133::State::handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
 	obj.heabSig(heab);
 
 	static struct timeval lastMsgTimestamp;
-	if(!obj.firstHeab && 
-		TimeGetTimeDifferenceMS(&heab.dataTimestamp, &lastMsgTimestamp) >
-		obj.heartbeatTimeout.count()) {
-			if(this->getStateID() != ISO_OBJECT_STATE_ABORTING) {
-				std::cerr << "HEAB message is too old. Last timestamp - current timestamp = " << 
-				TimeGetTimeDifferenceMS(&heab.dataTimestamp, &lastMsgTimestamp) << 
-				" ms." << std::endl;
-				this->handleEvent(obj, ISO22133::Events::W); 
-			}
+	if(!obj.firstHeab &&
+			TimeGetTimeDifferenceMS(&heab.dataTimestamp, &lastMsgTimestamp) >
+			obj.heartbeatTimeout.count()) {
+		if(this->getStateID() != ISO_OBJECT_STATE_ABORTING) {
+			std::cerr << "HEAB message is too old. Last timestamp - current timestamp = " <<
+						 TimeGetTimeDifferenceMS(&heab.dataTimestamp, &lastMsgTimestamp) <<
+						 " ms." << std::endl;
+			this->handleEvent(obj, ISO22133::Events::W);
+		}
 	}
 	lastMsgTimestamp = heab.dataTimestamp;
 
@@ -102,7 +102,7 @@ void ISO22133::State::handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
 		break;
 	case CONTROL_CENTER_STATUS_ABORT:
 		if(this->getStateID() != ISO_OBJECT_STATE_ABORTING) {
-			this->handleEvent(obj, ISO22133::Events::W);			
+			this->handleEvent(obj, ISO22133::Events::W);
 		}
 		break;
 	case CONTROL_CENTER_STATUS_TEST_DONE:
@@ -116,7 +116,7 @@ void ISO22133::State::handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
 
 /**
  * @brief Handles state change requests from Control center
- * 
+ *
  * @param obj TestObject reference
  * @param ostm struct ObjectCommandType
  */
@@ -124,7 +124,7 @@ void ISO22133::State::handleOSTM(TestObject& obj,ObjectCommandType& ostm) {
 	// Order matters here, below may change state
 	// causing the signal to not be triggered if placed
 	// after the handleEvent() calls
-	obj.ostmSig(ostm); 
+	obj.ostmSig(ostm);
 	switch (ostm) {
 	case OBJECT_COMMAND_ARM:
 		this->handleEvent(obj, ISO22133::Events::M);
@@ -146,7 +146,7 @@ void ISO22133::State::handleOSTM(TestObject& obj,ObjectCommandType& ostm) {
 
 /**
  * @brief Changes object settings
- * 
+ *
  * @param obj TestObject reference
  * @param osem struct ObjectSettingsType
  */
@@ -156,12 +156,12 @@ void ISO22133::State::handleOSEM(TestObject& obj,ObjectSettingsType& osem) {
 	std::cout << "Got OSEM - set transmitter ID to " << osem.desiredTransmitterID << std::endl;
 	setTransmitterID(osem.desiredTransmitterID);
 	obj.osemSig(osem);
-	return; 
+	return;
 }
 
 /**
  * @brief Handles start request from Control center
- * 
+ *
  * @param obj TestObject reference
  * @param strt struct TODO
  */
@@ -171,24 +171,24 @@ void ISO22133::State::handleSTRT(TestObject& obj,StartMessageType& strt) {
 	// after the handleEvent() calls
 	obj.strtSig(strt);
 	this->handleEvent(obj, ISO22133::Events::S);
-	return; 
+	return;
 }
 
 /**
  * @brief TODO
- * 
- * @param obj 
- * @param traj 
+ *
+ * @param obj
+ * @param traj
  */
 void ISO22133::State::handleTRAJ(TestObject& obj) {
 	// Signal TRAJ is now available
 	obj.trajSig();
-	return; 
+	return;
 }
 
 /**
  * @brief Sets TestObject ready to arm flag
- * 
+ *
  * @param obj TestObject reference
  */
 void ISO22133::Disarmed::onEnter(TestObject& obj) {
@@ -197,7 +197,7 @@ void ISO22133::Disarmed::onEnter(TestObject& obj) {
 
 /**
  * @brief Resets TestObject ready to arm flag
- * 
+ *
  * @param obj TestObject reference
  */
 void ISO22133::Disarmed::onExit(TestObject& obj) {

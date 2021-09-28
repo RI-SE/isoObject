@@ -10,13 +10,16 @@
 #define UDP_BUFFER_SIZE 1024
 
 namespace ISO22133 {
-TestObject::TestObject(const std::string& listenIP) : name("myTestObject"),
-							controlChannel(), 
-							processChannel(), 
-							trajDecoder() {
+TestObject::TestObject(const std::string& listenIP)
+	: name("myTestObject"),
+	  controlChannel(),
+	  processChannel(),
+	  trajDecoder() {
+
 	CartesianPosition initPos;
 	SpeedType initSpd;
 	AccelerationType initAcc;
+	std::cout << "Listen IP: " << listenIP << std::endl;
 	localIP = listenIP;
 	initPos.isHeadingValid = false;
 	initPos.isPositionValid = false;
@@ -40,10 +43,18 @@ TestObject::TestObject(const std::string& listenIP) : name("myTestObject"),
 
 TestObject::~TestObject() {
 	on = false;
-	monrThread.join();
-	tcpReceiveThread.join();
-	udpReceiveThread.join();
-	heabTimeoutThread.join();
+	try {
+		monrThread.join();
+	} catch (std::system_error) {}
+	try {
+		tcpReceiveThread.join(); // This blocks forever when the receive thread has not finished accept()
+	} catch (std::system_error) {}
+	try {
+		udpReceiveThread.join();
+	} catch (std::system_error) {}
+	try {
+		heabTimeoutThread.join();
+	} catch (std::system_error) {}
 }; 
 
 void TestObject::receiveTCP() {
@@ -98,14 +109,14 @@ void TestObject::receiveTCP() {
 		}
 		catch(const std::runtime_error& e) {
 			std::cerr << e.what() << '\n';
-		}		
+		}
 		this->controlChannel.TCPHandlerclose();
 		try {
 			this->udpReceiveThread.join();
 		}
 		catch (const std::system_error& e) {
 			std::cerr << e.what() << '\n';
-		}		
+		}
 	}
 	std::cout << "Exiting TCP thread." << std::endl;
 }
@@ -170,8 +181,8 @@ void TestObject::sendMONR(bool debug) {
 
 	TimeSetToCurrentSystemTime(&time);
 	auto result = encodeMONRMessage(&time, this->position, this->speed, this->acceleration,
-					this->driveDirection, this->state->getStateID(), this->readyToArm,
-					this->errorState, buffer.data(), buffer.size(),debug);
+									this->driveDirection, this->state->getStateID(), this->readyToArm,
+									this->errorState, buffer.data(), buffer.size(),debug);
 	if (result < 0) {
 		std::cout << "Failed to encode MONR data" << std::endl;
 	}
@@ -192,10 +203,10 @@ void TestObject::monrLoop() {
 		monrTime = std::chrono::system_clock::now();
 		this->sendMONR();
 		std::this_thread::sleep_for(
-			monrPeriod -
-			monrTime.time_since_epoch() +
-			std::chrono::system_clock::now().time_since_epoch()
-			);
+					monrPeriod -
+					monrTime.time_since_epoch() +
+					std::chrono::system_clock::now().time_since_epoch()
+					);
 	}
 	std::cout << "Exiting MONR thread." << std::endl;
 }
@@ -214,83 +225,83 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 	}
 
 	switch(msgType) {
-		case MESSAGE_ID_TRAJ:
-			try {
-				bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer);
-			}
-			catch(const std::exception& e) {
-				throw e;
-			}
-			if(bytesHandled < 0) {
-				throw std::invalid_argument("Error decoding TRAJ");
-			};
-			if (!this->trajDecoder.ExpectingTrajPoints()) {
-				this->state->handleTRAJ(*this);
-			}
-			break;
-		case MESSAGE_ID_OSEM:
-			ObjectSettingsType OSEMstruct;
-			bytesHandled = decodeOSEMMessage(
-				&OSEMstruct,
-				dataBuffer->data(),
-				dataBuffer->size(),
-				nullptr,
-				debug);
-			if(bytesHandled < 0) {
-				throw std::invalid_argument("Error decoding OSEM");
-			}		
-			std::cout << "Received OSEM " << std::endl;
-			this->state->handleOSEM(*this, OSEMstruct);
-			break;
+	case MESSAGE_ID_TRAJ:
+		try {
+		bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer);
+	}
+		catch(const std::exception& e) {
+			throw e;
+		}
+		if(bytesHandled < 0) {
+			throw std::invalid_argument("Error decoding TRAJ");
+		};
+		if (!this->trajDecoder.ExpectingTrajPoints()) {
+			this->state->handleTRAJ(*this);
+		}
+		break;
+	case MESSAGE_ID_OSEM:
+		ObjectSettingsType OSEMstruct;
+		bytesHandled = decodeOSEMMessage(
+					&OSEMstruct,
+					dataBuffer->data(),
+					dataBuffer->size(),
+					nullptr,
+					debug);
+		if(bytesHandled < 0) {
+			throw std::invalid_argument("Error decoding OSEM");
+		}
+		std::cout << "Received OSEM " << std::endl;
+		this->state->handleOSEM(*this, OSEMstruct);
+		break;
 
-		case MESSAGE_ID_OSTM:
-			ObjectCommandType OSTMdata;
-			bytesHandled = decodeOSTMMessage(
-				dataBuffer->data(),
-				dataBuffer->size(),
-				&OSTMdata,
-				debug);
-			if(bytesHandled < 0) {
-				throw std::invalid_argument("Error decoding OSTM");
-			}
-			this->state->handleOSTM(*this, OSTMdata);
-			break;
+	case MESSAGE_ID_OSTM:
+		ObjectCommandType OSTMdata;
+		bytesHandled = decodeOSTMMessage(
+					dataBuffer->data(),
+					dataBuffer->size(),
+					&OSTMdata,
+					debug);
+		if(bytesHandled < 0) {
+			throw std::invalid_argument("Error decoding OSTM");
+		}
+		this->state->handleOSTM(*this, OSTMdata);
+		break;
 
-		case MESSAGE_ID_STRT:
-			StartMessageType STRTdata;
-			bytesHandled = decodeSTRTMessage(
-				dataBuffer->data(),
-				dataBuffer->size(),
-				&currentTime,
-				&STRTdata,
-				debug);
-			if(bytesHandled < 0) {
-				throw std::invalid_argument("Error decoding STRT");
-			}
-			this->state->handleSTRT(*this, STRTdata);
-			break;
+	case MESSAGE_ID_STRT:
+		StartMessageType STRTdata;
+		bytesHandled = decodeSTRTMessage(
+					dataBuffer->data(),
+					dataBuffer->size(),
+					&currentTime,
+					&STRTdata,
+					debug);
+		if(bytesHandled < 0) {
+			throw std::invalid_argument("Error decoding STRT");
+		}
+		this->state->handleSTRT(*this, STRTdata);
+		break;
 
-		case MESSAGE_ID_HEAB:
-			HeabMessageDataType HEABdata;
-	
-			bytesHandled = decodeHEABMessage(
-				dataBuffer->data(),
-				dataBuffer->size(),
-				currentTime,
-				&HEABdata,
-				debug);
-			if(bytesHandled < 0) {
-				throw std::invalid_argument("Error decoding HEAB");
-			}
-			this->ccStatus = HEABdata.controlCenterStatus;			
-			this->state->handleHEAB(*this, HEABdata);
-			this->lastHeabTime = currentTime;
-			this->firstHeab = false;
-			break;
+	case MESSAGE_ID_HEAB:
+		HeabMessageDataType HEABdata;
 
-		default:
-			bytesHandled = static_cast<int>(dataBuffer->size());
-			break;
+		bytesHandled = decodeHEABMessage(
+					dataBuffer->data(),
+					dataBuffer->size(),
+					currentTime,
+					&HEABdata,
+					debug);
+		if(bytesHandled < 0) {
+			throw std::invalid_argument("Error decoding HEAB");
+		}
+		this->ccStatus = HEABdata.controlCenterStatus;
+		this->state->handleHEAB(*this, HEABdata);
+		this->lastHeabTime = currentTime;
+		this->firstHeab = false;
+		break;
+
+	default:
+		bytesHandled = static_cast<int>(dataBuffer->size());
+		break;
 	}
 
 	return bytesHandled;
@@ -305,8 +316,8 @@ void TestObject::checkHeabTimeout() {
 			lastTime = this->lastHeabTime;
 			auto timeDiff = std::chrono::milliseconds(TimeGetTimeDifferenceMS(&currentTime, &lastTime));
 			if(timeDiff >= heartbeatTimeout) {
-				std::cerr << "Did not receive HEAB in time, difference is " << 
-				timeDiff.count() << " ms" << std::endl;
+				std::cerr << "Did not receive HEAB in time, difference is " <<
+							 timeDiff.count() << " ms" << std::endl;
 				this->firstHeab = true;
 				this->heabTimeout();
 			}
