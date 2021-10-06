@@ -135,6 +135,9 @@ void ISO22133::State::handleOSTM(TestObject& obj,ObjectCommandType& ostm) {
 	case OBJECT_COMMAND_REMOTE_CONTROL:
 		this->handleEvent(obj, ISO22133::Events::H);
 		break;
+    case OBJECT_COMMAND_ALL_CLEAR:
+        this->handleEvent(obj, ISO22133::Events::X);
+        break;
 	default:
 		break;
 
