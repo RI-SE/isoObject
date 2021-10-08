@@ -107,7 +107,6 @@ protected:
 	//! When a message arrives, these methods are
 	//! the 'front line' handlers.
 	//! Handles ISO22133 required actions from contorl center
-	virtual void handleHEAB(TestObject&,HeabMessageDataType&);
 	virtual void handleTRAJ(TestObject&);
 	virtual void handleOSEM(TestObject&,ObjectSettingsType&);
 	virtual void handleOSTM(TestObject&,ObjectCommandType&);
@@ -127,7 +126,6 @@ class Unknown : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_UNKNOWN; }
 private:
-	void handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageWarning("HEAB"); }
 	void handleTRAJ(TestObject&) final override { unexpectedMessageWarning("TRAJ"); }
 	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageWarning("OSEM"); }
 	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageWarning("OSTM"); }
@@ -137,8 +135,8 @@ private:
 class Off : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_OFF; }
+	virtual void onEnter(TestObject&) override;
 private:
-	void handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageWarning("HEAB"); }
 	void handleTRAJ(TestObject&) final override { unexpectedMessageWarning("TRAJ"); }
 	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageWarning("OSEM"); }
 	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageWarning("OSTM"); }
@@ -148,8 +146,9 @@ private:
 class Init : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_INIT; }
+	virtual void onEnter(TestObject&) override;
+	virtual void onExit(TestObject&) override;
 private:
-	void handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageWarning("HEAB"); }
 	void handleTRAJ(TestObject&) final override { unexpectedMessageWarning("TRAJ"); }
 	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageWarning("OSEM"); }
 	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageWarning("OSTM"); }
