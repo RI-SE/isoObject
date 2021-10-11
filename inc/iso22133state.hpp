@@ -135,7 +135,6 @@ private:
 class Off : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_OFF; }
-	virtual void onEnter(TestObject&) override;
 private:
 	void handleTRAJ(TestObject&) final override { unexpectedMessageWarning("TRAJ"); }
 	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageWarning("OSEM"); }
@@ -146,7 +145,6 @@ private:
 class Init : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_INIT; }
-	virtual void onEnter(TestObject&) override;
 	virtual void onExit(TestObject&) override;
 private:
 	void handleTRAJ(TestObject&) final override { unexpectedMessageWarning("TRAJ"); }
@@ -211,6 +209,7 @@ inline bool operator< (const Transition &lhs, const Transition &rhs){
 
 static const std::set<Transition> language = {
 	{ISO_OBJECT_STATE_OFF,					Events::D,		ISO_OBJECT_STATE_INIT},
+	{ISO_OBJECT_STATE_INIT,					Events::L,		ISO_OBJECT_STATE_INIT},
 	{ISO_OBJECT_STATE_INIT,					Events::B,		ISO_OBJECT_STATE_DISARMED},
 	{ISO_OBJECT_STATE_ARMED,				Events::E,		ISO_OBJECT_STATE_DISARMED},
 	{ISO_OBJECT_STATE_ARMED,				Events::F,		ISO_OBJECT_STATE_DISARMED},

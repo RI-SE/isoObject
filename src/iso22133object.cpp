@@ -55,9 +55,12 @@ TestObject::~TestObject() {
 }; 
 
 void TestObject::disconnect() {
+	std::cout << "Disconnecting" << std::endl;
 	ctrlChannel.close();
 	processPort.close();
-	heabMonrThread.join();
+	try {
+		heabMonrThread.join();
+	} catch (std::system_error) {}
 	awaitingFirstHeab = true;
 }
 
@@ -91,6 +94,7 @@ void TestObject::receiveTCP() {
 			}
 		} catch (SocketErrors::DisconnectedError&) {
 			std::cout << "Connection to control center lost" << std::endl;
+			disconnect();
 			state->handleEvent(*this, ISO22133::Events::L);
 		}
 	}
@@ -166,6 +170,7 @@ void TestObject::checkHeabLoop() {
 }
 
 void TestObject::onHeabTimeout() {
+	disconnect();
 	this->state->handleEvent(*this, Events::L);
 }
 

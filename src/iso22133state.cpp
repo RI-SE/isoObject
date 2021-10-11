@@ -146,14 +146,6 @@ void ISO22133::State::handleTRAJ(TestObject& obj) {
 	return;
 }
 
-void ISO22133::Off::onEnter(TestObject& obj) {
-	obj.disconnect();
-}
-
-void ISO22133::Init::onEnter(TestObject& obj) {
-	obj.disconnect();
-}
-
 void ISO22133::Init::onExit(TestObject& obj) {
 	obj.startHandleUDP();
 }

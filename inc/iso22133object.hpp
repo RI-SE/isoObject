@@ -133,7 +133,7 @@ protected:
 
 	std::chrono::milliseconds expectedHeartbeatPeriod = std::chrono::milliseconds(1000 / HEAB_FREQUENCY_HZ);
 	std::chrono::milliseconds monrPeriod = std::chrono::milliseconds(1000 / MONR_EXPECTED_FREQUENCY_HZ);
-	std::chrono::milliseconds heartbeatTimeout = 5*expectedHeartbeatPeriod;
+	std::chrono::milliseconds heartbeatTimeout = 10*expectedHeartbeatPeriod;
 	std::chrono::milliseconds maxSafeNetworkDelay = std::chrono::milliseconds(200);
 private:
 
