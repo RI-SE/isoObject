@@ -66,13 +66,20 @@ void TestObject::disconnect() {
 
 void TestObject::receiveTCP() {
 	std::cout << "Started TCP thread." << std::endl;
+	const unsigned int maxAwaitAttempts = 3;
+	unsigned int remainingAwaitAttempts = maxAwaitAttempts;
 	while(this->on) {
 		std::cout << "Awaiting TCP connection from server..." << std::endl;
 		try {
 			ctrlChannel = ctrlPort.await(
 						localIP, ISO_22133_DEFAULT_OBJECT_TCP_PORT);
+			remainingAwaitAttempts = maxAwaitAttempts;
 		} catch (std::exception& e) {
-			std::cout << "pls fix" << std::endl;
+			if (remainingAwaitAttempts-- > 0) {
+				std::cout << "Control channel TCP listening socket error: attempting restart..." << std::endl;
+				ctrlPort = TCPServer();
+				continue;
+			}
 			throw e;
 		}
 		std::cout << "TCP connection established." << std::endl;
