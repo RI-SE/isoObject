@@ -98,7 +98,7 @@ public:
     }
 
     //! overridden vendor specific message handling
-    int handleVendorSpecificMessage(const int msgType, const std::vector<char>* data) override {
+    int handleVendorSpecificMessage(const int msgType, const std::vector<char>& data) override {
         int handledBytes = 0;
         RemoteControlManoeuvreMessageType DCMMmsg;
         switch (msgType)
