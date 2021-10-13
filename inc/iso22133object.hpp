@@ -85,7 +85,7 @@ protected:
 	//! Virtual function for adding handling of vendor specific messages if needed.
 	//! Expected to return the number of handled bytes or <= 0 if message was not recognized
 	//! or decoding failed.
-	virtual int handleVendorSpecificMessage(const int msgType, const std::vector<char>* data) { };
+	virtual int handleVendorSpecificMessage(const int msgType, const std::vector<char>& data) { return -1; }
 
 	// These should be overridden if extending one of the states
 	// Example of override:
