@@ -300,12 +300,7 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 		break;
 
 	default:
-		try {
-			bytesHandled = handleVendorSpecificMessage(msgType, dataBuffer);
-		}
-		catch(const std::exception& e) {
-			throw e;
-		}
+		bytesHandled = handleVendorSpecificMessage(msgType, *dataBuffer);
 		
 		if(bytesHandled <= 0) {
 			bytesHandled = static_cast<int>(dataBuffer->size());

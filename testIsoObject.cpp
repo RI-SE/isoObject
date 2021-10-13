@@ -104,7 +104,7 @@ public:
         switch (msgType)
         {
         case MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_DCMM:
-            handledBytes = decodeDCMMMessage(data->data(), data->size(), &DCMMmsg, 0);
+            handledBytes = decodeDCMMMessage(data.data(), data.size(), &DCMMmsg, 0);
             if(handledBytes < 0) {
                 throw std::invalid_argument("Error decoding DCMM");
             }
