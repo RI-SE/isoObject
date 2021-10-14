@@ -96,6 +96,29 @@ public:
     void onSTRT(StartMessageType&) override {
         std::cout << "Object Starting" << std::endl;
     }
+
+    //! overridden vendor specific message handling
+    int handleVendorSpecificMessage(const int msgType, const std::vector<char>& data) override {
+        int handledBytes = 0;
+        RemoteControlManoeuvreMessageType DCMMmsg;
+        switch (msgType)
+        {
+        case MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_DCMM:
+            handledBytes = decodeDCMMMessage(data.data(), data.size(), &DCMMmsg, 0);
+            if(handledBytes < 0) {
+                throw std::invalid_argument("Error decoding DCMM");
+            }
+            else {
+                std::cout << "Handled DCMM Message" << std::endl;
+            }
+            break;
+        
+        default:
+            break;
+        }
+
+        return handledBytes;
+    }
 private:
     int dummyMember;
     void dummyFunc() {

@@ -190,11 +190,11 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 
 	ISOMessageID msgType = getISOMessageType(dataBuffer.data(), dataBuffer.size(), 0);
 	// Ugly check here since we don't know if it is UDP or the rest of TRAJ
-	if(msgType == MESSAGE_ID_INVALID && this->trajDecoder.ExpectingTrajPoints()) {
+	if (msgType == MESSAGE_ID_INVALID && this->trajDecoder.ExpectingTrajPoints()) {
 		msgType = MESSAGE_ID_TRAJ;
 	}
 
-	switch(msgType) {
+	switch (msgType) {
 	case MESSAGE_ID_TRAJ:
 		try {
 			bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer);
@@ -202,7 +202,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 		catch(const std::exception& e) {
 			throw e;
 		}
-		if(bytesHandled < 0) {
+		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding TRAJ");
 		};
 		if (!this->trajDecoder.ExpectingTrajPoints()) {
@@ -217,7 +217,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 					dataBuffer.size(),
 					nullptr,
 					debug);
-		if(bytesHandled < 0) {
+		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding OSEM");
 		}
 		std::cout << "Received OSEM " << std::endl;
@@ -231,7 +231,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 					dataBuffer.size(),
 					&OSTMdata,
 					debug);
-		if(bytesHandled < 0) {
+		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding OSTM");
 		}
 		this->state->handleOSTM(*this, OSTMdata);
@@ -245,7 +245,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 					&currentTime,
 					&STRTdata,
 					debug);
-		if(bytesHandled < 0) {
+		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding STRT");
 		}
 		this->state->handleSTRT(*this, STRTdata);
@@ -260,16 +260,20 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 					currentTime,
 					&HEABdata,
 					debug);
-		if(bytesHandled < 0) {
+		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding HEAB");
 		}
 		this->handleHEAB(HEABdata);
 		break;
 	default:
+		bytesHandled = handleVendorSpecificMessage(msgType, dataBuffer);
+		if (bytesHandled < 0) {
+			throw std::invalid_argument(std::string("Unable to decode ISO-22133 message with MsgID ")
+                                  + std::to_string(msgType));
+		}
 		bytesHandled = static_cast<int>(dataBuffer.size());
 		break;
 	}
-
 	return bytesHandled;
 }
 
