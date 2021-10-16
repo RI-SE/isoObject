@@ -12,8 +12,7 @@
 namespace ISO22133 {
 TestObject::TestObject(const std::string& listenIP)
 	: name("myTestObject"),
-	  controlChannel(),
-	  processChannel(),
+	  ctrlChannel(BasicSocket::STREAM),
 	  trajDecoder() {
 
 	CartesianPosition initPos;
@@ -32,6 +31,7 @@ TestObject::TestObject(const std::string& listenIP)
 	this->setAcceleration(initAcc);
 	this->state = this->createInit();
 	this->startHandleTCP();
+	this->startHEABCheck();
 	this->stateChangeSig.connect(&TestObject::onStateChange, this);
 	this->osemSig.connect(&TestObject::onOSEM, this);
 	this->heabSig.connect(&TestObject::onHEAB, this);
@@ -44,141 +44,73 @@ TestObject::TestObject(const std::string& listenIP)
 TestObject::~TestObject() {
 	on = false;
 	try {
-		monrThread.join();
+		heabMonrThread.join();
 	} catch (std::system_error) {}
 	try {
 		tcpReceiveThread.join(); // This blocks forever when the receive thread has not finished accept()
-	} catch (std::system_error) {}
-	try {
-		udpReceiveThread.join();
 	} catch (std::system_error) {}
 	try {
 		heabTimeoutThread.join();
 	} catch (std::system_error) {}
 }; 
 
+void TestObject::disconnect() {
+	std::cout << "Disconnecting" << std::endl;
+	ctrlChannel.close();
+	processPort.close();
+	try {
+		heabMonrThread.join();
+	} catch (std::system_error) {}
+	awaitingFirstHeab = true;
+}
+
 void TestObject::receiveTCP() {
+	std::cout << "Started TCP thread." << std::endl;
+	const unsigned int maxAwaitAttempts = 3;
+	unsigned int remainingAwaitAttempts = maxAwaitAttempts;
 	while(this->on) {
-		std::cout << "Started TCP thread." << std::endl;
-		std::cout << "Awaiting TCP connection to server..." << std::endl;
-		if(this->controlChannel.CreateServer(ISO_22133_DEFAULT_OBJECT_TCP_PORT, localIP) < 0) {
-			continue;
-		}
-		std::cout << "TCP Connected to server..." << std::endl;
-
+		std::cout << "Awaiting TCP connection from server..." << std::endl;
 		try {
-			this->state->handleEvent(*this, ISO22133::Events::B);
+			ctrlChannel = ctrlPort.await(
+						localIP, ISO_22133_DEFAULT_OBJECT_TCP_PORT);
+			remainingAwaitAttempts = maxAwaitAttempts;
+		} catch (std::exception& e) {
+			if (remainingAwaitAttempts-- > 0) {
+				std::cout << "Control channel TCP listening socket error: attempting restart..." << std::endl;
+				ctrlPort = TCPServer();
+				continue;
+			}
+			throw e;
 		}
-		catch(const std::runtime_error& e) {
-			std::cerr << e.what() << '\n';
-		}
-		this->startHandleUDP();
-		this->startHEABCheck();
-
-		std::vector<char> TCPReceiveBuffer(TCP_BUFFER_SIZE);
-		int nBytesReceived, nBytesHandled;
-		while(this->isServerConnected()) {
-			std::fill(TCPReceiveBuffer.begin(), TCPReceiveBuffer.end(), 0);
-			nBytesReceived = this->controlChannel.receiveTCP(TCPReceiveBuffer,0);
-			
-			if (nBytesReceived > 0) {
-				TCPReceiveBuffer.resize(static_cast<size_t>(nBytesReceived));
+		std::cout << "TCP connection established." << std::endl;
+		state->handleEvent(*this, ISO22133::Events::B);
+		try {
+			while (true) {
+				auto data = ctrlChannel.recv();
+				int nBytesHandled = 0;
 				do {
 					try {
-						nBytesHandled = this->handleMessage(&TCPReceiveBuffer);
+						nBytesHandled = handleMessage(data);
 					}
-					catch(const std::exception& e) {
-						std::cerr << e.what() << '\n';
-						nBytesHandled = nBytesReceived;
+					catch (const std::exception& e) {
+						std::cerr << e.what() << std::endl;
+						break;
 					}
-					nBytesReceived -= nBytesHandled;
-					TCPReceiveBuffer.erase(TCPReceiveBuffer.begin(), TCPReceiveBuffer.begin() + nBytesHandled);
-				}
-				while(nBytesReceived > 0);
+					data.erase(data.begin(), data.begin() + nBytesHandled);
+				} while(data.size() > 0);
 			}
-			else if (nBytesReceived < 0) {
-				break;
-			}
-			TCPReceiveBuffer.resize(TCP_BUFFER_SIZE);
-		}
-		std::cout << "Connection to control center lost" << std::endl;
-		this->udpOk = false;
-		this->firstHeab = true;
-		try {
-			this->state->handleEvent(*this, ISO22133::Events::L);
-		}
-		catch(const std::runtime_error& e) {
-			std::cerr << e.what() << '\n';
-		}
-		this->controlChannel.TCPHandlerclose();
-		try {
-			this->udpReceiveThread.join();
-		}
-		catch (const std::system_error& e) {
-			std::cerr << e.what() << '\n';
+		} catch (SocketErrors::DisconnectedError&) {
+			std::cout << "Connection to control center lost" << std::endl;
+			disconnect();
+			state->handleEvent(*this, ISO22133::Events::L);
 		}
 	}
 	std::cout << "Exiting TCP thread." << std::endl;
 }
 
-void TestObject::receiveUDP(){
-	std::cout << "Started UDP thread." << std::endl;
-	this->processChannel.CreateServer(ISO_22133_OBJECT_UDP_PORT,localIP,0);
-	std::vector<char> UDPReceiveBuffer(UDP_BUFFER_SIZE);
-	
-	this->startSendMONR();
-
-	while(this->processChannel.receiveUDP(UDPReceiveBuffer) < 0){ // Would prefer blocking behavior on UDPhandler..
-		std::this_thread::sleep_for(expectedHeartbeatPeriod / 2);
-	}
-	this->udpOk = true;
-	int nBytesReceived, nBytesHandled;
-
-	
-
-	while(this->isServerConnected() && this->udpOk) {
-		std::fill(UDPReceiveBuffer.begin(), UDPReceiveBuffer.end(), 0);
-		nBytesReceived = this->processChannel.receiveUDP(UDPReceiveBuffer);
-		if (nBytesReceived > 0) {
-			UDPReceiveBuffer.resize(static_cast<size_t>(nBytesReceived));
-			do {
-				try {
-					nBytesHandled = this->handleMessage(&UDPReceiveBuffer);
-					nBytesReceived -= nBytesHandled;
-					UDPReceiveBuffer.erase(UDPReceiveBuffer.begin(), UDPReceiveBuffer.begin() + nBytesHandled);
-				}
-				catch(const std::exception& e) {
-					std::cerr << e.what() << '\n';
-					nBytesHandled = nBytesReceived;
-				}
-			}
-			while (nBytesReceived > 0);
-		}
-		else if (nBytesReceived < 0) {
-			break;
-		}
-		UDPReceiveBuffer.resize(UDP_BUFFER_SIZE);
-		std::this_thread::sleep_for(expectedHeartbeatPeriod / 2); // Would prefer blocking behavior on UDPhandler..
-	}
-	this->udpOk = false;
-	this->processChannel.UDPHandlerclose();
-	try {
-		this->monrThread.join();
-	}
-	catch (const std::system_error& e) {
-		std::cerr << e.what() << '\n';
-	}
-	std::cout << "Exiting UDP thread." << std::endl;
-}
-
-void TestObject::sendMONR(bool debug) {
-	if(!this->udpOk) {
-		std::cout << "UDP communication not set up. Can't send MONR" << std::endl;
-		return;
-	}
+void TestObject::sendMONR(const BasicSocket::HostInfo& toWhere, bool debug) {
 	std::vector<char> buffer(UDP_BUFFER_SIZE);
 	struct timeval time;
-
 	TimeSetToCurrentSystemTime(&time);
 	auto result = encodeMONRMessage(&time, this->position, this->speed, this->acceleration,
 									this->driveDirection, this->state->getStateID(), this->readyToArm,
@@ -187,52 +119,90 @@ void TestObject::sendMONR(bool debug) {
 		std::cout << "Failed to encode MONR data" << std::endl;
 	}
 	else {
-		buffer.resize(static_cast<size_t>(result));
-		this->processChannel.sendUDP(buffer);
+		processPort.sendto({buffer, toWhere}, static_cast<size_t>(result));
 	}
 }
 
-void TestObject::monrLoop() {
-	std::cout << "Started MONR thread." << std::endl;
-	while(!this->udpOk) {
-		// Wait for UDP connection
-		std::this_thread::sleep_for(monrPeriod / 2);
-	}
-	std::chrono::time_point<std::chrono::system_clock> monrTime;
-	while(this->isServerConnected() && this->udpOk) {
-		monrTime = std::chrono::system_clock::now();
-		this->sendMONR();
-		std::this_thread::sleep_for(
-					monrPeriod -
-					monrTime.time_since_epoch() +
-					std::chrono::system_clock::now().time_since_epoch()
-					);
-	}
-	std::cout << "Exiting MONR thread." << std::endl;
+void TestObject::heabMonrLoop() {
+	std::cout << "Started MONR/HEAB communication thread." << std::endl;
+	processPort.bind({localIP, ISO_22133_OBJECT_UDP_PORT});
+	awaitingFirstHeab = true;
+	std::cout << "Awaiting UDP data from server..." << std::endl;
+	try {
+		while (this->on) {
+			auto [data, host] = processPort.recvfrom();
+			if (awaitingFirstHeab) {
+				std::cout << "Received UDP data from " << host.address << std::endl;
+			}
+			int nBytesHandled = 0;
+			do {
+				try {
+					nBytesHandled = handleMessage(data);
+					sendMONR(host);
+				}
+				catch (const std::exception& e) {
+					std::cerr << e.what() << std::endl;
+					break;
+				}
+				data.erase(data.begin(), data.begin() + nBytesHandled);
+			} while(data.size() > 0);
+		}
+	} catch (SocketErrors::DisconnectedError&) {}
+	std::cout << "Exiting MONR/HEAB communication thread." << std::endl;
 }
 
-int TestObject::handleMessage(std::vector<char>* dataBuffer) {
+void TestObject::checkHeabTimeout() {
+	using namespace std::chrono;
+	std::scoped_lock lock(heabMutex);
+	// Check time difference of received HEAB and last HEAB
+	auto timeSinceHeab = steady_clock::now() - lastHeabTime;
+	if (!awaitingFirstHeab && timeSinceHeab > heartbeatTimeout) {
+		std::cerr << "Heartbeat timeout: " << duration_cast<milliseconds>(timeSinceHeab).count()
+				  << " ms since last heartbeat exceeds limit of " << heartbeatTimeout.count() << " ms."
+				  << std::endl;
+		heabTimeout();
+	}
+}
+
+void TestObject::checkHeabLoop() {
+	std::cout << "Started HEAB timeout thread." << std::endl;
+	using namespace std::chrono;
+	while (this->on) {
+		auto t = std::chrono::steady_clock::now();
+		checkHeabTimeout();
+		// Don't lock the mutex all the time
+		std::this_thread::sleep_until(t+expectedHeartbeatPeriod);
+	}
+	std::cout << "Exiting HEAB timeout thread." << std::endl;
+}
+
+void TestObject::onHeabTimeout() {
+	disconnect();
+	this->state->handleEvent(*this, Events::L);
+}
+
+int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 	std::lock_guard<std::mutex> lock(this->recvMutex); // Both TCP and UDP threads end up in here
 	int bytesHandled = 0;
 	int debug = 0;
 	struct timeval currentTime;
 	TimeSetToCurrentSystemTime(&currentTime);
 
-	ISOMessageID msgType = getISOMessageType(dataBuffer->data(), dataBuffer->size(), 0);
+	ISOMessageID msgType = getISOMessageType(dataBuffer.data(), dataBuffer.size(), 0);
 	// Ugly check here since we don't know if it is UDP or the rest of TRAJ
-	if(msgType == MESSAGE_ID_INVALID && this->trajDecoder.ExpectingTrajPoints()) {
+	if (msgType == MESSAGE_ID_INVALID && this->trajDecoder.ExpectingTrajPoints()) {
 		msgType = MESSAGE_ID_TRAJ;
 	}
 
-	switch(msgType) {
+	switch (msgType) {
 	case MESSAGE_ID_TRAJ:
 		try {
-		bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer);
-	}
+			bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer);
+		}
 		catch(const std::exception& e) {
 			throw e;
 		}
-		if(bytesHandled < 0) {
+		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding TRAJ");
 		};
 		if (!this->trajDecoder.ExpectingTrajPoints()) {
@@ -243,11 +213,11 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 		ObjectSettingsType OSEMstruct;
 		bytesHandled = decodeOSEMMessage(
 					&OSEMstruct,
-					dataBuffer->data(),
-					dataBuffer->size(),
+					dataBuffer.data(),
+					dataBuffer.size(),
 					nullptr,
 					debug);
-		if(bytesHandled < 0) {
+		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding OSEM");
 		}
 		std::cout << "Received OSEM " << std::endl;
@@ -257,11 +227,11 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 	case MESSAGE_ID_OSTM:
 		ObjectCommandType OSTMdata;
 		bytesHandled = decodeOSTMMessage(
-					dataBuffer->data(),
-					dataBuffer->size(),
+					dataBuffer.data(),
+					dataBuffer.size(),
 					&OSTMdata,
 					debug);
-		if(bytesHandled < 0) {
+		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding OSTM");
 		}
 		this->state->handleOSTM(*this, OSTMdata);
@@ -270,12 +240,12 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 	case MESSAGE_ID_STRT:
 		StartMessageType STRTdata;
 		bytesHandled = decodeSTRTMessage(
-					dataBuffer->data(),
-					dataBuffer->size(),
+					dataBuffer.data(),
+					dataBuffer.size(),
 					&currentTime,
 					&STRTdata,
 					debug);
-		if(bytesHandled < 0) {
+		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding STRT");
 		}
 		this->state->handleSTRT(*this, STRTdata);
@@ -285,61 +255,70 @@ int TestObject::handleMessage(std::vector<char>* dataBuffer) {
 		HeabMessageDataType HEABdata;
 
 		bytesHandled = decodeHEABMessage(
-					dataBuffer->data(),
-					dataBuffer->size(),
+					dataBuffer.data(),
+					dataBuffer.size(),
 					currentTime,
 					&HEABdata,
 					debug);
-		if(bytesHandled < 0) {
+		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding HEAB");
 		}
-		this->ccStatus = HEABdata.controlCenterStatus;
-		this->state->handleHEAB(*this, HEABdata);
-		this->lastHeabTime = currentTime;
-		this->firstHeab = false;
+		this->handleHEAB(HEABdata);
 		break;
-
 	default:
-		bytesHandled = handleVendorSpecificMessage(msgType, *dataBuffer);
-		
-		if(bytesHandled <= 0) {
-			bytesHandled = static_cast<int>(dataBuffer->size());
+		bytesHandled = handleVendorSpecificMessage(msgType, dataBuffer);
+		if (bytesHandled < 0) {
+			throw std::invalid_argument(std::string("Unable to decode ISO-22133 message with MsgID ")
+                                  + std::to_string(msgType));
 		}
+		bytesHandled = static_cast<int>(dataBuffer.size());
 		break;
 	}
-
 	return bytesHandled;
 }
 
-void TestObject::checkHeabTimeout() {
-	std::cout << "Started HEAB thread." << std::endl;
-	while(this->on) {
-		if(!this->firstHeab) {
-			struct timeval currentTime, lastTime;
-			TimeSetToCurrentSystemTime(&currentTime);
-			lastTime = this->lastHeabTime;
-			auto timeDiff = std::chrono::milliseconds(TimeGetTimeDifferenceMS(&currentTime, &lastTime));
-			if(timeDiff >= heartbeatTimeout) {
-				std::cerr << "Did not receive HEAB in time, difference is " <<
-							 timeDiff.count() << " ms" << std::endl;
-				this->firstHeab = true;
-				this->heabTimeout();
-			}
-			else {
-				auto sleepPeriod = heartbeatTimeout - timeDiff;
-				std::this_thread::sleep_for(sleepPeriod);
-			}
-		}
-		// Don't lock the mutex all the time
-		std::this_thread::sleep_for(expectedHeartbeatPeriod);
+/**
+ * @brief Generates state changes based on control center status
+ * @param heab struct HeabMessageDataType
+ */
+void TestObject::handleHEAB(HeabMessageDataType& heab) {
+	using namespace std::chrono;
+	// Order matters here, below may change state
+	// causing the signal to not be triggered if placed
+	// after the handleEvent() calls
+	heabSig(heab);
+
+	// Check network delay: difference between
+	// timestamp in HEAB and local time
+	auto heabTime = seconds(heab.dataTimestamp.tv_sec)
+			+ microseconds(heab.dataTimestamp.tv_usec);
+	auto networkDelay = system_clock::now().time_since_epoch() - heabTime;
+	if (networkDelay > maxSafeNetworkDelay) {
+		std::cerr << "Network delay of " << duration_cast<milliseconds>(networkDelay).count()
+				  << " ms exceeds safe limit of " << maxSafeNetworkDelay.count() << " ms."
+				  << std::endl;
+		// TODO do something
 	}
-	std::cout << "Exiting HEAB thread." << std::endl;
+	checkHeabTimeout();
+	std::scoped_lock lock(heabMutex);
+	lastHeabTime = steady_clock::now();
+	awaitingFirstHeab = false;
+
+	switch (heab.controlCenterStatus) {
+	case CONTROL_CENTER_STATUS_NORMAL_STOP:
+		this->state->handleEvent(*this, ISO22133::Events::U);
+		break;
+	case CONTROL_CENTER_STATUS_ABORT:
+		this->state->handleEvent(*this, ISO22133::Events::W);
+		break;
+	case CONTROL_CENTER_STATUS_TEST_DONE:
+		this->state->handleEvent(*this, ISO22133::Events::Y);
+		break;
+	default:
+		break;
+	}
+	ccStatus = heab.controlCenterStatus;
+	return;
 }
 
-void TestObject::onHeabTimeout() { 
-	// If we are alredy in abort, stay there
-	if(this->state->getStateID() != ISO_OBJECT_STATE_ABORTING){
-		this->state->handleEvent(*this, Events::W);
-	}
-}
 } //namespace ISO22133

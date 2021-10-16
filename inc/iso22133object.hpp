@@ -11,8 +11,8 @@
 #include "iso22133.h"
 #include "iso22133state.hpp"
 #include "trajDecoder.hpp"
-#include "tcphandler.hpp"
-#include "udphandler.hpp"
+#include "server.hpp"
+#include "socket.hpp"
 #include "signal.hpp"
 
 namespace ISO22133 {
@@ -54,8 +54,8 @@ public:
 
 	virtual ~TestObject();
 
-	bool isServerConnected() const { return controlChannel.isConnected(); }
-	bool isUdpOk() const { return udpOk; }
+	void disconnect();
+
 	std::string getCurrentStateName() const { return state->getName(); }
 	std::string getName() const { return name; }
 	CartesianPosition getPosition() const { return position; }
@@ -136,45 +136,44 @@ protected:
 
 	std::chrono::milliseconds expectedHeartbeatPeriod = std::chrono::milliseconds(1000 / HEAB_FREQUENCY_HZ);
 	std::chrono::milliseconds monrPeriod = std::chrono::milliseconds(1000 / MONR_EXPECTED_FREQUENCY_HZ);
-	std::chrono::milliseconds heartbeatTimeout = 5*expectedHeartbeatPeriod;
+	std::chrono::milliseconds heartbeatTimeout = 10*expectedHeartbeatPeriod;
+	std::chrono::milliseconds maxSafeNetworkDelay = std::chrono::milliseconds(200);
 private:
 
-	//! UDP receiver loop that should be run in its own thread.
-	void receiveUDP();
 	//! TCP receiver loop that should be run in its own thread.
 	void receiveTCP();
-	//! MONR sending loop that should be run in its own thread.
-	void monrLoop();
+	//! HEAB receiving / MONR sending loop that should be run in its own thread.
+	void heabMonrLoop();
+	//! HEAB timeout checking loop that should be run in its own thread.
+	void checkHeabLoop();
 	void startHandleTCP() { tcpReceiveThread = std::thread(&TestObject::receiveTCP, this); }
-	void startHandleUDP() { udpReceiveThread = std::thread(&TestObject::receiveUDP, this); }
-	void startSendMONR() { monrThread = std::thread(&TestObject::monrLoop, this); }
-	void startHEABCheck() { heabTimeoutThread = std::thread(&TestObject::checkHeabTimeout, this); }
+	void startHandleUDP() { heabMonrThread = std::thread(&TestObject::heabMonrLoop, this); }
+	void startHEABCheck() { heabTimeoutThread = std::thread(&TestObject::checkHeabLoop, this); }
 	//! Function for handling received ISO messages. Calls corresponding
 	//! handler in the current state.
-	int handleMessage(std::vector<char>*);
+	int handleMessage(std::vector<char>&);
 	//! Sends MONR message on process channel
-	void sendMONR(bool debug = false);
+	void handleHEAB(HeabMessageDataType& heab);
+	void sendMONR(const BasicSocket::HostInfo& toWhere, bool debug = false);
 	//! Called if HEAB messages do not arrive on time
 	void onHeabTimeout();
-	//! Loop function that checks if HEABs arrive on time
+	//! Function that checks if HEABs arrive on time
 	void checkHeabTimeout();
 
 	sigslot::signal<>heabTimeout;
 	std::mutex recvMutex;
 	std::thread tcpReceiveThread;
-	std::thread udpReceiveThread;
 	std::string localIP;
-	std::thread monrThread;
+	std::thread heabMonrThread;
 	std::thread heabTimeoutThread;
 	ISO22133::State* state;
 	std::string name;
-	TCPHandler controlChannel;
-	UDPHandler processChannel;
+	TCPServer ctrlPort;
+	Socket ctrlChannel;
+	UDPServer processPort;
 	TrajDecoder trajDecoder;
-	std::atomic<bool> udpOk { false };
-	std::atomic<bool> on { true };
-	std::atomic<bool> firstHeab { true };
-	std::atomic<struct timeval> lastHeabTime;
+	std::mutex heabMutex;
+	std::chrono::steady_clock::time_point lastHeabTime;
 	std::atomic<GeographicPositionType> origin;
 	std::atomic<ControlCenterStatusType> ccStatus;
 	std::atomic<CartesianPosition> position;
@@ -186,7 +185,8 @@ private:
 	std::atomic<int> transmitterID;
 	std::atomic<char> errorState { 0 };
 
-
+	bool awaitingFirstHeab = true;
+	bool on = true;
 
 };
 } // namespace ISO22133

@@ -23,6 +23,9 @@ void ISO22133::State::handleEvent(
 								 + Events::descriptions.at(event)
 								 + "' in state " + this->getName());
 	}
+	if (transition->source == transition->target) {
+		return;
+	}
 
 	std::cout << "Leaving state: " << obj.state->getName() << std::endl;
 	obj.state->onExit(obj);
@@ -69,49 +72,6 @@ void ISO22133::State::handleEvent(
 	std::cout << "Entering state: " << obj.state->getName() << std::endl;
 	obj.stateChangeSig();
 	obj.state->onEnter(obj);
-}
-
-/**
- * @brief Generates state changes based on control center status
- *
- * @param obj TestObject reference
- * @param heab struct HeabMessageDataType
- */
-void ISO22133::State::handleHEAB(TestObject& obj,HeabMessageDataType& heab) {
-	// Order matters here, below may change state
-	// causing the signal to not be triggered if placed
-	// after the handleEvent() calls
-	obj.heabSig(heab);
-
-	static struct timeval lastMsgTimestamp;
-	if(!obj.firstHeab &&
-			TimeGetTimeDifferenceMS(&heab.dataTimestamp, &lastMsgTimestamp) >
-			obj.heartbeatTimeout.count()) {
-		if(this->getStateID() != ISO_OBJECT_STATE_ABORTING) {
-			std::cerr << "HEAB message is too old. Last timestamp - current timestamp = " <<
-						 TimeGetTimeDifferenceMS(&heab.dataTimestamp, &lastMsgTimestamp) <<
-						 " ms." << std::endl;
-			this->handleEvent(obj, ISO22133::Events::W);
-		}
-	}
-	lastMsgTimestamp = heab.dataTimestamp;
-
-	switch (heab.controlCenterStatus) {
-	case CONTROL_CENTER_STATUS_NORMAL_STOP:
-		this->handleEvent(obj, ISO22133::Events::U);
-		break;
-	case CONTROL_CENTER_STATUS_ABORT:
-		if(this->getStateID() != ISO_OBJECT_STATE_ABORTING) {
-			this->handleEvent(obj, ISO22133::Events::W);
-		}
-		break;
-	case CONTROL_CENTER_STATUS_TEST_DONE:
-		this->handleEvent(obj, ISO22133::Events::Y);
-		break;
-	default:
-		break;
-	}
-	return;
 }
 
 /**
@@ -184,6 +144,10 @@ void ISO22133::State::handleTRAJ(TestObject& obj) {
 	// Signal TRAJ is now available
 	obj.trajSig();
 	return;
+}
+
+void ISO22133::Init::onExit(TestObject& obj) {
+	obj.startHandleUDP();
 }
 
 /**

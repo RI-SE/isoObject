@@ -107,7 +107,6 @@ protected:
 	//! When a message arrives, these methods are
 	//! the 'front line' handlers.
 	//! Handles ISO22133 required actions from contorl center
-	virtual void handleHEAB(TestObject&,HeabMessageDataType&);
 	virtual void handleTRAJ(TestObject&);
 	virtual void handleOSEM(TestObject&,ObjectSettingsType&);
 	virtual void handleOSTM(TestObject&,ObjectCommandType&);
@@ -127,7 +126,6 @@ class Unknown : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_UNKNOWN; }
 private:
-	void handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageWarning("HEAB"); }
 	void handleTRAJ(TestObject&) final override { unexpectedMessageWarning("TRAJ"); }
 	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageWarning("OSEM"); }
 	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageWarning("OSTM"); }
@@ -138,7 +136,6 @@ class Off : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_OFF; }
 private:
-	void handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageWarning("HEAB"); }
 	void handleTRAJ(TestObject&) final override { unexpectedMessageWarning("TRAJ"); }
 	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageWarning("OSEM"); }
 	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageWarning("OSTM"); }
@@ -148,8 +145,8 @@ private:
 class Init : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_INIT; }
+	virtual void onExit(TestObject&) override;
 private:
-	void handleHEAB(TestObject&, HeabMessageDataType&) final override { unexpectedMessageWarning("HEAB"); }
 	void handleTRAJ(TestObject&) final override { unexpectedMessageWarning("TRAJ"); }
 	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageWarning("OSEM"); }
 	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageWarning("OSTM"); }
@@ -212,6 +209,7 @@ inline bool operator< (const Transition &lhs, const Transition &rhs){
 
 static const std::set<Transition> language = {
 	{ISO_OBJECT_STATE_OFF,					Events::D,		ISO_OBJECT_STATE_INIT},
+	{ISO_OBJECT_STATE_INIT,					Events::L,		ISO_OBJECT_STATE_INIT},
 	{ISO_OBJECT_STATE_INIT,					Events::B,		ISO_OBJECT_STATE_DISARMED},
 	{ISO_OBJECT_STATE_ARMED,				Events::E,		ISO_OBJECT_STATE_DISARMED},
 	{ISO_OBJECT_STATE_ARMED,				Events::F,		ISO_OBJECT_STATE_DISARMED},

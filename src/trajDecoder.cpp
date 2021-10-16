@@ -4,9 +4,9 @@
 #include "trajDecoder.hpp"
 #include "iso22133.h"
 
-ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>* dataBuffer) {
+ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>& dataBuffer) {
     std::lock_guard<std::mutex> lock(this->guard);
-    copiedData = *dataBuffer;
+	copiedData = dataBuffer;
     int tmpByteCounter;
     // Decode TRAJ Header
     if(!expectingTRAJPoints) {
@@ -65,7 +65,7 @@ ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>* dataBuffer) {
 
     // Always return the complete buffer size since we don't want
     // the same bytes in here again
-    return static_cast<int>(dataBuffer->size());
+	return static_cast<int>(dataBuffer.size());
 }
 
 TrajectoryHeaderType TrajDecoder::getTrajHeader() const {
