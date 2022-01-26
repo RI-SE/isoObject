@@ -2,6 +2,7 @@
 %module isoObject
 
 %rename(LessThan) operator<(const Transition &lhs, const Transition &rhs);
+%include "std_string.i"
 %include "stdint.i"
 %include "cpointer.i"
 %include "../../../iso22133/iso22133.h"
@@ -24,6 +25,7 @@ long int tv_usec;
 
 %pointer_functions(uint32_t, uint32ptr);
 
-//swig -java -c++ isoObject.i
+//swig -java -c++ -package com.isoObject isoObject.i
+
 
 //gcc -fPIC -Wall -c ../../../iso22133/iso22133.h ../../../iso22133/positioning.h isoObject_wrap.cxx -I/usr/lib/jvm/jdk-15.0.2/include/ -I/usr/lib/jvm/jdk-15.0.2/include/linux/
