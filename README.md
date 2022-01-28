@@ -88,3 +88,14 @@ ISO22133::PreArming* myObject::createPreArming() const override {
 ```
 
 
+
+## SWIG
+
+To swig the ISOobject to Java the following command in terminal:
+
+'''
+swig -java -c++ -package com.isoObject isoObject.i
+'''
+
+The generated files can then be included and used in a Java project. 
+
