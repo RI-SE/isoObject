@@ -1,15 +1,26 @@
 /* File : isoObject.i */
 %module isoObject
-
+%{
+#include "trajDecoder.hpp"
+#include "iso22133state.hpp"
+#include "iso22133object.hpp"
+#include "socket.hpp"
+#include "server.hpp"
+#include "iso22133.h"
+%}
+%rename(BasicSocketEquals) operator=(BasicSocket&& other);
+%rename(SocketEquals) operator=(Socket&& other);
 %rename(LessThan) operator<(const Transition &lhs, const Transition &rhs);
 %include "std_string.i"
+%include "std_vector.i"
 %include "stdint.i"
 %include "cpointer.i"
-%include "../../../iso22133/iso22133.h"
-%include "../../../iso22133/positioning.h"
-%include "/inc/trajDecoder.hpp"
-%include "/inc/iso22133state.hpp"
-%include "/inc/iso22133object.hpp"
+%include "trajDecoder.hpp"
+%include "iso22133state.hpp"
+%include "iso22133object.hpp"
+%include "socket.hpp"
+%include "server.hpp"
+%include "iso22133.h"
 %include "typemaps.i"
 %javaconst(1);
 
