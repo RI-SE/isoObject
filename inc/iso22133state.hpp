@@ -112,8 +112,9 @@ protected:
 	virtual void handleOSTM(TestObject&,ObjectCommandType&);
 	virtual void handleSTRT(TestObject&,StartMessageType&);
 
-
+#ifndef SWIG
 	[[noreturn]]
+#endif
 	void unexpectedMessageError(const std::string& msgName) {
 		throw std::runtime_error("Unexpected " + msgName + " in state " + this->getName());
 	}
