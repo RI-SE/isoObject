@@ -79,35 +79,31 @@ find_package(SWIG COMPONENTS java)
 if(NOT SWIG_FOUND)
 	message(WARNING "SWIG not found")
 else()
-	include(UseSWIG)
-	set_property(SOURCE iso22133.i PROPERTY CPLUSPLUS ON)
-	if(NOT SWIG_java_FOUND)
-		message(WARNING "SWIG Java bindings cannot be generated")
-	else()
-		find_package(JNI REQUIRED)
+	include(${SWIG_USE_FILE})
+	find_package(JNI REQUIRED)
 
-		swig_add_library(${ISOOBJECT_LIBRARY}_java
-			TYPE SHARED
-			LANGUAGE java
-			SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/isoObject.i
-		)
-		set_property(TARGET ${ISOOBJECT_LIBRARY}_java PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
-		set_property(TARGET ${ISOOBJECT_LIBRARY}_java PROPERTY LIBRARY_OUTPUT_NAME "testObjectMake2113.cxx")
-		target_include_directories(${ISOOBJECT_LIBRARY}_java PUBLIC
-	        	${CMAKE_CURRENT_SOURCE_DIR}/inc
-        		${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
-			${SOCKET_HEADER_DIR}
-			${ISO22133_HEADER_DIR}
-			${JNI_INCLUDE_DIRS}
-		)
+	set(ISO22133_JAVA iso22133)
+	set_property(SOURCE isoObject.i PROPERTY CPLUSPLUS ON)
+	swig_add_library(${ISO22133_JAVA}
+		TYPE SHARED
+		LANGUAGE java
+		SOURCES isoObject.i
+	)
+	set_property(TARGET ${ISO22133_JAVA} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
+	target_include_directories(${ISO22133_JAVA} PUBLIC
+        	${CMAKE_CURRENT_SOURCE_DIR}/inc
+       		${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
+		${SOCKET_HEADER_DIR}
+		${ISO22133_HEADER_DIR}
+		${JNI_INCLUDE_DIRS}
+	)
 
-		target_link_libraries(${ISOOBJECT_LIBRARY}_java LINK_PUBLIC
-        		${SOCKET_LIBRARY}
-	        	${ISO22133_LIBRARY}
-        		${TIME_LIBRARY}
-			${JNI_LIBRARIES}
-	        	pthread
-        		atomic
-		)
-	endif()
+	target_link_libraries(${ISO22133_JAVA} PUBLIC
+       		${SOCKET_LIBRARY}
+        	${ISO22133_LIBRARY}
+       		${TIME_LIBRARY}
+		${JNI_LIBRARIES}
+        	pthread
+       		atomic
+	)
 endif()
