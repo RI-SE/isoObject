@@ -1,5 +1,5 @@
 /* File : isoObject.i */
-%module isoObject
+%module isoObject_wrap
 %include <std_string.i>
 %include <std_vector.i>
 %include <stdint.i>
