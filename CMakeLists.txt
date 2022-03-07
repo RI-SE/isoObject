@@ -82,7 +82,7 @@ else()
 	include(${SWIG_USE_FILE})
 	find_package(JNI REQUIRED)
 
-	set(ISO22133_JAVA iso22133)
+	set(ISO22133_JAVA ${ISOOBJECT_LIBRARY}_java)
 	set_property(SOURCE isoObject.i PROPERTY CPLUSPLUS ON)
 	swig_add_library(${ISO22133_JAVA}
 		TYPE SHARED
