@@ -21,9 +21,9 @@ include(GNUInstallDirs)
 
 # Library target
 add_library(${ISOOBJECT_LIBRARY} SHARED
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/iso22133object.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/iso22133state.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/src/trajDecoder.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/iso22133object.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/iso22133state.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/trajDecoder.cpp
 )
 
 target_include_directories(${ISOOBJECT_LIBRARY} PUBLIC
@@ -84,6 +84,13 @@ else()
 
 	set(ISO22133_JAVA isoObject_wrap)
 	set_property(SOURCE isoObject.i PROPERTY CPLUSPLUS ON)
+	set_property(SOURCE isoObject.i PROPERTY INCLUDE_DIRECTORIES
+		${CMAKE_CURRENT_SOURCE_DIR}/inc
+		${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
+		${SOCKET_HEADER_DIR}
+		${ISO22133_HEADER_DIR}
+		${JNI_INCLUDE_DIRS}
+	)
 	swig_add_library(${ISO22133_JAVA}
 		TYPE SHARED
 		LANGUAGE java
@@ -91,19 +98,19 @@ else()
 	)
 	set_property(TARGET ${ISO22133_JAVA} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
 	target_include_directories(${ISO22133_JAVA} PUBLIC
-        	${CMAKE_CURRENT_SOURCE_DIR}/inc
-       		${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
+		${CMAKE_CURRENT_SOURCE_DIR}/inc
+		${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
 		${SOCKET_HEADER_DIR}
 		${ISO22133_HEADER_DIR}
 		${JNI_INCLUDE_DIRS}
 	)
 
 	target_link_libraries(${ISO22133_JAVA} PUBLIC
-       		${SOCKET_LIBRARY}
-        	${ISO22133_LIBRARY}
-       		${TIME_LIBRARY}
+		${SOCKET_LIBRARY}
+		${ISO22133_LIBRARY}
+		${TIME_LIBRARY}
 		${JNI_LIBRARIES}
-        	pthread
-       		atomic
+		pthread
+		atomic
 	)
 endif()
