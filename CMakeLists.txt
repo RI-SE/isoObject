@@ -101,7 +101,7 @@ else()
 			${JNI_INCLUDE_DIRS}
 		)
 
-		target_link_libraries(${ISOOBJECT_LIBRARY}_swig LINK_PUBLIC
+		target_link_libraries(${ISOOBJECT_LIBRARY}_java LINK_PUBLIC
         		${SOCKET_LIBRARY}
 	        	${ISO22133_LIBRARY}
         		${TIME_LIBRARY}
