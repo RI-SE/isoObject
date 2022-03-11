@@ -11,11 +11,27 @@ set(CMAKE_BUILD_TYPE Debug)
 set(ISOOBJECT_LIBRARY ${PARENT_TARGET_NAMESPACE}${PROJECT_NAME})
 set(ISOOBJECT_TEST ${ISOOBJECT_LIBRARY}Test)
 
-find_library(ISO22133_LIBRARY ISO22133 REQUIRED)
+find_library(ISO22133_LIBRARY ISO22133)
+if (NOT ISO22133_LIBRARY)
+	message("ISO22133 library not found - attempting search in local build tree")
+	add_subdirectory(../iso22133 ${CMAKE_CURRENT_BINARY_DIR}/iso22133)
+	set(ISO22133_LIBRARY ISO22133)
+	find_path(ISO22133_HEADER_DIR iso22133.h HINTS ../iso22133 REQUIRED)
+else()
+	find_path(ISO22133_HEADER_DIR iso22133.h REQUIRED)
+endif()
+message("ISO22133_HEADER_DIR: ${ISO22133_HEADER_DIR}")
+
 find_library(SOCKET_LIBRARY TCPUDPSocket REQUIRED)
-find_library(TIME_LIBRARY MaestroTime REQUIRED)
-find_path(SOCKET_HEADER_DIR socket.hpp REQUIRED)
-find_path(ISO22133_HEADER_DIR iso22133.h REQUIRED)
+if (NOT SOCKET_LIBRARY)
+	message("Socket library not found - attempting search in local build tree")
+	add_subdirectory(../sockets ${CMAKE_CURRENT_BINARY_DIR}/sockets)
+	set(SOCKET_LIBRARY TCPUDPSocket)
+	find_path(SOCKET_HEADER_DIR socket.hpp HINTS ../sockets REQUIRED)
+else()
+	find_path(SOCKET_HEADER_DIR socket.hpp REQUIRED)
+endif()
+message("SOCKET_HEADER_DIR: ${SOCKET_HEADER_DIR}")
 
 include(GNUInstallDirs)
 
@@ -29,12 +45,12 @@ add_library(${ISOOBJECT_LIBRARY} SHARED
 target_include_directories(${ISOOBJECT_LIBRARY} PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}/inc
 	${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
+	${ISO22133_HEADER_DIR}
 )
 
 target_link_libraries(${ISOOBJECT_LIBRARY} LINK_PUBLIC
 	${SOCKET_LIBRARY}
 	${ISO22133_LIBRARY}
-	${TIME_LIBRARY}
 	pthread
 	atomic
 )
@@ -108,7 +124,6 @@ else()
 	target_link_libraries(${ISO22133_JAVA} PUBLIC
 		${SOCKET_LIBRARY}
 		${ISO22133_LIBRARY}
-		${TIME_LIBRARY}
 		${JNI_LIBRARIES}
 		pthread
 		atomic
