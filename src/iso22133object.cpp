@@ -191,7 +191,9 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 	int bytesHandled = 0;
 	int debug = 0;
 	struct timeval currentTime;
-	TimeSetToCurrentSystemTime(&currentTime);
+
+	currentTime.tv_usec = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	currentTime.tv_sec = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
 	ISOMessageID msgType = getISOMessageType(dataBuffer.data(), dataBuffer.size(), 0);
 	// Ugly check here since we don't know if it is UDP or the rest of TRAJ
