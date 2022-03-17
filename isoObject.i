@@ -6,7 +6,7 @@
 %include <stdint.i>
 %include <cpointer.i>
 %include <typemaps.i>
-
+%rename(LessThan) operator<(const Transition &lhs, const Transition &rhs);
 
 %{
 #include "trajDecoder.hpp"
@@ -24,7 +24,7 @@
 %include "server.hpp"
 %include "iso22133.h"
 %javaconst(1);
-//%rename(LessThan) operator<(const Transition &lhs, const Transition &rhs);
+
 
 typedef double double_t;
 typedef long int ssize_t;

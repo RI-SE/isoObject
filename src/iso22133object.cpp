@@ -53,6 +53,7 @@ TestObject::~TestObject() {
 	} catch (std::system_error) {}
 }; 
 
+
 void TestObject::disconnect() {
 	std::cout << "Disconnecting" << std::endl;
 	ctrlChannel.close();

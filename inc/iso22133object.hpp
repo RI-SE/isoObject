@@ -71,7 +71,7 @@ public:
 protected:
 
 	//! Pure virtual safety function that must be implemented by the user.
-	virtual void handleAbort() = 0;
+	virtual void handleAbort() { throw std::logic_error("Use of unimplemented abort handler"); }
 
 	void setPosition(const CartesianPosition& pos) { position = pos; }
 	void setSpeed(const SpeedType& spd) { speed = spd; }
@@ -167,7 +167,7 @@ private:
 	std::thread heabMonrThread;
 	std::thread heabTimeoutThread;
 	ISO22133::State* state;
-	std::string name;
+	std::string name = "unnamed";
 	TCPServer ctrlPort;
 	Socket ctrlChannel;
 	UDPServer processPort;
