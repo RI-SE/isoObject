@@ -20,6 +20,7 @@ if (NOT ISO22133_LIBRARY)
         message(STATUS "${CMAKE_CURRENT_SOURCE_DIR}")
         find_path(ISO22133_HEADER_DIR
             NAMES "iso22133.h"
+            NO_CMAKE_FIND_ROOT_PATH
             PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../iso22133"
             REQUIRED)
 else()
@@ -27,12 +28,16 @@ else()
 endif()
 message("ISO22133_HEADER_DIR: ${ISO22133_HEADER_DIR}")
 
-find_library(SOCKET_LIBRARY TCPUDPSocket REQUIRED)
+find_library(SOCKET_LIBRARY TCPUDPSocket)
 if (NOT SOCKET_LIBRARY)
         message("Socket library not found - attempting search in local build tree")
-        add_subdirectory(../sockets ${CMAKE_CURRENT_BINARY_DIR}../sockets)
+        add_subdirectory(../sockets ${CMAKE_CURRENT_BINARY_DIR}/sockets)
         set(SOCKET_LIBRARY TCPUDPSocket)
-        find_path(SOCKET_HEADER_DIR socket.hpp HINTS ../sockets REQUIRED)
+        find_path(SOCKET_HEADER_DIR
+            NAMES "socket.hpp"
+            NO_CMAKE_FIND_ROOT_PATH
+            PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../sockets"
+            REQUIRED)
 else()
         find_path(SOCKET_HEADER_DIR socket.hpp REQUIRED)
 endif()
