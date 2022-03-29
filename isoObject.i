@@ -1,6 +1,6 @@
 /* File : isoObject.i */
 %module isoObject_wrap
-
+%javaconst(1);
 %include <std_string.i>
 %include <std_vector.i>
 %include <stdint.i>

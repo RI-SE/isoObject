@@ -106,38 +106,41 @@ install(TARGETS ${ISOOBJECT_LIBRARY}
 # SWIG
 find_package(SWIG COMPONENTS java)
 if(NOT SWIG_FOUND)
-        message(WARNING "SWIG not found")
+    message(WARNING "SWIG not found")
 else()
-        include(${SWIG_USE_FILE})
+    include(${SWIG_USE_FILE})
 
-        set(ISO22133_JAVA isoObject_wrap)
-        set_property(SOURCE isoObject.i PROPERTY CPLUSPLUS ON)
-        set_property(SOURCE isoObject.i PROPERTY INCLUDE_DIRECTORIES
-                ${CMAKE_CURRENT_SOURCE_DIR}/inc
-                ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
-                ${SOCKET_HEADER_DIR}
-                ${ISO22133_HEADER_DIR}
-                ${JNI_INCLUDE_DIRS}
-        )
-        swig_add_library(${ISO22133_JAVA}
-                TYPE SHARED
-                LANGUAGE java
-                SOURCES isoObject.i
-        )
-        set_property(TARGET ${ISO22133_JAVA} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
-        target_include_directories(${ISO22133_JAVA} PUBLIC
-                ${CMAKE_CURRENT_SOURCE_DIR}/inc
-                ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
-                ${SOCKET_HEADER_DIR}
-                ${ISO22133_HEADER_DIR}
-                ${JNI_INCLUDE_DIRS}
-        )
+    if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Android")
+        find_package(JNI REQUIRED)
+    endif()
+    set(ISO22133_JAVA isoObject_wrap)
+    set_property(SOURCE isoObject.i PROPERTY CPLUSPLUS ON)
+    set_property(SOURCE isoObject.i PROPERTY INCLUDE_DIRECTORIES
+        ${CMAKE_CURRENT_SOURCE_DIR}/inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
+        ${SOCKET_HEADER_DIR}
+        ${ISO22133_HEADER_DIR}
+        ${JNI_INCLUDE_DIRS}
+    )
+    swig_add_library(${ISO22133_JAVA}
+        TYPE SHARED
+        LANGUAGE java
+        SOURCES isoObject.i
+    )
+    set_property(TARGET ${ISO22133_JAVA} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
+    target_include_directories(${ISO22133_JAVA} PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
+        ${SOCKET_HEADER_DIR}
+        ${ISO22133_HEADER_DIR}
+        ${JNI_INCLUDE_DIRS}
+    )
 
-        target_link_libraries(${ISO22133_JAVA}
-                ${ISOOBJECT_LIBRARY}
-                ${SOCKET_LIBRARY}
-                ${ISO22133_LIBRARY}
-                ${JNI_LIBRARIES}
-                atomic
-        )
+    target_link_libraries(${ISO22133_JAVA}
+        ${ISOOBJECT_LIBRARY}
+        ${SOCKET_LIBRARY}
+        ${ISO22133_LIBRARY}
+        ${JNI_LIBRARIES}
+        atomic
+    )
 endif()

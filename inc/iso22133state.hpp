@@ -4,8 +4,9 @@
 #include <map>
 #include <iostream>
 #include <functional>
+extern "C"{
 #include "iso22133.h"
-
+}
 namespace ISO22133 {
 class TestObject;
 
