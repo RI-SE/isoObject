@@ -113,6 +113,7 @@ else()
     if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Android")
         find_package(JNI REQUIRED)
     endif()
+    SET(CMAKE_SWIG_FLAGS -package org.asta.isoObject)
     set(ISO22133_JAVA isoObject_wrap)
     set_property(SOURCE isoObject.i PROPERTY CPLUSPLUS ON)
     set_property(SOURCE isoObject.i PROPERTY INCLUDE_DIRECTORIES
