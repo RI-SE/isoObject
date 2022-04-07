@@ -136,11 +136,12 @@ else()
         ${ISO22133_HEADER_DIR}
         ${JNI_INCLUDE_DIRS}
     )
+    message("Socket library: ${SOCKET_LIBRARY}")
 
     target_link_libraries(${ISO22133_JAVA}
-        ${ISOOBJECT_LIBRARY}
         ${SOCKET_LIBRARY}
         ${ISO22133_LIBRARY}
+        ${ISOOBJECT_LIBRARY}
         ${JNI_LIBRARIES}
         atomic
     )

@@ -8,14 +8,20 @@
 %include <cpointer.i>
 %include <typemaps.i>
 %rename(LessThan) operator<(const Transition &lhs, const Transition &rhs);
-
 %rename(basicSockEqualsRef) operator=(const BasicSocket& other);
 %rename(basicSockEqualsRefRef) operator=(BasicSocket&& other);
 %rename(sockEqualsRef) operator=(const Socket& other);
+%rename(sockEqualsRefConst) operator=(Socket const &other);
 %rename(sockEqualsRefRef) operator=(Socket&& other);
 
 %rename(basicSockRefRef) BasicSocket(BasicSocket&& );
 %rename(socketRefRef) Socket(Socket&&);
+%rename(basicSockRef) BasicSocket(BasicSocket& );
+%rename(socketRef) Socket(Socket&);
+
+%rename(socketRef) Socket::Socket(Socket&);
+%rename(socketRefconst) Socket::Socket(const Socket&);
+
 
 %{
 #include "trajDecoder.hpp"
