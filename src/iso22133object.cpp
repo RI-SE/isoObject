@@ -111,12 +111,9 @@ void TestObject::receiveTCP() {
 void TestObject::sendMONR(const BasicSocket::HostInfo& toWhere, bool debug) {
 	std::vector<char> buffer(UDP_BUFFER_SIZE);
 	struct timeval time;
-	auto millisecs=
-		std::chrono::duration_cast<std::chrono::milliseconds>(
-			std::chrono::system_clock::now().time_since_epoch()
-		);;
-	time.tv_sec = millisecs.count()/1000;
-	time.tv_usec = (millisecs.count()%1000)*1000;
+	auto nanos = std::chrono::system_clock::now().time_since_epoch().count();
+	time.tv_sec = nanos/1e9;
+	time.tv_usec = nanos/1e3 - time.tv_sec*1e6;
 
 	auto result = encodeMONRMessage(&time, this->position, this->speed, this->acceleration,
 									this->driveDirection, this->state->getStateID(), this->readyToArm,

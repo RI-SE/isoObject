@@ -10,15 +10,13 @@ set(CMAKE_BUILD_TYPE Debug)
 set(ISOOBJECT_LIBRARY ${PARENT_TARGET_NAMESPACE}${PROJECT_NAME})
 set(ISOOBJECT_TEST ${ISOOBJECT_LIBRARY}Test)
 
-find_library(ISO22133_LIBRARY ISO22133)
-if (NOT ISO22133_LIBRARY)
     message("ISO22133 library not found - attempting search in local build tree")
     add_subdirectory(../iso22133 ${CMAKE_CURRENT_BINARY_DIR}/iso22133)
     set(ISO22133_LIBRARY ISO22133)
     message(STATUS "${CMAKE_CURRENT_SOURCE_DIR}")
     find_path(ISO22133_HEADER_DIR
         NAMES "iso22133.h"
-        NO_CMAKE_FIND_ROOT_PATH
+        NO_DEFAULT_PATH
         PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../iso22133"
         REQUIRED)
 else()
