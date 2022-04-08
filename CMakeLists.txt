@@ -108,26 +108,24 @@ find_package(SWIG REQUIRED)
 if(NOT SWIG_FOUND)
     message(WARNING "SWIG not found")
 else()
+    cmake_policy(SET CMP0078 NEW)
+    cmake_policy(SET CMP0086 NEW)
     include(${SWIG_USE_FILE})
-    #FIND_PACKAGE(PythonLibs)
-    #INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
-    #INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
     #if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Android")
     #    find_package(JNI REQUIRED)
     #endif()
     #SET(CMAKE_SWIG_FLAGS -package org.asta.isoObject)
-    find_package(PythonLibs REQUIRED)
+    find_package(Python COMPONENTS Development)
     SET(CMAKE_SWIG_FLAGS "")
     set(ISO22133_PYTHON isoObject_wrap)
+    message(WARNING "pydirs " ${Python_LIBRARIES})
     set_property(SOURCE isoObject.i PROPERTY CPLUSPLUS ON)
-    #set_property(SOURCE isoObject.i PROPERTY SWIG_MODULE_NAME ${ISO22133_PYTHON})
     set_property(SOURCE isoObject.i PROPERTY INCLUDE_DIRECTORIES
         ${CMAKE_CURRENT_SOURCE_DIR}/inc
         ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
         ${SOCKET_HEADER_DIR}
         ${ISO22133_HEADER_DIR}
-        ${PYTHON_HEADER_DIR}
+        ${Python_INCLUDE_DIRS}
         #${JNI_INCLUDE_DIRS}
     )
     swig_add_library(${ISO22133_PYTHON}
@@ -135,22 +133,22 @@ else()
         LANGUAGE python 
         SOURCES isoObject.i
     )
-    set_property(${ISO22133_PYTHON} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
+    set_property(TARGET ${ISO22133_PYTHON} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
     target_include_directories(${ISO22133_PYTHON} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/inc
         ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
         ${SOCKET_HEADER_DIR}
         ${ISO22133_HEADER_DIR}
-        ${PYTHON_HEADER_DIR}
+        ${Python_INCLUDE_DIRS}
         #${JNI_INCLUDE_DIRS}
     )
 
-    #target_link_libraries(${ISO22133_PYTHON}
-    #    ${ISOOBJECT_LIBRARY}
-    #    ${SOCKET_LIBRARY}
-    #    ${ISO22133_LIBRARY}
-    #    ${PYTHON_LIBRARIES}
-    #    #${JNI_LIBRARIES}
-    #    atomic
-    #)
+    target_link_libraries(${ISO22133_PYTHON}
+        ${ISOOBJECT_LIBRARY}
+        ${SOCKET_LIBRARY}
+        ${ISO22133_LIBRARY}
+        ${PYTHON_LIBRARIES}
+        #${JNI_LIBRARIES}
+        atomic
+    )
 endif()
