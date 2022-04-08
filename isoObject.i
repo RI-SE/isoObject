@@ -1,6 +1,6 @@
 /* File : isoObject.i */
 %module isoObject_wrap
-%javaconst(0);
+/*%javaconst(0); */
 %pointer_functions(uint32_t, uint32ptr);
 %include <std_string.i>
 %include <std_vector.i>

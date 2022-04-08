@@ -12,7 +12,7 @@ set(CMAKE_BUILD_TYPE Debug)
 set(ISOOBJECT_LIBRARY ${PARENT_TARGET_NAMESPACE}${PROJECT_NAME})
 set(ISOOBJECT_TEST ${ISOOBJECT_LIBRARY}Test)
 
-find_library(ISO22133_LIBRARY ISO22133)
+#find_library(ISO22133_LIBRARY ISO22133)
 if (NOT ISO22133_LIBRARY)
     message("ISO22133 library not found - attempting search in local build tree")
     add_subdirectory(../iso22133 ${CMAKE_CURRENT_BINARY_DIR}/iso22133)
@@ -20,7 +20,7 @@ if (NOT ISO22133_LIBRARY)
     message(STATUS "${CMAKE_CURRENT_SOURCE_DIR}")
     find_path(ISO22133_HEADER_DIR
         NAMES "iso22133.h"
-        NO_CMAKE_FIND_ROOT_PATH
+        NO_DEFAULT_PATH
         PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../iso22133"
         REQUIRED)
 else()
@@ -28,14 +28,14 @@ else()
 endif()
 message("ISO22133_HEADER_DIR: ${ISO22133_HEADER_DIR}")
 
-find_library(SOCKET_LIBRARY TCPUDPSocket)
+#find_library(SOCKET_LIBRARY TCPUDPSocket)
 if (NOT SOCKET_LIBRARY)
     message("Socket library not found - attempting search in local build tree")
     add_subdirectory(../sockets ${CMAKE_CURRENT_BINARY_DIR}/sockets)
     set(SOCKET_LIBRARY TCPUDPSocket)
     find_path(SOCKET_HEADER_DIR
         NAMES "socket.hpp"
-        NO_CMAKE_FIND_ROOT_PATH
+        NO_DEFAULT_PATH
         PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../sockets"
         REQUIRED)
 else()
@@ -104,44 +104,53 @@ install(TARGETS ${ISOOBJECT_LIBRARY}
 )
 
 # SWIG
-find_package(SWIG COMPONENTS java)
+find_package(SWIG REQUIRED)
 if(NOT SWIG_FOUND)
     message(WARNING "SWIG not found")
 else()
     include(${SWIG_USE_FILE})
+    #FIND_PACKAGE(PythonLibs)
+    #INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
+    #INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-    if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Android")
-        find_package(JNI REQUIRED)
-    endif()
-    SET(CMAKE_SWIG_FLAGS -package org.asta.isoObject)
-    set(ISO22133_JAVA isoObject_wrap)
+    #if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Android")
+    #    find_package(JNI REQUIRED)
+    #endif()
+    #SET(CMAKE_SWIG_FLAGS -package org.asta.isoObject)
+    find_package(PythonLibs REQUIRED)
+    SET(CMAKE_SWIG_FLAGS "")
+    set(ISO22133_PYTHON isoObject_wrap)
     set_property(SOURCE isoObject.i PROPERTY CPLUSPLUS ON)
+    #set_property(SOURCE isoObject.i PROPERTY SWIG_MODULE_NAME ${ISO22133_PYTHON})
     set_property(SOURCE isoObject.i PROPERTY INCLUDE_DIRECTORIES
         ${CMAKE_CURRENT_SOURCE_DIR}/inc
         ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
         ${SOCKET_HEADER_DIR}
         ${ISO22133_HEADER_DIR}
-        ${JNI_INCLUDE_DIRS}
+        ${PYTHON_HEADER_DIR}
+        #${JNI_INCLUDE_DIRS}
     )
-    swig_add_library(${ISO22133_JAVA}
+    swig_add_library(${ISO22133_PYTHON}
         TYPE SHARED
-        LANGUAGE java
+        LANGUAGE python 
         SOURCES isoObject.i
     )
-    set_property(TARGET ${ISO22133_JAVA} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
-    target_include_directories(${ISO22133_JAVA} PUBLIC
+    set_property(${ISO22133_PYTHON} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
+    target_include_directories(${ISO22133_PYTHON} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/inc
         ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
         ${SOCKET_HEADER_DIR}
         ${ISO22133_HEADER_DIR}
-        ${JNI_INCLUDE_DIRS}
+        ${PYTHON_HEADER_DIR}
+        #${JNI_INCLUDE_DIRS}
     )
 
-    target_link_libraries(${ISO22133_JAVA}
-        ${ISOOBJECT_LIBRARY}
-        ${SOCKET_LIBRARY}
-        ${ISO22133_LIBRARY}
-        ${JNI_LIBRARIES}
-        atomic
-    )
+    #target_link_libraries(${ISO22133_PYTHON}
+    #    ${ISOOBJECT_LIBRARY}
+    #    ${SOCKET_LIBRARY}
+    #    ${ISO22133_LIBRARY}
+    #    ${PYTHON_LIBRARIES}
+    #    #${JNI_LIBRARIES}
+    #    atomic
+    #)
 endif()
