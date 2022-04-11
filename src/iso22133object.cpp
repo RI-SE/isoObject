@@ -8,6 +8,29 @@
 #define TCP_BUFFER_SIZE 1024
 #define UDP_BUFFER_SIZE 1024
 
+TODO: get this from maestroTime.h in the future
+namespace std::chrono {
+    using quartermilliseconds = std::chrono::duration<int64_t, std::ratio<1,4000>>;
+    using weeks = std::chrono::duration<uint16_t, std::ratio<7*24*60*60,1>>;
+
+    template<typename Duration>
+    struct timeval to_timeval(Duration&& d) {
+        std::chrono::seconds const sec = std::chrono::duration_cast<std::chrono::seconds>(d);
+        struct timeval tv;
+        tv.tv_sec  = sec.count();
+        tv.tv_usec = std::chrono::duration_cast<std::chrono::microseconds>(d - sec).count();
+        return tv;
+    }
+
+    template<typename Duration>
+    void from_timeval(struct timeval & tv, Duration& d) {
+        // TODO
+        //const auto sec = std::chrono::seconds(tv.tv_sec);
+        //const auto usec = std::chrono::microseconds(tv.tv_usec);
+        //d = sec + usec;
+    }
+}
+
 namespace ISO22133 {
 TestObject::TestObject(const std::string& listenIP)
 	: name("myTestObject"),
@@ -111,12 +134,9 @@ void TestObject::receiveTCP() {
 void TestObject::sendMONR(const BasicSocket::HostInfo& toWhere, bool debug) {
 	std::vector<char> buffer(UDP_BUFFER_SIZE);
 	struct timeval time;
-	auto millisecs=
-		std::chrono::duration_cast<std::chrono::milliseconds>(
-			std::chrono::system_clock::now().time_since_epoch()
-		);;
-	time.tv_sec = millisecs.count()/1000;
-	time.tv_usec = (millisecs.count()%1000)*1000;
+	auto nanos = std::chrono::system_clock::now().time_since_epoch().count();
+	time.tv_sec = nanos/1e9;
+	time.tv_usec = nanos/1e3 - time.tv_sec*1e6;
 
 	auto result = encodeMONRMessage(&time, this->position, this->speed, this->acceleration,
 									this->driveDirection, this->state->getStateID(), this->readyToArm,
@@ -193,8 +213,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 	int debug = 0;
 	struct timeval currentTime;
 
-	currentTime.tv_usec = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-	currentTime.tv_sec = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    currentTime = std::chrono::to_timeval(std::chrono::system_clock::now().time_since_epoch());
 
 	ISOMessageID msgType = getISOMessageType(dataBuffer.data(), dataBuffer.size(), 0);
 	// Ugly check here since we don't know if it is UDP or the rest of TRAJ
