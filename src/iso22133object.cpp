@@ -212,7 +212,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 	int debug = 0;
 	struct timeval currentTime;
 
-    currentTime = to_timeval(system_clock::now().time_since_epoch());
+    currentTime = std::chrono::to_timeval(std::chrono::system_clock::now().time_since_epoch());
 
 	ISOMessageID msgType = getISOMessageType(dataBuffer.data(), dataBuffer.size(), 0);
 	// Ugly check here since we don't know if it is UDP or the rest of TRAJ
