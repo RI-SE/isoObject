@@ -8,40 +8,37 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(CMAKE_BUILD_TYPE Debug)
 
+# Swig flags
+set(WITH_SWIG OFF CACHE BOOL "Enable swigging")
+set(SWIG_WITH_JAVA OFF CACHE BOOL "Swig using to target language java")
+set(SWIG_WITH_PYTHON OFF CACHE BOOL "Swig to target language python")
+if(SWIG_WITH_JAVA)
+    set(SWIG_TARGET_LANG java)
+elseif(SWIG_WITH_PYTHON)
+    set(SWIG_TARGET_LANG python)
+endif()
+
 # Manage namespace of the project
 set(ISOOBJECT_LIBRARY ${PARENT_TARGET_NAMESPACE}${PROJECT_NAME})
 set(ISOOBJECT_TEST ${ISOOBJECT_LIBRARY}Test)
 
-#find_library(ISO22133_LIBRARY ISO22133)
-if (NOT ISO22133_LIBRARY)
-    message("ISO22133 library not found - attempting search in local build tree")
-    add_subdirectory(../iso22133 ${CMAKE_CURRENT_BINARY_DIR}/iso22133)
-    set(ISO22133_LIBRARY ISO22133)
-    message(STATUS "${CMAKE_CURRENT_SOURCE_DIR}")
-    find_path(ISO22133_HEADER_DIR
-        NAMES "iso22133.h"
-        NO_DEFAULT_PATH
-        PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../iso22133"
-        REQUIRED)
-else()
-        find_path(ISO22133_HEADER_DIR iso22133.h REQUIRED)
-endif()
-message("ISO22133_HEADER_DIR: ${ISO22133_HEADER_DIR}")
-
-#find_library(SOCKET_LIBRARY TCPUDPSocket)
-if (NOT SOCKET_LIBRARY)
-    message("Socket library not found - attempting search in local build tree")
-    add_subdirectory(../sockets ${CMAKE_CURRENT_BINARY_DIR}/sockets)
-    set(SOCKET_LIBRARY TCPUDPSocket)
-    find_path(SOCKET_HEADER_DIR
-        NAMES "socket.hpp"
-        NO_DEFAULT_PATH
-        PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../sockets"
-        REQUIRED)
-else()
-    find_path(SOCKET_HEADER_DIR socket.hpp REQUIRED)
-endif()
-message("SOCKET_HEADER_DIR: ${SOCKET_HEADER_DIR}")
+#ISO22133 library/headers
+add_subdirectory(../iso22133 ${CMAKE_CURRENT_BINARY_DIR}/iso22133)
+set(ISO22133_LIBRARY ISO22133)
+find_path(ISO22133_HEADER_DIR
+    NAMES "iso22133.h"
+    NO_DEFAULT_PATH
+    PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../iso22133"
+    REQUIRED
+)
+#Sockets library/headers
+add_subdirectory(../sockets ${CMAKE_CURRENT_BINARY_DIR}/sockets)
+set(SOCKET_LIBRARY TCPUDPSocket)
+find_path(SOCKET_HEADER_DIR
+    NAMES "socket.hpp"
+    NO_DEFAULT_PATH
+    PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../sockets"
+    REQUIRED)
 
 include(GNUInstallDirs)
 
@@ -104,51 +101,61 @@ install(TARGETS ${ISOOBJECT_LIBRARY}
 )
 
 # SWIG
-find_package(SWIG REQUIRED)
-if(NOT SWIG_FOUND)
-    message(WARNING "SWIG not found")
-else()
-    cmake_policy(SET CMP0078 NEW)
-    cmake_policy(SET CMP0086 NEW)
-    include(${SWIG_USE_FILE})
-    #if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Android")
-    #    find_package(JNI REQUIRED)
-    #endif()
-    #SET(CMAKE_SWIG_FLAGS -package org.asta.isoObject)
-    find_package(Python COMPONENTS Development)
-    SET(CMAKE_SWIG_FLAGS "")
-    set(ISO22133_PYTHON isoObject_wrap)
-    message(WARNING "pydirs " ${Python_LIBRARIES})
-    set_property(SOURCE isoObject.i PROPERTY CPLUSPLUS ON)
-    set_property(SOURCE isoObject.i PROPERTY INCLUDE_DIRECTORIES
-        ${CMAKE_CURRENT_SOURCE_DIR}/inc
-        ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
-        ${SOCKET_HEADER_DIR}
-        ${ISO22133_HEADER_DIR}
-        ${Python_INCLUDE_DIRS}
-        #${JNI_INCLUDE_DIRS}
-    )
-    swig_add_library(${ISO22133_PYTHON}
-        TYPE SHARED
-        LANGUAGE python 
-        SOURCES isoObject.i
-    )
-    set_property(TARGET ${ISO22133_PYTHON} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
-    target_include_directories(${ISO22133_PYTHON} PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/inc
-        ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
-        ${SOCKET_HEADER_DIR}
-        ${ISO22133_HEADER_DIR}
-        ${Python_INCLUDE_DIRS}
-        #${JNI_INCLUDE_DIRS}
-    )
+if (WITH_SWIG)
+    find_package(SWIG REQUIRED)
+    if(NOT SWIG_FOUND)
+        message(WARNING "SWIG not found")
+    else()
+        #Policy for swig_add_library to put target inside first argument to the function
+        cmake_policy(SET CMP0078 NEW)
+        #Policy for passing SWIG_MODULE_NAME to swig compiler as -module <name>
+        cmake_policy(SET CMP0086 NEW)
 
-    target_link_libraries(${ISO22133_PYTHON}
-        ${ISOOBJECT_LIBRARY}
-        ${SOCKET_LIBRARY}
-        ${ISO22133_LIBRARY}
-        ${PYTHON_LIBRARIES}
-        #${JNI_LIBRARIES}
-        atomic
-    )
+        include(${SWIG_USE_FILE})
+
+        if(SWIG_WITH_JAVA)
+            if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Android")
+                find_package(JNI REQUIRED)
+            endif()
+            SET(CMAKE_SWIG_FLAGS -package org.asta.isoObject)
+        elseif(SWIG_WITH_PYTHON)
+            find_package(Python COMPONENTS Development)
+            SET(CMAKE_SWIG_FLAGS "")
+        endif()
+
+        set(ISO22133_SWIGGED isoObject_wrap)
+
+        set_property(SOURCE isoObject.i PROPERTY CPLUSPLUS ON)
+        set_property(SOURCE isoObject.i PROPERTY INCLUDE_DIRECTORIES
+            ${CMAKE_CURRENT_SOURCE_DIR}/inc
+            ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
+            ${SOCKET_HEADER_DIR}
+            ${ISO22133_HEADER_DIR}
+            ${Python_INCLUDE_DIRS} #Note that cmake ignored empty variables
+            ${JNI_INCLUDE_DIRS}
+        )
+        swig_add_library(${ISO22133_SWIGGED}
+            TYPE SHARED
+            LANGUAGE ${SWIG_TARGET_LANG}
+            SOURCES isoObject.i
+        )
+        set_property(TARGET ${ISO22133_SWIGGED} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
+        target_include_directories(${ISO22133_SWIGGED} PUBLIC
+            ${CMAKE_CURRENT_SOURCE_DIR}/inc
+            ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
+            ${SOCKET_HEADER_DIR}
+            ${ISO22133_HEADER_DIR}
+            ${Python_INCLUDE_DIRS}
+            ${JNI_INCLUDE_DIRS}
+        )
+
+        target_link_libraries(${ISO22133_SWIGGED}
+            ${ISOOBJECT_LIBRARY}
+            ${SOCKET_LIBRARY}
+            ${ISO22133_LIBRARY}
+            atomic
+            ${Python_LIBRARIES}
+            ${JNI_LIBRARIES}
+        )
+    endif()
 endif()
