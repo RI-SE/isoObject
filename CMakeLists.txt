@@ -8,8 +8,8 @@ set(CMAKE_BUILD_TYPE Debug)
 
 # Swig flags
 set(WITH_SWIG OFF CACHE BOOL "Enable swigging")
-set(SWIG_WITH_JAVA OFF CACHE BOOL "Swig using to target language java")
-set(SWIG_WITH_PYTHON OFF CACHE BOOL "Swig to target language python")
+set(SWIG_WITH_JAVA OFF CACHE BOOL "Swig to target-language java")
+set(SWIG_WITH_PYTHON OFF CACHE BOOL "Swig to target-language python")
 if(SWIG_WITH_JAVA)
     set(SWIG_TARGET_LANG java)
 elseif(SWIG_WITH_PYTHON)
