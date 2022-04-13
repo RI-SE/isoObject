@@ -1,6 +1,8 @@
 /* File : isoObject.i */
 %module isoObject_wrap
+#ifdef SWIGJAVA
 %javaconst(0);
+#endif
 %pointer_functions(uint32_t, uint32ptr);
 %include <std_string.i>
 %include <std_vector.i>
