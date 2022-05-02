@@ -31,9 +31,9 @@
 %include "trajDecoder.hpp"
 %include "iso22133state.hpp"
 %include "iso22133object.hpp"
-%include "socket.hpp"
-%include "server.hpp"
-%include "iso22133.h"
+%include "../../sockets/socket.hpp"
+%include "../sockets/server.hpp"
+%include "../iso22133/iso22133.h"
 
 
 typedef double double_t;
@@ -43,6 +43,15 @@ struct timeval {
 long int tv_sec;
 long int tv_usec;
 };
+
+typedef struct {
+    double xCoord_m;
+    double yCoord_m;
+    double zCoord_m;
+    double heading_rad;
+    bool isPositionValid;
+    bool isHeadingValid;
+} CartesianPosition;
 
 
 
