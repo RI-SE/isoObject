@@ -31,9 +31,9 @@
 %include "trajDecoder.hpp"
 %include "iso22133state.hpp"
 %include "iso22133object.hpp"
-%include "../../sockets/socket.hpp"
-%include "../sockets/server.hpp"
-%include "../iso22133/iso22133.h"
+%include "socket.hpp"
+%include "server.hpp"
+%include "iso22133.h"
 
 
 typedef double double_t;
