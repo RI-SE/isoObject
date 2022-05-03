@@ -44,5 +44,14 @@ long int tv_sec;
 long int tv_usec;
 };
 
+typedef struct {
+    double xCoord_m;
+    double yCoord_m;
+    double zCoord_m;
+    double heading_rad;
+    bool isPositionValid;
+    bool isHeadingValid;
+} CartesianPosition;
+
 
 
