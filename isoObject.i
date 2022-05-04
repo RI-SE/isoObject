@@ -31,7 +31,7 @@
 %include "trajDecoder.hpp"
 %include "iso22133state.hpp"
 %include "iso22133object.hpp"
-%include "../../sockets/socket.hpp"
+%include "../sockets/socket.hpp"
 %include "../sockets/server.hpp"
 %include "../iso22133/iso22133.h"
 
@@ -52,6 +52,15 @@ typedef struct {
     bool isPositionValid;
     bool isHeadingValid;
 } CartesianPosition;
+
+typedef struct {
+    double latitude_deg;
+    double longitude_deg;
+    double altitude_m;
+    bool isLatitudeValid;
+    bool isLongitudeValid;
+    bool isAltitudeValid;
+} GeographicPositionType;
 
 
 
