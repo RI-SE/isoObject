@@ -62,5 +62,13 @@ typedef struct {
     bool isAltitudeValid;
 } GeographicPositionType;
 
+typedef struct {
+	struct timeval relativeTime;
+	CartesianPosition pos;
+	SpeedType spd;
+	AccelerationType acc;
+	float_t curvature;
+} TrajectoryWaypointType;
+
 
 
