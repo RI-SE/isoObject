@@ -53,5 +53,22 @@ typedef struct {
     bool isHeadingValid;
 } CartesianPosition;
 
+typedef struct {
+    double latitude_deg;
+    double longitude_deg;
+    double altitude_m;
+    bool isLatitudeValid;
+    bool isLongitudeValid;
+    bool isAltitudeValid;
+} GeographicPositionType;
+
+typedef struct {
+	struct timeval relativeTime;
+	CartesianPosition pos;
+	SpeedType spd;
+	AccelerationType acc;
+	float_t curvature;
+} TrajectoryWaypointType;
+
 
 
