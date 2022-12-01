@@ -87,7 +87,7 @@ set_property(TARGET ${ISOOBJECT_LIBRARY} APPEND PROPERTY
 )
 
 
-# Test target
+# Demo target
 add_executable(${ISOOBJECT_TEST} demoIsoObject.cpp)
 
 target_include_directories(${ISOOBJECT_TEST} PUBLIC

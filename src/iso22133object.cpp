@@ -103,14 +103,14 @@ void TestObject::receiveTCP() {
 	const unsigned int maxAwaitAttempts = 3;
 	unsigned int remainingAwaitAttempts = maxAwaitAttempts;
 	while(this->on) {
-		std::cout << "\nAwaiting TCP connection from server..." << std::endl;
+		std::cout << "\nAwaiting TCP connection from ATOS..." << std::endl;
 		try {
 			ctrlPort.acceptConnection();
 		} catch (boost::system::system_error& e) {
 			std::cout << "TCP accept failed: " << e.what() << std::endl;
 			throw e;
 		}
-		std::cout << "TCP connection established." << std::endl;
+		std::cout << "TCP connection to ATOS established." << std::endl;
 		state->handleEvent(*this, ISO22133::Events::B);
 		try {
 			while (true) {
@@ -129,7 +129,7 @@ void TestObject::receiveTCP() {
 				} while(data.size() > 0);
 			}
 		} catch (boost::system::system_error&) {
-			std::cerr << "Connection to control center lost" << std::endl;
+			std::cerr << "Connection to ATOS lost" << std::endl;
 			disconnect();
 			state->handleEvent(*this, ISO22133::Events::L);
 		}
@@ -159,12 +159,12 @@ void TestObject::heabMonrLoop() {
 	std::cout << "Started MONR/HEAB communication thread." << std::endl;
 	processPort.bind({localIP, ISO_22133_OBJECT_UDP_PORT});
 	awaitingFirstHeab = true;
-	std::cout << "Awaiting UDP data from server..." << std::endl;
+	std::cout << "Awaiting UDP data from ATOS..." << std::endl;
 	try {
 		while (this->on) {
 			auto [data, host] = processPort.recvfrom();
 			if (awaitingFirstHeab) {
-				std::cout << "Received UDP data from " << host.address << std::endl;
+				std::cout << "Received UDP data from ATOS server at " << host.address << std::endl;
 			}
 			int nBytesHandled = 0;
 			do {
