@@ -5,8 +5,8 @@
 #include <thread> 
 #include <mutex>
 #include <atomic>
-
 #include <optional>
+#include <boost/system/system_error.hpp>
 
 #include "iso22133.h"
 #include "iso22133state.hpp"
@@ -14,6 +14,7 @@
 #include "server.hpp"
 #include "socket.hpp"
 #include "signal.hpp"
+#include "tcpServer.hpp"
 
 namespace ISO22133 {
 class State;
@@ -138,6 +139,7 @@ protected:
 	std::chrono::milliseconds monrPeriod = std::chrono::milliseconds(1000 / MONR_EXPECTED_FREQUENCY_HZ);
 	std::chrono::milliseconds heartbeatTimeout = 10*expectedHeartbeatPeriod;
 	std::chrono::milliseconds maxSafeNetworkDelay = std::chrono::milliseconds(200);
+
 private:
 
 	//! TCP receiver loop that should be run in its own thread.
@@ -168,8 +170,7 @@ private:
 	std::thread heabTimeoutThread;
 	ISO22133::State* state;
 	std::string name = "unnamed";
-	TCPServer ctrlPort;
-	Socket ctrlChannel;
+	TcpServer ctrlPort;
 	UDPServer processPort;
 	TrajDecoder trajDecoder;
 	std::mutex heabMutex;
@@ -187,6 +188,5 @@ private:
 
 	bool awaitingFirstHeab = true;
 	bool on = true;
-
 };
 } // namespace ISO22133

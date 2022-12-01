@@ -34,8 +34,9 @@ namespace std::chrono {
 namespace ISO22133 {
 TestObject::TestObject(const std::string& listenIP)
 	: name("myTestObject"),
-	  ctrlChannel(BasicSocket::STREAM),
-	  trajDecoder() {
+	  trajDecoder(),
+	  ctrlPort(ISO_22133_DEFAULT_OBJECT_TCP_PORT)
+{	
 
 	CartesianPosition initPos;
 	SpeedType initSpd;
@@ -61,6 +62,7 @@ TestObject::TestObject(const std::string& listenIP)
 	this->trajSig.connect(&TestObject::onTRAJ, this);
 	this->strtSig.connect(&TestObject::onSTRT, this);
 	this->heabTimeout.connect(&TestObject::onHeabTimeout, this);
+	
 }
 
 TestObject::~TestObject() {
@@ -79,11 +81,20 @@ TestObject::~TestObject() {
 
 void TestObject::disconnect() {
 	std::cout << "Disconnecting" << std::endl;
-	ctrlChannel.close();
+	try {
+		ctrlPort.disconnect(); // Close TCP socket
+	} catch(boost::system::system_error& e) {
+		std::cerr << "TCP socket close error: " << e.what() << '\n';
+	} catch(const std::exception& e) {
+		std::cerr << "TCP socket close error: " << e.what() << '\n';
+	}
+	
 	processPort.close();
 	try {
 		heabMonrThread.join();
-	} catch (std::system_error) {}
+	} catch (std::system_error& e) {
+		std::cerr << "disconnect error: " << e.what() << std::endl;	
+	}
 	awaitingFirstHeab = true;
 }
 
@@ -92,24 +103,19 @@ void TestObject::receiveTCP() {
 	const unsigned int maxAwaitAttempts = 3;
 	unsigned int remainingAwaitAttempts = maxAwaitAttempts;
 	while(this->on) {
-		std::cout << "Awaiting TCP connection from server..." << std::endl;
+		std::cout << "\nAwaiting TCP connection from server..." << std::endl;
 		try {
-			ctrlChannel = ctrlPort.await(
-						localIP, ISO_22133_DEFAULT_OBJECT_TCP_PORT);
-			remainingAwaitAttempts = maxAwaitAttempts;
-		} catch (std::exception& e) {
-			if (remainingAwaitAttempts-- > 0) {
-				std::cout << "Control channel TCP listening socket error: attempting restart..." << std::endl;
-				ctrlPort = TCPServer();
-				continue;
-			}
+			ctrlPort.acceptConnection();
+		} catch (boost::system::system_error& e) {
+			std::cout << "TCP accept failed: " << e.what() << std::endl;
 			throw e;
 		}
 		std::cout << "TCP connection established." << std::endl;
 		state->handleEvent(*this, ISO22133::Events::B);
 		try {
 			while (true) {
-				auto data = ctrlChannel.recv();
+				
+				auto data = ctrlPort.receive();
 				int nBytesHandled = 0;
 				do {
 					try {
@@ -122,8 +128,8 @@ void TestObject::receiveTCP() {
 					data.erase(data.begin(), data.begin() + nBytesHandled);
 				} while(data.size() > 0);
 			}
-		} catch (SocketErrors::DisconnectedError&) {
-			std::cout << "Connection to control center lost" << std::endl;
+		} catch (boost::system::system_error&) {
+			std::cerr << "Connection to control center lost" << std::endl;
 			disconnect();
 			state->handleEvent(*this, ISO22133::Events::L);
 		}

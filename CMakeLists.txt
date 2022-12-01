@@ -18,7 +18,7 @@ endif()
 
 # Manage namespace of the project
 set(ISOOBJECT_LIBRARY ${PARENT_TARGET_NAMESPACE}${PROJECT_NAME})
-set(ISOOBJECT_TEST ${ISOOBJECT_LIBRARY}Test)
+set(ISOOBJECT_TEST ${ISOOBJECT_LIBRARY}Demo)
 
 #ISO22133 library/headers
 add_subdirectory(../iso22133 ${CMAKE_CURRENT_BINARY_DIR}/iso22133)
@@ -40,6 +40,8 @@ find_path(SOCKET_HEADER_DIR
 
 include(GNUInstallDirs)
 
+find_package(Boost REQUIRED)
+
 # Library target
 add_library(${ISOOBJECT_LIBRARY} SHARED
     ${CMAKE_CURRENT_SOURCE_DIR}/src/iso22133object.cpp
@@ -57,6 +59,7 @@ target_link_libraries(${ISOOBJECT_LIBRARY}
     ${SOCKET_LIBRARY}
     ${ISO22133_LIBRARY}
     atomic
+    pthread
 )
 
 set_property(TARGET ${ISOOBJECT_LIBRARY} PROPERTY
@@ -79,8 +82,13 @@ set_property(TARGET ${ISOOBJECT_LIBRARY} APPEND PROPERTY
     PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot/signal.hpp
 )
 
+set_property(TARGET ${ISOOBJECT_LIBRARY} APPEND PROPERTY
+    PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/inc/tcpServer.hpp
+)
+
+
 # Test target
-add_executable(${ISOOBJECT_TEST} testIsoObject.cpp)
+add_executable(${ISOOBJECT_TEST} demoIsoObject.cpp)
 
 target_include_directories(${ISOOBJECT_TEST} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/inc
