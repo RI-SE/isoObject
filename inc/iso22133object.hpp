@@ -6,7 +6,6 @@
 #include <mutex>
 #include <atomic>
 #include <optional>
-#include <boost/system/system_error.hpp>
 
 #include "iso22133.h"
 #include "iso22133state.hpp"
