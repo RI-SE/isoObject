@@ -29,18 +29,10 @@ find_path(ISO22133_HEADER_DIR
     PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../iso22133"
     REQUIRED
 )
-#Sockets library/headers
-add_subdirectory(../sockets ${CMAKE_CURRENT_BINARY_DIR}/sockets)
-set(SOCKET_LIBRARY TCPUDPSocket)
-find_path(SOCKET_HEADER_DIR
-    NAMES "socket.hpp"
-    NO_DEFAULT_PATH
-    PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../sockets"
-    REQUIRED)
 
 include(GNUInstallDirs)
 
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system)
 
 # Library target
 add_library(${ISOOBJECT_LIBRARY} SHARED
@@ -56,7 +48,6 @@ target_include_directories(${ISOOBJECT_LIBRARY} PUBLIC
 )
 
 target_link_libraries(${ISOOBJECT_LIBRARY}
-    ${SOCKET_LIBRARY}
     ${ISO22133_LIBRARY}
     atomic
     pthread
@@ -75,10 +66,6 @@ set_property(TARGET ${ISOOBJECT_LIBRARY} APPEND PROPERTY
 )
 
 set_property(TARGET ${ISOOBJECT_LIBRARY} APPEND PROPERTY
-    PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/inc/testTestTest.hpp
-)
-
-set_property(TARGET ${ISOOBJECT_LIBRARY} APPEND PROPERTY
     PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot/signal.hpp
 )
 
@@ -86,6 +73,9 @@ set_property(TARGET ${ISOOBJECT_LIBRARY} APPEND PROPERTY
     PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/inc/tcpServer.hpp
 )
 
+set_property(TARGET ${ISOOBJECT_LIBRARY} APPEND PROPERTY
+    PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/inc/udpServer.hpp
+)
 
 # Demo target
 add_executable(${ISOOBJECT_TEST} demoIsoObject.cpp)
@@ -105,6 +95,7 @@ install(TARGETS ${ISOOBJECT_LIBRARY}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
+message(("BOOST:" ${Boost_INCLUDE_DIRS}))
 
 # SWIG
 if (WITH_SWIG)
@@ -135,10 +126,10 @@ if (WITH_SWIG)
         set_property(SOURCE isoObject.i PROPERTY INCLUDE_DIRECTORIES
             ${CMAKE_CURRENT_SOURCE_DIR}/inc
             ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
-            ${SOCKET_HEADER_DIR}
             ${ISO22133_HEADER_DIR}
             ${Python_INCLUDE_DIRS} #Note that cmake ignored empty variables
             ${JNI_INCLUDE_DIRS}
+            ${Boost_INCLUDE_DIRS}
         )
         swig_add_library(${ISO22133_SWIGGED}
             TYPE SHARED
@@ -149,7 +140,6 @@ if (WITH_SWIG)
         target_include_directories(${ISO22133_SWIGGED} PUBLIC
             ${CMAKE_CURRENT_SOURCE_DIR}/inc
             ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
-            ${SOCKET_HEADER_DIR}
             ${ISO22133_HEADER_DIR}
             ${Python_INCLUDE_DIRS}
             ${JNI_INCLUDE_DIRS}
@@ -157,7 +147,6 @@ if (WITH_SWIG)
 
         target_link_libraries(${ISO22133_SWIGGED}
             ${ISOOBJECT_LIBRARY}
-            ${SOCKET_LIBRARY}
             ${ISO22133_LIBRARY}
             atomic
             ${Python_LIBRARIES}

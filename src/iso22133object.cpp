@@ -35,7 +35,8 @@ namespace ISO22133 {
 TestObject::TestObject(const std::string& listenIP)
 	: name("myTestObject"),
 	  trajDecoder(),
-	  ctrlPort(ISO_22133_DEFAULT_OBJECT_TCP_PORT)
+	  ctrlChannel(ISO_22133_DEFAULT_OBJECT_TCP_PORT),
+	  processChannel(ISO_22133_OBJECT_UDP_PORT)
 {	
 
 	CartesianPosition initPos;
@@ -80,42 +81,43 @@ TestObject::~TestObject() {
 
 
 void TestObject::disconnect() {
-	std::cout << "Disconnecting" << std::endl;
 	try {
-		ctrlPort.disconnect(); // Close TCP socket
+		ctrlChannel.disconnect(); // Close TCP socket
 	} catch(boost::system::system_error& e) {
 		std::cerr << "TCP socket close error: " << e.what() << '\n';
 	} catch(const std::exception& e) {
 		std::cerr << "TCP socket close error: " << e.what() << '\n';
 	}
 	
-	processPort.close();
+	processChannel.disconnect(); // Close UDP socket
+	awaitingFirstHeab = true; // Reset HEAB timeout check
+
 	try {
-		heabMonrThread.join();
+		if(heabMonrThread.joinable())
+			heabMonrThread.join();
 	} catch (std::system_error& e) {
-		std::cerr << "disconnect error: " << e.what() << std::endl;	
+		std::cerr << "Disconnect error: " << e.what() << std::endl;	
+		throw e;
 	}
-	awaitingFirstHeab = true;
 }
 
 void TestObject::receiveTCP() {
 	std::cout << "Started TCP thread." << std::endl;
-	const unsigned int maxAwaitAttempts = 3;
-	unsigned int remainingAwaitAttempts = maxAwaitAttempts;
 	while(this->on) {
 		std::cout << "\nAwaiting TCP connection from ATOS..." << std::endl;
 		try {
-			ctrlPort.acceptConnection();
+			ctrlChannel.acceptConnection();
 		} catch (boost::system::system_error& e) {
 			std::cout << "TCP accept failed: " << e.what() << std::endl;
 			throw e;
 		}
-		std::cout << "TCP connection to ATOS established." << std::endl;
+		std::cout << "TCP connection to ATOS at " << ctrlChannel.getEndPoint().address().to_string() << " established." << std::endl;
+
 		state->handleEvent(*this, ISO22133::Events::B);
 		try {
 			while (true) {
 				
-				auto data = ctrlPort.receive();
+				auto data = ctrlChannel.receive();
 				int nBytesHandled = 0;
 				do {
 					try {
@@ -137,7 +139,7 @@ void TestObject::receiveTCP() {
 	std::cout << "Exiting TCP thread." << std::endl;
 }
 
-void TestObject::sendMONR(const BasicSocket::HostInfo& toWhere, bool debug) {
+void TestObject::sendMONR(bool debug) {
 	std::vector<char> buffer(UDP_BUFFER_SIZE);
 	struct timeval time;
 	auto nanos = std::chrono::system_clock::now().time_since_epoch().count();
@@ -148,38 +150,43 @@ void TestObject::sendMONR(const BasicSocket::HostInfo& toWhere, bool debug) {
 									this->driveDirection, this->state->getStateID(), this->readyToArm,
 									this->errorState, buffer.data(), buffer.size(),debug);
 	if (result < 0) {
-		std::cout << "Failed to encode MONR data" << std::endl;
+		throw(std::invalid_argument("Failed to encode MONR data"));
 	}
 	else {
-		processPort.sendto({buffer, toWhere}, static_cast<size_t>(result));
+		processChannel.send(buffer, static_cast<size_t>(result));
 	}
 }
 
 void TestObject::heabMonrLoop() {
 	std::cout << "Started MONR/HEAB communication thread." << std::endl;
-	processPort.bind({localIP, ISO_22133_OBJECT_UDP_PORT});
-	awaitingFirstHeab = true;
 	std::cout << "Awaiting UDP data from ATOS..." << std::endl;
-	try {
-		while (this->on) {
-			auto [data, host] = processPort.recvfrom();
-			if (awaitingFirstHeab) {
-				std::cout << "Received UDP data from ATOS server at " << host.address << std::endl;
-			}
-			int nBytesHandled = 0;
-			do {
-				try {
-					nBytesHandled = handleMessage(data);
-					sendMONR(host);
-				}
-				catch (const std::exception& e) {
-					std::cerr << e.what() << std::endl;
-					break;
-				}
-				data.erase(data.begin(), data.begin() + nBytesHandled);
-			} while(data.size() > 0);
+	awaitingFirstHeab = true;
+
+	while (this->on && ctrlChannel.isOpen()) {
+		auto data = processChannel.receive();
+		
+		// Connection lost
+		if(data.size() <= 0) {
+			continue;
 		}
-	} catch (SocketErrors::DisconnectedError&) {}
+
+		if (awaitingFirstHeab) {
+			std::cout << "Received UDP data from ATOS" << std::endl;
+		}
+
+		int nBytesHandled = 0;
+		do {
+			try {
+				nBytesHandled = handleMessage(data);
+				sendMONR();
+			}
+			catch (const std::exception& e) {
+				std::cerr << e.what() << std::endl;
+				break;
+			}
+			data.erase(data.begin(), data.begin() + nBytesHandled);
+		} while(data.size() > 0);
+	}
 	std::cout << "Exiting MONR/HEAB communication thread." << std::endl;
 }
 
@@ -229,15 +236,10 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 
 	switch (msgType) {
 	case MESSAGE_ID_TRAJ:
-		try {
-			bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer);
-		}
-		catch(const std::exception& e) {
-			throw e;
-		}
+		bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer);
 		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding TRAJ");
-		};
+		}
 		if (!this->trajDecoder.ExpectingTrajPoints()) {
 			this->state->handleTRAJ(*this);
 		}

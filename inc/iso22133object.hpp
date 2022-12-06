@@ -15,6 +15,7 @@
 #include "socket.hpp"
 #include "signal.hpp"
 #include "tcpServer.hpp"
+#include "udpServer.hpp"
 
 namespace ISO22133 {
 class State;
@@ -154,9 +155,9 @@ private:
 	//! Function for handling received ISO messages. Calls corresponding
 	//! handler in the current state.
 	int handleMessage(std::vector<char>&);
-	//! Sends MONR message on process channel
 	void handleHEAB(HeabMessageDataType& heab);
-	void sendMONR(const BasicSocket::HostInfo& toWhere, bool debug = false);
+	//! Sends MONR message on process channel
+	void sendMONR(bool debug = false);
 	//! Called if HEAB messages do not arrive on time
 	void onHeabTimeout();
 	//! Function that checks if HEABs arrive on time
@@ -170,8 +171,8 @@ private:
 	std::thread heabTimeoutThread;
 	ISO22133::State* state;
 	std::string name = "unnamed";
-	TcpServer ctrlPort;
-	UDPServer processPort;
+	TcpServer ctrlChannel;
+	UdpServer processChannel;
 	TrajDecoder trajDecoder;
 	std::mutex heabMutex;
 	std::chrono::steady_clock::time_point lastHeabTime;
