@@ -17,14 +17,14 @@ class TcpServer {
 		setBufferSize(defaultBufferSize);
 	};
 	virtual ~TcpServer() = default;
-	void disconnect() { 
+	void disconnect() {
 		try {
-			socket.shutdown(socket_base::shutdown_both); 
-			socket.close(); 
-		} catch (boost::system::system_error& e){}
-    };
+			socket.shutdown(socket_base::shutdown_both);
+			socket.close();
+		} catch (boost::system::system_error& e) {}
+	};
 
-	void acceptConnection() { 
+	void acceptConnection() {
 		try {
 			acceptor.accept(socket);
 		} catch (boost::system::system_error& e) {
@@ -35,10 +35,9 @@ class TcpServer {
 	void setBufferSize(size_t size) { dataBuffer.resize(size); };
 	size_t getBuffferSize() const { return dataBuffer.size(); };
 
-    tcp::endpoint getEndPoint() const { return socket.remote_endpoint(); };
+	tcp::endpoint getEndPoint() const { return socket.remote_endpoint(); };
 
-    bool isOpen() const { return socket.is_open(); };
-    
+	bool isOpen() const { return socket.is_open(); };
 
 	std::vector<char> receive() {
 		try {
@@ -49,11 +48,10 @@ class TcpServer {
 			setBufferSize(defaultBufferSize);
 			return result;
 		} catch (boost::system::system_error& e) {
-			if(e.code() == error::eof) {
+			if (e.code() == error::eof) {
 				std::cerr << "Peer closed connection" << std::endl;
 				throw e;
-			}
-			else {
+			} else {
 				std::cerr << "TCP socket receive failed: " << e.what() << std::endl;
 				throw e;
 			}
