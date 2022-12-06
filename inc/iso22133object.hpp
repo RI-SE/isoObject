@@ -10,8 +10,6 @@
 #include "iso22133.h"
 #include "iso22133state.hpp"
 #include "trajDecoder.hpp"
-#include "server.hpp"
-#include "socket.hpp"
 #include "signal.hpp"
 #include "tcpServer.hpp"
 #include "udpServer.hpp"
