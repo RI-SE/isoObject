@@ -111,9 +111,9 @@ void ISO22133::State::handleOSTM(TestObject& obj,ObjectCommandType& ostm) {
  */
 void ISO22133::State::handleOSEM(TestObject& obj,ObjectSettingsType& osem) {
 	obj.origin = osem.coordinateSystemOrigin;
-	obj.transmitterID = osem.desiredTransmitterID;
-	std::cout << "Got OSEM - set transmitter ID to " << osem.desiredTransmitterID << std::endl;
-	setTransmitterID(osem.desiredTransmitterID);
+	obj.transmitterID = osem.desiredID.transmitter;
+	std::cout << "Got OSEM - set transmitter ID to " << osem.desiredID.transmitter << std::endl;
+	setTransmitterID(osem.desiredID.transmitter);
 	obj.osemSig(osem);
 	return;
 }
