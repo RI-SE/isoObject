@@ -148,7 +148,7 @@ void TestObject::sendMONR(bool debug) {
 
 	auto result = encodeMONRMessage(&time, this->position, this->speed, this->acceleration,
 									this->driveDirection, this->state->getStateID(), this->readyToArm,
-									this->errorState, buffer.data(), buffer.size(),debug);
+									this->errorState, 0x0000, buffer.data(), buffer.size(),debug);
 	if (result < 0) {
 		throw(std::invalid_argument("Failed to encode MONR data"));
 	}
@@ -228,7 +228,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 
     currentTime = std::chrono::to_timeval(std::chrono::system_clock::now().time_since_epoch());
 
-	ISOMessageID msgType = getISOMessageType(dataBuffer.data(), dataBuffer.size(), 0);
+	ISOMessageID msgType = getISOMessageType(dataBuffer.data(), dataBuffer.size(), false);
 	// Ugly check here since we don't know if it is UDP or the rest of TRAJ
 	if (msgType == MESSAGE_ID_INVALID && this->trajDecoder.ExpectingTrajPoints()) {
 		msgType = MESSAGE_ID_TRAJ;
@@ -250,7 +250,6 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 					&OSEMstruct,
 					dataBuffer.data(),
 					dataBuffer.size(),
-					nullptr,
 					debug);
 		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding OSEM");
