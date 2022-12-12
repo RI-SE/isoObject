@@ -36,7 +36,8 @@ TestObject::TestObject(const std::string& listenIP)
 	: name("myTestObject"),
 	  trajDecoder(),
 	  ctrlChannel(ISO_22133_DEFAULT_OBJECT_TCP_PORT),
-	  processChannel(ISO_22133_OBJECT_UDP_PORT)
+	  processChannel(ISO_22133_OBJECT_UDP_PORT),
+	  on(true)
 {	
 
 	CartesianPosition initPos;
@@ -67,6 +68,7 @@ TestObject::TestObject(const std::string& listenIP)
 }
 
 TestObject::~TestObject() {
+	std::cout << "Destructing" << std::endl;
 	on = false;
 	try {
 		heabMonrThread.join();
@@ -187,6 +189,7 @@ void TestObject::heabMonrLoop() {
 			data.erase(data.begin(), data.begin() + nBytesHandled);
 		} while(data.size() > 0);
 	}
+	std::cout << "this-on " << this->on << std::endl;
 	std::cout << "Exiting MONR/HEAB communication thread." << std::endl;
 }
 
@@ -205,6 +208,7 @@ void TestObject::checkHeabTimeout() {
 
 void TestObject::checkHeabLoop() {
 	std::cout << "Started HEAB timeout thread." << std::endl;
+	std::cout << "this->on " << this->on << std::endl;
 	using namespace std::chrono;
 	while (this->on) {
 		auto t = std::chrono::steady_clock::now();

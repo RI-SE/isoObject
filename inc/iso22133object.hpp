@@ -55,6 +55,17 @@ public:
 
 	void disconnect();
 
+
+	void setPosition(const CartesianPosition& pos) { position = pos; }
+	void setSpeed(const SpeedType& spd) { speed = spd; }
+	void setAcceleration(const AccelerationType& acc) { acceleration = acc; }
+	void setDriveDirection(const DriveDirectionType& drd) { driveDirection = drd; }
+	void setObjectState(const ObjectStateID& ost) { objectState = ost; }
+	void setName(const std::string nm) { name = nm; }
+	void setReadyToArm(const int& rdy) { readyToArm = rdy; }
+	void setErrorState(const char& err) { errorState = err; }
+
+	
 	std::string getCurrentStateName() const { return state->getName(); }
 	std::string getName() const { return name; }
 	CartesianPosition getPosition() const { return position; }
@@ -67,19 +78,12 @@ public:
 	std::string getLocalIP() const { return localIP; }
 	uint32_t getTransmitterID() const { return transmitterID; }
 
+
+
 protected:
 
 	//! Pure virtual safety function that must be implemented by the user.
 	virtual void handleAbort() { throw std::logic_error("Use of unimplemented abort handler"); }
-
-	void setPosition(const CartesianPosition& pos) { position = pos; }
-	void setSpeed(const SpeedType& spd) { speed = spd; }
-	void setAcceleration(const AccelerationType& acc) { acceleration = acc; }
-	void setDriveDirection(const DriveDirectionType& drd) { driveDirection = drd; }
-	void setObjectState(const ObjectStateID& ost) { objectState = ost; }
-	void setName(const std::string nm) { name = nm; }
-	void setReadyToArm(const int& rdy) { readyToArm = rdy; }
-	void setErrorState(const char& err) { errorState = err; }
 
 	//! Virtual function for adding handling of vendor specific messages if needed.
 	//! Expected to return the number of handled bytes or <= 0 if message was not recognized

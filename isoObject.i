@@ -1,5 +1,7 @@
 /* File : isoObject.i */
-%module isoObject_wrap
+%module(directors="1") isoObject_wrap
+%feature("director") TestObject::handleAbort(); 
+
 #ifdef SWIGJAVA
 %javaconst(0);
 #endif
@@ -12,30 +14,39 @@
 %rename(LessThan) operator<(const Transition &lhs, const Transition &rhs);
 
 %{
+#include <boost/asio.hpp>
 #include "trajDecoder.hpp"
 #include "iso22133state.hpp"
 #include "iso22133object.hpp"
+#include "iso22133.h"
 #include "udpServer.hpp"
 #include "tcpServer.hpp"
-#include "iso22133.h"
 %}
 
-
+%include <boost/asio.hpp>
 %include "trajDecoder.hpp"
 %include "iso22133state.hpp"
 %include "iso22133object.hpp"
+%include "iso22133.h"
 %include "udpServer.hpp"
 %include "tcpServer.hpp"
-%include "iso22133.h"
 
 
 typedef double double_t;
 typedef long int ssize_t;
 
+
 struct timeval {
 long int tv_sec;
 long int tv_usec;
 };
+
+typedef struct {
+	double longitudinal_m_s;
+	double lateral_m_s;
+	bool isLongitudinalValid;
+	bool isLateralValid;
+} SpeedType;
 
 typedef struct {
     double xCoord_m;
@@ -62,6 +73,3 @@ typedef struct {
 	AccelerationType acc;
 	float_t curvature;
 } TrajectoryWaypointType;
-
-
-
