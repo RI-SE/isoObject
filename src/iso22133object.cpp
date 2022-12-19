@@ -188,7 +188,6 @@ void TestObject::heabMonrLoop() {
 			data.erase(data.begin(), data.begin() + nBytesHandled);
 		} while(data.size() > 0);
 	}
-	std::cout << "this-on " << this->on << std::endl;
 	std::cout << "Exiting MONR/HEAB communication thread." << std::endl;
 }
 
