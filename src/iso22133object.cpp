@@ -68,7 +68,6 @@ TestObject::TestObject(const std::string& listenIP)
 }
 
 TestObject::~TestObject() {
-	std::cout << "Destructing" << std::endl;
 	on = false;
 	try {
 		heabMonrThread.join();
@@ -208,7 +207,6 @@ void TestObject::checkHeabTimeout() {
 
 void TestObject::checkHeabLoop() {
 	std::cout << "Started HEAB timeout thread." << std::endl;
-	std::cout << "this->on " << this->on << std::endl;
 	using namespace std::chrono;
 	while (this->on) {
 		auto t = std::chrono::steady_clock::now();
