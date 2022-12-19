@@ -1,6 +1,7 @@
 /* File : isoObject.i */
 %module(directors="1") isoObject_wrap
-%feature("director") TestObject::handleAbort(); 
+%feature("director") TestObject; 
+
 
 #ifdef SWIGJAVA
 %javaconst(0);
@@ -30,6 +31,7 @@
 %include "iso22133.h"
 %include "udpServer.hpp"
 %include "tcpServer.hpp"
+
 
 
 typedef double double_t;

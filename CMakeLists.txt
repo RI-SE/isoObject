@@ -116,7 +116,7 @@ if (WITH_SWIG)
             SET(CMAKE_SWIG_FLAGS -package org.asta.isoObject)
         elseif(SWIG_WITH_PYTHON)
             find_package(Python COMPONENTS Development)
-            SET(CMAKE_SWIG_FLAGS "")
+            SET(CMAKE_SWIG_FLAGS "-threads")
         endif()
 
         set(ISO22133_SWIGGED isoObject_wrap)

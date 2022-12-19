@@ -1,14 +1,13 @@
 from isoObject_wrap import TestObject, CartesianPosition, SpeedType
 from time import sleep
 
-class myTestObject(TestObject):
-    def __init__(self):
-        print("creating my new shiny test object")
-        super().__init__()
 
+class myTestObject(TestObject):
+
+    # This is now overridden in the target language (Python)
     def handleAbort(self):
-        print("handleAbort() from python")
-        TestObject.handleAbort()
+        print("handleAbort() from python!")
+
 
 if __name__ == "__main__":
 
@@ -26,10 +25,8 @@ if __name__ == "__main__":
     spd.longitudinal_m_s = 0
     spd.isLateralValid = True
     spd.isLongitudinalValid = True
-
     isoObject.setPosition(pos)
     isoObject.setSpeed(spd)
 
     while(True):
        sleep(1)
-

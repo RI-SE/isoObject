@@ -50,11 +50,9 @@ class TestObject {
 
 public:
 	TestObject(const std::string& listenIP = "");
-
 	virtual ~TestObject();
 
 	void disconnect();
-
 
 	void setPosition(const CartesianPosition& pos) { position = pos; }
 	void setSpeed(const SpeedType& spd) { speed = spd; }
@@ -65,7 +63,6 @@ public:
 	void setReadyToArm(const int& rdy) { readyToArm = rdy; }
 	void setErrorState(const char& err) { errorState = err; }
 
-	
 	std::string getCurrentStateName() const { return state->getName(); }
 	std::string getName() const { return name; }
 	CartesianPosition getPosition() const { return position; }
