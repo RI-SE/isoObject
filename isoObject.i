@@ -75,3 +75,10 @@ typedef struct {
 	AccelerationType acc;
 	float_t curvature;
 } TrajectoryWaypointType;
+
+typedef struct {
+	double longitudinal_m_s2;
+	double lateral_m_s2;
+	bool isLongitudinalValid;
+	bool isLateralValid;
+} AccelerationType;
