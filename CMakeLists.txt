@@ -55,7 +55,7 @@ target_include_directories(${ISOOBJECT_LIBRARY} PUBLIC
     ${ISO22133_HEADER_DIR}
 )
 set(ISO_OBJ_LIBS ${ISO22133_LIBRARY} atomic pthread Boost::system)
-set(ISO_OBJ_LIBS_JAVA ${ISO22133_LIBRARY} atomic boost_system)
+set(ISO_OBJ_LIBS_JAVA ${ISO22133_LIBRARY} atomic ${boost_system})
 if (SWIG_WITH_JAVA)
     target_link_libraries(${ISOOBJECT_LIBRARY}
         ${ISO_OBJ_LIBS_JAVA}
