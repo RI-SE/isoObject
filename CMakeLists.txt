@@ -4,10 +4,14 @@ cmake_minimum_required(VERSION 3.1)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Build flags
+set(BUILDING_FOR_ANDROID OFF CACHE BOOL "Building for Android")
+
 # Swig flags
 set(WITH_SWIG OFF CACHE BOOL "Enable swigging")
 set(SWIG_WITH_JAVA OFF CACHE BOOL "Swig to target-language java")
 set(SWIG_WITH_PYTHON OFF CACHE BOOL "Swig to target-language python")
+
 if(SWIG_WITH_JAVA)
     set(SWIG_TARGET_LANG java)
 elseif(SWIG_WITH_PYTHON)
@@ -32,13 +36,13 @@ find_path(ISO22133_HEADER_DIR
 
 include(GNUInstallDirs)
 
-if (SWIG_WITH_JAVA)
+if (BUILDING_FOR_ANDROID) # Boost is found in variables set by android toolchain upstream
     add_library(boost_system SHARED IMPORTED)
     set_target_properties(boost_system PROPERTIES IMPORTED_LOCATION
-                        ${MY_BOOST_LIBS_DIR}/libboost_system.so)
+                        ${ANDROID_BOOST_LIB_DIR}/libboost_system.so)
 
-    include_directories(${MY_BOOST_INC_DIR})
-else()
+    include_directories(${ANDROID_BOOST_INCLUDE_DIR})
+else() # Find boost normally
     find_package(Boost REQUIRED COMPONENTS system)
 endif()
 
