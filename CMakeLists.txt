@@ -4,12 +4,14 @@ cmake_minimum_required(VERSION 3.1)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_BUILD_TYPE Debug)
+# Build flags
+set(BUILDING_FOR_ANDROID OFF CACHE BOOL "Building for Android")
 
 # Swig flags
 set(WITH_SWIG OFF CACHE BOOL "Enable swigging")
 set(SWIG_WITH_JAVA OFF CACHE BOOL "Swig to target-language java")
 set(SWIG_WITH_PYTHON OFF CACHE BOOL "Swig to target-language python")
+
 if(SWIG_WITH_JAVA)
     set(SWIG_TARGET_LANG java)
 elseif(SWIG_WITH_PYTHON)
@@ -26,13 +28,23 @@ set(ISO22133_LIBRARY ISO22133)
 find_path(ISO22133_HEADER_DIR
     NAMES "iso22133.h"
     NO_DEFAULT_PATH
+    NO_CMAKE_FIND_ROOT_PATH
+    NO_CACHE
     PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../iso22133"
     REQUIRED
 )
 
 include(GNUInstallDirs)
 
-find_package(Boost REQUIRED COMPONENTS system)
+if (BUILDING_FOR_ANDROID) # Boost is found in variables set by android toolchain upstream
+    add_library(boost_system SHARED IMPORTED)
+    set_target_properties(boost_system PROPERTIES IMPORTED_LOCATION
+                        ${ANDROID_BOOST_LIB_DIR}/libboost_system.so)
+
+    include_directories(${ANDROID_BOOST_INCLUDE_DIR})
+else() # Find boost normally
+    find_package(Boost REQUIRED COMPONENTS system)
+endif()
 
 # Library target
 add_library(${ISOOBJECT_LIBRARY} SHARED
@@ -46,12 +58,17 @@ target_include_directories(${ISOOBJECT_LIBRARY} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
     ${ISO22133_HEADER_DIR}
 )
-
-target_link_libraries(${ISOOBJECT_LIBRARY}
-    ${ISO22133_LIBRARY}
-    atomic
-    pthread
+set(ISO_OBJ_LIBS ${ISO22133_LIBRARY} atomic pthread Boost::system)
+set(ISO_OBJ_LIBS_JAVA ${ISO22133_LIBRARY} atomic ${boost_system})
+if (SWIG_WITH_JAVA)
+    target_link_libraries(${ISOOBJECT_LIBRARY}
+        ${ISO_OBJ_LIBS_JAVA}
+    )
+else()
+    target_link_libraries(${ISOOBJECT_LIBRARY}
+        ${ISO_OBJ_LIBS}
 )
+endif()
 
 set_property(TARGET ${ISOOBJECT_LIBRARY} PROPERTY
     PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/inc/iso22133object.hpp
