@@ -184,6 +184,7 @@ private:
 	std::atomic<int> readyToArm { OBJECT_READY_TO_ARM_UNAVAILABLE };
 	std::atomic<int> transmitterID;
 	std::atomic<char> errorState { 0 };
+	bool osemReceived = false;
 
 	bool awaitingFirstHeab = true;
 	bool on = true;

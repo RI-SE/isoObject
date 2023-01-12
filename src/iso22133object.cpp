@@ -21,7 +21,6 @@ namespace std::chrono {
         tv.tv_usec = std::chrono::duration_cast<std::chrono::microseconds>(d - sec).count();
         return tv;
     }
-
     template<typename Duration>
     void from_timeval(struct timeval & tv, Duration& d) {
         // TODO
@@ -38,19 +37,18 @@ TestObject::TestObject(const std::string& listenIP)
 	  ctrlChannel(ISO_22133_DEFAULT_OBJECT_TCP_PORT),
 	  processChannel(ISO_22133_OBJECT_UDP_PORT),
 	  on(true)
-{	
-
+{
 	CartesianPosition initPos;
 	SpeedType initSpd;
 	AccelerationType initAcc;
 	std::cout << "Listen IP: " << listenIP << std::endl;
 	localIP = listenIP;
-	initPos.isHeadingValid = false;
-	initPos.isPositionValid = false;
-	initSpd.isLateralValid = false;
-	initSpd.isLongitudinalValid = false;
-	initAcc.isLateralValid = false;
-	initAcc.isLongitudinalValid = false;
+	initPos.isHeadingValid = true;
+	initPos.isPositionValid = true;
+	initSpd.isLateralValid = true;
+	initSpd.isLongitudinalValid = true;
+	initAcc.isLateralValid = true;
+	initAcc.isLongitudinalValid = true;
 	this->setPosition(initPos);
 	this->setSpeed(initSpd);
 	this->setAcceleration(initAcc);
@@ -179,7 +177,9 @@ void TestObject::heabMonrLoop() {
 		do {
 			try {
 				nBytesHandled = handleMessage(data);
-				sendMONR();
+                if(osemReceived) {
+                    sendMONR();
+                }
 			}
 			catch (const std::exception& e) {
 				std::cerr << e.what() << std::endl;
@@ -256,6 +256,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 			throw std::invalid_argument("Error decoding OSEM");
 		}
 		std::cout << "Received OSEM " << std::endl;
+			osemReceived = true;
 		this->state->handleOSEM(*this, OSEMstruct);
 		break;
 
