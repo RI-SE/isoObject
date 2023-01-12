@@ -33,6 +33,9 @@
 %include "tcpServer.hpp"
 
 
+namespace std {                                                                  
+    %template(TrajectoryWaypointVector) vector<TrajectoryWaypointType>;                                      
+}; 
 
 typedef double double_t;
 typedef long int ssize_t;
@@ -68,13 +71,7 @@ typedef struct {
     bool isAltitudeValid;
 } GeographicPositionType;
 
-typedef struct {
-	struct timeval relativeTime;
-	CartesianPosition pos;
-	SpeedType spd;
-	AccelerationType acc;
-	float_t curvature;
-} TrajectoryWaypointType;
+
 
 typedef struct {
 	double longitudinal_m_s2;
