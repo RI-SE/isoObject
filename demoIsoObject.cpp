@@ -122,7 +122,9 @@ public:
 private:
     int dummyMember;
     void dummyFunc() {
-        std::cout << "I am printed in a useless function" << std::endl;
+        std::stringstream ss;
+        ss << "I am printed in a useless function" << std::endl;
+        std::cout << ss.str();
     };
 
 };

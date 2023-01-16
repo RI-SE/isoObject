@@ -107,8 +107,6 @@ void ISO22133::State::handleOSTM(TestObject& obj, ObjectCommandType& ostm) {
 void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 	obj.origin = osem.coordinateSystemOrigin;
 	obj.transmitterID = osem.desiredID.transmitter;
-	obj.expectedHeartbeatPeriod = std::chrono::milliseconds(1000 / (uint)osem.rate.heab);
-	obj.monrPeriod = std::chrono::milliseconds(1000 / (uint)osem.rate.monr);
 
 	std::stringstream msg;	// Remove risk of not printing the whole message due to threading
 	msg << "Got OSEM - set transmitter ID to " << osem.desiredID.transmitter << std::endl;
@@ -118,16 +116,22 @@ void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 	msg << "Setting HEAB period to " << obj.expectedHeartbeatPeriod.count() << " ms. ("
 		<< 1000 / obj.expectedHeartbeatPeriod.count() << " Hz) " << std::endl;
 	std::cout << msg.str();
+	obj.expectedHeartbeatPeriod = std::chrono::milliseconds(1000 / (uint)osem.rate.heab);
+
+	obj.heartbeatTimeout = 10*obj.expectedHeartbeatPeriod;
+	msg.str(std::string());
+	msg << "Set HEAB timeout to" << obj.heartbeatTimeout.count() << std::endl;
+	std::cout << msg.str();
 
 	msg.str(std::string());
-	msg << "Setting MONR period to " << obj.monrPeriod.count() << " ms.("
+	msg << "Setting MONR period to " << obj.monrPeriod.count() << " ms. ("
 		<< 1000 / obj.monrPeriod.count() << " Hz) " << std::endl;
 	std::cout << msg.str();
+	obj.monrPeriod = std::chrono::milliseconds(1000 / (uint)osem.rate.monr);
+
 
 	setTransmitterID(osem.desiredID.transmitter);
 	obj.osemSig(osem);
-
-	obj.startSendMonr();
 	return;
 }
 
