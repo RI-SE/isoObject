@@ -3,23 +3,19 @@
 #include "iso22133object.hpp"
 #include "iso22133state.hpp"
 
-
 /**
  * @brief Handle events according to ISO22133 state change description
  *
  * @param obj TestObject reference
  * @param event Event according to ISO22133::EventType
  */
-void ISO22133::State::handleEvent(
-		TestObject& obj,
-		const ISO22133::Events::EventType event) {
-	auto transition = std::find_if(language.begin(), language.end(),
-								   [&event, this](const ISO22133::Transition& tr) {
-		return event == tr.event && this->getStateID() == tr.source;
-	});
+void ISO22133::State::handleEvent(TestObject& obj, const ISO22133::Events::EventType event) {
+	auto transition
+		= std::find_if(language.begin(), language.end(), [&event, this](const ISO22133::Transition& tr) {
+			  return event == tr.event && this->getStateID() == tr.source;
+		  });
 	if (transition == language.end()) {
-		throw std::runtime_error(std::string("Unexpected event '")
-								 + Events::descriptions.at(event)
+		throw std::runtime_error(std::string("Unexpected event '") + Events::descriptions.at(event)
 								 + "' in state " + this->getName());
 	}
 	if (transition->source == transition->target) {
@@ -79,7 +75,7 @@ void ISO22133::State::handleEvent(
  * @param obj TestObject reference
  * @param ostm struct ObjectCommandType
  */
-void ISO22133::State::handleOSTM(TestObject& obj,ObjectCommandType& ostm) {
+void ISO22133::State::handleOSTM(TestObject& obj, ObjectCommandType& ostm) {
 	// Order matters here, below may change state
 	// causing the signal to not be triggered if placed
 	// after the handleEvent() calls
@@ -94,12 +90,11 @@ void ISO22133::State::handleOSTM(TestObject& obj,ObjectCommandType& ostm) {
 	case OBJECT_COMMAND_REMOTE_CONTROL:
 		this->handleEvent(obj, ISO22133::Events::H);
 		break;
-    case OBJECT_COMMAND_ALL_CLEAR:
-        this->handleEvent(obj, ISO22133::Events::X);
-        break;
+	case OBJECT_COMMAND_ALL_CLEAR:
+		this->handleEvent(obj, ISO22133::Events::X);
+		break;
 	default:
 		break;
-
 	}
 }
 
@@ -109,12 +104,30 @@ void ISO22133::State::handleOSTM(TestObject& obj,ObjectCommandType& ostm) {
  * @param obj TestObject reference
  * @param osem struct ObjectSettingsType
  */
-void ISO22133::State::handleOSEM(TestObject& obj,ObjectSettingsType& osem) {
+void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 	obj.origin = osem.coordinateSystemOrigin;
 	obj.transmitterID = osem.desiredID.transmitter;
-	std::cout << "Got OSEM - set transmitter ID to " << osem.desiredID.transmitter << std::endl;
+	obj.expectedHeartbeatPeriod = std::chrono::milliseconds(1000 / (uint)osem.rate.heab);
+	obj.monrPeriod = std::chrono::milliseconds(1000 / (uint)osem.rate.monr);
+
+	std::stringstream msg;	// Remove risk of not printing the whole message due to threading
+	msg << "Got OSEM - set transmitter ID to " << osem.desiredID.transmitter << std::endl;
+	std::cout << msg.str();
+
+	msg.str(std::string());
+	msg << "Setting HEAB period to " << obj.expectedHeartbeatPeriod.count() << " ms. ("
+		<< 1000 / obj.expectedHeartbeatPeriod.count() << " Hz) " << std::endl;
+	std::cout << msg.str();
+
+	msg.str(std::string());
+	msg << "Setting MONR period to " << obj.monrPeriod.count() << " ms.("
+		<< 1000 / obj.monrPeriod.count() << " Hz) " << std::endl;
+	std::cout << msg.str();
+
 	setTransmitterID(osem.desiredID.transmitter);
 	obj.osemSig(osem);
+
+	obj.startSendMonr();
 	return;
 }
 
@@ -124,7 +137,7 @@ void ISO22133::State::handleOSEM(TestObject& obj,ObjectSettingsType& osem) {
  * @param obj TestObject reference
  * @param strt struct TODO
  */
-void ISO22133::State::handleSTRT(TestObject& obj,StartMessageType& strt) {
+void ISO22133::State::handleSTRT(TestObject& obj, StartMessageType& strt) {
 	// Order matters here, below changes state
 	// causing the signal to not be triggered if placed
 	// after the handleEvent() calls
