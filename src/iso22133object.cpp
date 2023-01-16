@@ -1,35 +1,35 @@
 #include <chrono>
 #include <thread>
 
+#include "iso22133.h"
 #include "iso22133object.hpp"
 #include "iso22133state.hpp"
-#include "iso22133.h"
 
 #define TCP_BUFFER_SIZE 1024
 #define UDP_BUFFER_SIZE 1024
 
-//TODO: get this from maestroTime.h in the future
+// TODO: get this from maestroTime.h in the future
 namespace std::chrono {
-    using quartermilliseconds = std::chrono::duration<int64_t, std::ratio<1,4000>>;
-    using weeks = std::chrono::duration<uint16_t, std::ratio<7*24*60*60,1>>;
+using quartermilliseconds = std::chrono::duration<int64_t, std::ratio<1, 4000>>;
+using weeks = std::chrono::duration<uint16_t, std::ratio<7 * 24 * 60 * 60, 1>>;
 
-    template<typename Duration>
-    struct timeval to_timeval(Duration&& d) {
-        std::chrono::seconds const sec = std::chrono::duration_cast<std::chrono::seconds>(d);
-        struct timeval tv;
-        tv.tv_sec  = sec.count();
-        tv.tv_usec = std::chrono::duration_cast<std::chrono::microseconds>(d - sec).count();
-        return tv;
-    }
-
-    template<typename Duration>
-    void from_timeval(struct timeval & tv, Duration& d) {
-        // TODO
-        //const auto sec = std::chrono::seconds(tv.tv_sec);
-        //const auto usec = std::chrono::microseconds(tv.tv_usec);
-        //d = sec + usec;
-    }
+template <typename Duration>
+struct timeval to_timeval(Duration&& d) {
+	std::chrono::seconds const sec = std::chrono::duration_cast<std::chrono::seconds>(d);
+	struct timeval tv;
+	tv.tv_sec = sec.count();
+	tv.tv_usec = std::chrono::duration_cast<std::chrono::microseconds>(d - sec).count();
+	return tv;
 }
+
+template <typename Duration>
+void from_timeval(struct timeval& tv, Duration& d) {
+	// TODO
+	// const auto sec = std::chrono::seconds(tv.tv_sec);
+	// const auto usec = std::chrono::microseconds(tv.tv_usec);
+	// d = sec + usec;
+}
+}  // namespace std::chrono
 
 namespace ISO22133 {
 TestObject::TestObject(const std::string& listenIP)
@@ -37,9 +37,7 @@ TestObject::TestObject(const std::string& listenIP)
 	  trajDecoder(),
 	  ctrlChannel(ISO_22133_DEFAULT_OBJECT_TCP_PORT),
 	  processChannel(ISO_22133_OBJECT_UDP_PORT),
-	  on(true)
-{	
-
+	  on(true) {
 	CartesianPosition initPos;
 	SpeedType initSpd;
 	AccelerationType initAcc;
@@ -64,45 +62,45 @@ TestObject::TestObject(const std::string& listenIP)
 	this->trajSig.connect(&TestObject::onTRAJ, this);
 	this->strtSig.connect(&TestObject::onSTRT, this);
 	this->heabTimeout.connect(&TestObject::onHeabTimeout, this);
-	
 }
 
 TestObject::~TestObject() {
 	on = false;
 	try {
 		udpReceiveThread.join();
-	} catch (std::system_error) {}
+	} catch (std::system_error) {
+	}
 	try {
 		monrThread.join();
-	} catch (std::system_error) {}
+	} catch (std::system_error) {
+	}
 	try {
-		tcpReceiveThread.join(); 
-	} catch (std::system_error) {}
+		tcpReceiveThread.join();
+	} catch (std::system_error) {
+	}
 	try {
 		heabTimeoutThread.join();
-	} catch (std::system_error) {}
-}; 
-
+	} catch (std::system_error) {
+	}
+};
 
 void TestObject::disconnect() {
 	try {
-		ctrlChannel.disconnect(); // Close TCP socket
-	} catch(boost::system::system_error& e) {
-		std::cerr << "TCP socket close error: " << e.what() << '\n';
-	} catch(const std::exception& e) {
+		ctrlChannel.disconnect();  // Close TCP socket
+	} catch (const std::exception& e) {
 		std::cerr << "TCP socket close error: " << e.what() << '\n';
 	}
-	
-	processChannel.disconnect(); // Close UDP socket
-	awaitingFirstHeab = true; // Reset HEAB timeout check
+
+	processChannel.disconnect();  // Close UDP socket
+	awaitingFirstHeab = true;	  // Reset HEAB timeout check
 
 	try {
-		if(udpReceiveThread.joinable())
+		if (udpReceiveThread.joinable())
 			udpReceiveThread.join();
-		if(monrThread.joinable())
+		if (monrThread.joinable())
 			monrThread.join();
 	} catch (std::system_error& e) {
-		std::cerr << "Disconnect error: " << e.what() << std::endl;	
+		std::cerr << "Disconnect error: " << e.what() << std::endl;
 		throw e;
 	}
 }
@@ -112,7 +110,7 @@ void TestObject::receiveTCP() {
 	ss << "Started TCP thread." << std::endl;
 	std::cout << ss.str();
 
-	while(this->on) {
+	while (this->on) {
 		ss.str(std::string());
 		ss << "Awaiting TCP connection from ATOS..." << std::endl;
 		std::cout << ss.str();
@@ -126,24 +124,24 @@ void TestObject::receiveTCP() {
 			throw e;
 		}
 		ss.str(std::string());
-		ss << "TCP connection to ATOS running at " << ctrlChannel.getEndPoint().address().to_string() << " established." << std::endl;
+		ss << "TCP connection to ATOS running at " << ctrlChannel.getEndPoint().address().to_string()
+		   << " established." << std::endl;
 		std::cout << ss.str();
 
 		state->handleEvent(*this, ISO22133::Events::B);
 		try {
-			while (true) {				
+			while (true) {
 				auto data = ctrlChannel.receive();
 				int nBytesHandled = 0;
 				do {
 					try {
 						nBytesHandled = handleMessage(data);
-					}
-					catch (const std::exception& e) {
+					} catch (const std::exception& e) {
 						std::cerr << e.what() << std::endl;
 						break;
 					}
 					data.erase(data.begin(), data.begin() + nBytesHandled);
-				} while(data.size() > 0);
+				} while (data.size() > 0);
 			}
 		} catch (boost::system::system_error&) {
 			std::cerr << "Connection to ATOS lost" << std::endl;
@@ -160,16 +158,15 @@ void TestObject::sendMONR(bool debug) {
 	std::vector<char> buffer(UDP_BUFFER_SIZE);
 	struct timeval time;
 	auto nanos = std::chrono::system_clock::now().time_since_epoch().count();
-	time.tv_sec = nanos/1e9;
-	time.tv_usec = nanos/1e3 - time.tv_sec*1e6;
+	time.tv_sec = nanos / 1e9;
+	time.tv_usec = nanos / 1e3 - time.tv_sec * 1e6;
 
 	auto result = encodeMONRMessage(&time, this->position, this->speed, this->acceleration,
 									this->driveDirection, this->state->getStateID(), this->readyToArm,
-									this->errorState, 0x0000, buffer.data(), buffer.size(),debug);
+									this->errorState, 0x0000, buffer.data(), buffer.size(), debug);
 	if (result < 0) {
 		throw(std::invalid_argument("Failed to encode MONR data"));
-	}
-	else {
+	} else {
 		processChannel.send(buffer, static_cast<size_t>(result));
 	}
 }
@@ -178,11 +175,11 @@ void TestObject::sendMonrLoop() {
 	std::stringstream ss;
 	ss << "Started MONR thread." << std::endl;
 	std::cout << ss.str();
-	
+
 	while (this->on && ctrlChannel.isOpen()) {
 		sendMONR();
 		auto t = std::chrono::steady_clock::now();
-		std::this_thread::sleep_until(t+expectedHeartbeatPeriod);	
+		std::this_thread::sleep_until(t + expectedHeartbeatPeriod);
 	}
 }
 
@@ -196,9 +193,9 @@ void TestObject::receiveUDP() {
 
 	while (this->on && ctrlChannel.isOpen()) {
 		auto data = processChannel.receive();
-		
+
 		// Connection lost
-		if(data.size() <= 0) {
+		if (data.size() <= 0) {
 			continue;
 		}
 
@@ -212,15 +209,16 @@ void TestObject::receiveUDP() {
 		do {
 			try {
 				nBytesHandled = handleMessage(data);
-			}
-			catch (const std::exception& e) {
+			} catch (const std::exception& e) {
 				std::cerr << e.what() << std::endl;
 				break;
 			}
 			data.erase(data.begin(), data.begin() + nBytesHandled);
-		} while(data.size() > 0);
+		} while (data.size() > 0);
 	}
-	std::cout << "Exiting UDP communication thread." << std::endl;
+	ss.str(std::string());
+	ss << "Exiting UDP communication thread." << std::endl;
+	std::cout << ss.str();
 }
 
 void TestObject::checkHeabTimeout() {
@@ -229,9 +227,10 @@ void TestObject::checkHeabTimeout() {
 	// Check time difference of received HEAB and last HEAB
 	auto timeSinceHeab = steady_clock::now() - lastHeabTime;
 	if (!awaitingFirstHeab && timeSinceHeab > heartbeatTimeout) {
-		std::cerr << "Heartbeat timeout: " << duration_cast<milliseconds>(timeSinceHeab).count()
-				  << " ms since last heartbeat exceeds limit of " << heartbeatTimeout.count() << " ms."
-				  << std::endl;
+		std::stringstream ss;
+		ss << "Heartbeat timeout: " << duration_cast<milliseconds>(timeSinceHeab).count()
+		   << " ms since last heartbeat exceeds limit of " << heartbeatTimeout.count() << " ms." << std::endl;
+		std::cerr << ss.str();
 		heabTimeout();
 	}
 }
@@ -246,7 +245,7 @@ void TestObject::checkHeabLoop() {
 		auto t = std::chrono::steady_clock::now();
 		checkHeabTimeout();
 		// Don't lock the mutex all the time
-		std::this_thread::sleep_until(t+expectedHeartbeatPeriod);
+		std::this_thread::sleep_until(t + expectedHeartbeatPeriod);
 	}
 	ss.str(std::string());
 	ss << "Exiting HEAB timeout thread." << std::endl;
@@ -259,12 +258,12 @@ void TestObject::onHeabTimeout() {
 }
 
 int TestObject::handleMessage(std::vector<char>& dataBuffer) {
-	std::lock_guard<std::mutex> lock(this->recvMutex); // Both TCP and UDP threads end up in here
+	std::lock_guard<std::mutex> lock(this->recvMutex);	// Both TCP and UDP threads end up in here
 	int bytesHandled = 0;
 	int debug = 0;
 	struct timeval currentTime;
 
-    currentTime = std::chrono::to_timeval(std::chrono::system_clock::now().time_since_epoch());
+	currentTime = std::chrono::to_timeval(std::chrono::system_clock::now().time_since_epoch());
 
 	ISOMessageID msgType = getISOMessageType(dataBuffer.data(), dataBuffer.size(), false);
 	// Ugly check here since we don't know if it is UDP or the rest of TRAJ
@@ -284,25 +283,17 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 		break;
 	case MESSAGE_ID_OSEM:
 		ObjectSettingsType OSEMstruct;
-		bytesHandled = decodeOSEMMessage(
-					&OSEMstruct,
-					dataBuffer.data(),
-					dataBuffer.size(),
-					debug);
+		bytesHandled = decodeOSEMMessage(&OSEMstruct, dataBuffer.data(), dataBuffer.size(), debug);
 		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding OSEM");
 		}
-		std::cout << "Received OSEM " << std::endl;
+		std::cout << "Received OSEM \n";
 		this->state->handleOSEM(*this, OSEMstruct);
 		break;
 
 	case MESSAGE_ID_OSTM:
 		ObjectCommandType OSTMdata;
-		bytesHandled = decodeOSTMMessage(
-					dataBuffer.data(),
-					dataBuffer.size(),
-					&OSTMdata,
-					debug);
+		bytesHandled = decodeOSTMMessage(dataBuffer.data(), dataBuffer.size(), &OSTMdata, debug);
 		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding OSTM");
 		}
@@ -311,12 +302,8 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 
 	case MESSAGE_ID_STRT:
 		StartMessageType STRTdata;
-		bytesHandled = decodeSTRTMessage(
-					dataBuffer.data(),
-					dataBuffer.size(),
-					&currentTime,
-					&STRTdata,
-					debug);
+		bytesHandled
+			= decodeSTRTMessage(dataBuffer.data(), dataBuffer.size(), &currentTime, &STRTdata, debug);
 		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding STRT");
 		}
@@ -326,12 +313,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 	case MESSAGE_ID_HEAB:
 		HeabMessageDataType HEABdata;
 
-		bytesHandled = decodeHEABMessage(
-					dataBuffer.data(),
-					dataBuffer.size(),
-					currentTime,
-					&HEABdata,
-					debug);
+		bytesHandled = decodeHEABMessage(dataBuffer.data(), dataBuffer.size(), currentTime, &HEABdata, debug);
 		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding HEAB");
 		}
@@ -341,7 +323,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 		bytesHandled = handleVendorSpecificMessage(msgType, dataBuffer);
 		if (bytesHandled < 0) {
 			throw std::invalid_argument(std::string("Unable to decode ISO-22133 message with MsgID ")
-                                  + std::to_string(msgType));
+										+ std::to_string(msgType));
 		}
 		bytesHandled = static_cast<int>(dataBuffer.size());
 		break;
@@ -362,13 +344,13 @@ void TestObject::handleHEAB(HeabMessageDataType& heab) {
 
 	// Check network delay: difference between
 	// timestamp in HEAB and local time
-	auto heabTime = seconds(heab.dataTimestamp.tv_sec)
-			+ microseconds(heab.dataTimestamp.tv_usec);
+	auto heabTime = seconds(heab.dataTimestamp.tv_sec) + microseconds(heab.dataTimestamp.tv_usec);
 	auto networkDelay = system_clock::now().time_since_epoch() - heabTime;
 	if (networkDelay > maxSafeNetworkDelay) {
-		std::cerr << "Network delay of " << duration_cast<milliseconds>(networkDelay).count()
-				  << " ms exceeds safe limit of " << maxSafeNetworkDelay.count() << " ms."
-				  << std::endl;
+		std::stringstream ss;
+		ss << "Network delay of " << duration_cast<milliseconds>(networkDelay).count()
+		   << " ms exceeds safe limit of " << maxSafeNetworkDelay.count() << " ms." << std::endl;
+		std::cerr << ss.str();
 		// TODO: do something
 	}
 	// checkHeabTimeout();
@@ -393,4 +375,4 @@ void TestObject::handleHEAB(HeabMessageDataType& heab) {
 	return;
 }
 
-} //namespace ISO22133
+}  // namespace ISO22133

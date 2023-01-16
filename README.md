@@ -24,11 +24,12 @@ class myObject : public ISO22133::TestObject {
 }
 ```
 
-When a new TestObject instance is created there will be three threads created in
+When a new TestObject instance is created there will be four threads created in
 the background doing respectively: 
 * Receive and handle messages on TCP from test server
 * Receive and handle messages on UDP from test server
 * Periodically send MONR messages to the test server
+* Check the duration between HEABs and quit if not recieved in time
 
 The values populating the MONR message must be continously updated using the corresponding 
 setters, all values are per default 0.
@@ -91,6 +92,7 @@ ISO22133::PreArming* myObject::createPreArming() const override {
 
 ## SWIG
 
+### Java
 To swig the ISOobject to Java the following command in terminal:
 
 ```
@@ -99,3 +101,9 @@ swig -java -c++ -package com.isoObject isoObject.i
 
 The generated files can then be included and used in a Java project. 
 
+### Python
+To swig the ISOobject to Python build the project with 
+```cmake
+cmake . -DWITH_SWIG=ON -DSWIG_WITH_PYTHON=ON
+```
+See example app in swig folder.

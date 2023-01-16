@@ -149,7 +149,8 @@ private:
 	void checkHeabLoop();
 	//! MONR sending loop that should be run in its own thread.
 	void sendMonrLoop();
-
+	
+	//! Used to start the threads
 	void startHandleTCP() { tcpReceiveThread = std::thread(&TestObject::receiveTCP, this); }
 	void startHandleUDP() { udpReceiveThread = std::thread(&TestObject::receiveUDP, this); }
 	void startHEABCheck() { heabTimeoutThread = std::thread(&TestObject::checkHeabLoop, this); }
