@@ -142,6 +142,27 @@ void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
  * @param strt struct TODO
  */
 void ISO22133::State::handleSTRT(TestObject& obj, StartMessageType& strt) {
+	// Invalid timestamp, ignore message
+	if(!strt.isTimestampValid) {
+		std::stringstream ss;
+		ss << "Got invalid timestamp in STRT message. Ignoring." << std::endl;
+		std::cout << ss.str();
+		return;
+	}
+
+	// Start time already passed. Request abort from Control Center
+	if(strt.startTime < std::chrono::to_timeval(std::chrono::system_clock::now().time_since_epoch())) {
+		std::stringstream ss;
+		ss << "Got STRT message with start time in the past. Requesting abort." << std::endl;
+		std::cout << ss.str();
+		char error = 0;
+		error |= 1 << 8;
+		obj.setErrorState(error);
+		return;
+	}
+
+	// TODO: Change state when time in message is reached
+
 	// Order matters here, below changes state
 	// causing the signal to not be triggered if placed
 	// after the handleEvent() calls
