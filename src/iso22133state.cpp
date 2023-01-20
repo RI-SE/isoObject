@@ -156,7 +156,7 @@ void ISO22133::State::handleSTRT(TestObject& obj, StartMessageType& strt) {
 		ss << "Got STRT message with start time in the past. Requesting abort." << std::endl;
 		std::cout << ss.str();
 		char error = 0;
-		error |= 1 << 8;
+		error |= 1 << 8; // Abort request is MSB of error mask
 		obj.setErrorState(error);
 		return;
 	}
