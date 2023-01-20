@@ -8,7 +8,8 @@
 #define TCP_BUFFER_SIZE 1024
 #define UDP_BUFFER_SIZE 1024
 
-// TODO: get this from maestroTime.h in the future
+
+// Functions to convert between timeval and std::chrono::duration
 namespace std::chrono {
 using quartermilliseconds = std::chrono::duration<int64_t, std::ratio<1, 4000>>;
 using weeks = std::chrono::duration<uint16_t, std::ratio<7 * 24 * 60 * 60, 1>>;
@@ -354,7 +355,6 @@ void TestObject::handleHEAB(HeabMessageDataType& heab) {
 		std::cerr << ss.str();
 		// TODO: do something
 	}
-	// checkHeabTimeout();
 	std::scoped_lock lock(heabMutex);
 	lastHeabTime = steady_clock::now();
 	awaitingFirstHeab = false;
