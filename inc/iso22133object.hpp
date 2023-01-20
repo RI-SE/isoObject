@@ -139,6 +139,7 @@ protected:
 	std::chrono::milliseconds heartbeatTimeout = 10*expectedHeartbeatPeriod;
 	std::chrono::milliseconds maxSafeNetworkDelay = std::chrono::milliseconds(200);
 
+	ISO22133::State* state;
 private:
 
 	//! TCP receiver loop that should be run in its own thread.
@@ -174,7 +175,6 @@ private:
 	std::thread udpReceiveThread;
 	std::thread monrThread;
 	std::thread heabTimeoutThread;
-	ISO22133::State* state;
 	std::string name = "unnamed";
 	TcpServer ctrlChannel;
 	UdpServer processChannel;
