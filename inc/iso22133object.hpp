@@ -139,17 +139,24 @@ protected:
 	std::chrono::milliseconds heartbeatTimeout = 10*expectedHeartbeatPeriod;
 	std::chrono::milliseconds maxSafeNetworkDelay = std::chrono::milliseconds(200);
 
+	ISO22133::State* state;
 private:
 
 	//! TCP receiver loop that should be run in its own thread.
 	void receiveTCP();
-	//! HEAB receiving / MONR sending loop that should be run in its own thread.
-	void heabMonrLoop();
+	//! UDP receiver loop that should be run in its own thread.
+	void receiveUDP();
 	//! HEAB timeout checking loop that should be run in its own thread.
 	void checkHeabLoop();
+	//! MONR sending loop that should be run in its own thread.
+	void sendMonrLoop();
+	
+	//! Used to start the threads
 	void startHandleTCP() { tcpReceiveThread = std::thread(&TestObject::receiveTCP, this); }
-	void startHandleUDP() { heabMonrThread = std::thread(&TestObject::heabMonrLoop, this); }
+	void startHandleUDP() { udpReceiveThread = std::thread(&TestObject::receiveUDP, this); }
 	void startHEABCheck() { heabTimeoutThread = std::thread(&TestObject::checkHeabLoop, this); }
+	void startSendMonr()  { monrThread = std::thread(&TestObject::sendMonrLoop, this); }
+	
 	//! Function for handling received ISO messages. Calls corresponding
 	//! handler in the current state.
 	int handleMessage(std::vector<char>&);
@@ -163,11 +170,11 @@ private:
 
 	sigslot::signal<>heabTimeout;
 	std::mutex recvMutex;
-	std::thread tcpReceiveThread;
 	std::string localIP;
-	std::thread heabMonrThread;
+	std::thread tcpReceiveThread;
+	std::thread udpReceiveThread;
+	std::thread monrThread;
 	std::thread heabTimeoutThread;
-	ISO22133::State* state;
 	std::string name = "unnamed";
 	TcpServer ctrlChannel;
 	UdpServer processChannel;

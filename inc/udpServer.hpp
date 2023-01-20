@@ -36,7 +36,9 @@ class UdpServer {
 			setBufferSize(defaultBufferSize);
 			return result;
 		} catch (const std::exception& e) {
-			std::cerr << "Exception in receive UDP: " << e.what() << '\n';
+			std::stringstream ss;
+			ss << "Exception in receive UDP: " << e.what() << '\n';
+			std::cerr << ss.str();
 			throw e;
 		}
 	};
@@ -48,7 +50,9 @@ class UdpServer {
 			auto bytesSent = socket.send_to(boost::asio::buffer(sendBuffer), senderEndpoint);
 			return bytesSent;
 		} catch (const std::exception& e) {
-			std::cerr << "Exception in send UDP: " << e.what() << '\n';
+			std::stringstream ss;
+			ss << "Exception in send UDP: " << e.what() << '\n';
+			std::cerr << ss.str();
 			throw e;
 		}
 	};
