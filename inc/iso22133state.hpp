@@ -158,6 +158,7 @@ private:
 class Armed : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_ARMED; }
+	virtual void onEnter(TestObject& obj);
 };
 
 class Disarmed : public State {

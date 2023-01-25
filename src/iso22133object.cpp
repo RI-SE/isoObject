@@ -55,7 +55,6 @@ TestObject::TestObject(const std::string& listenIP)
 	this->setAcceleration(initAcc);
 	this->state = this->createInit();
 	this->startHandleTCP();
-	this->startHEABCheck();
 	this->stateChangeSig.connect(&TestObject::onStateChange, this);
 	this->osemSig.connect(&TestObject::onOSEM, this);
 	this->heabSig.connect(&TestObject::onHEAB, this);

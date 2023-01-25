@@ -183,3 +183,7 @@ void ISO22133::Disarmed::onEnter(TestObject& obj) {
 void ISO22133::Disarmed::onExit(TestObject& obj) {
 	obj.setReadyToArm(OBJECT_NOT_READY_TO_ARM);
 }
+
+void ISO22133::Armed::onEnter(TestObject& obj) {
+	obj.startHEABCheck();
+}
