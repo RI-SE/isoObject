@@ -105,5 +105,9 @@ The generated files can then be included and used in a Java project.
 To swig the ISOobject to Python build the project with 
 ```cmake
 cmake . -DWITH_SWIG=ON -DSWIG_WITH_PYTHON=ON
+
+sudo make install
+
+sudo ldconfig
 ```
-See example app in swig folder.
+See example script in swig folder for how to use it.
