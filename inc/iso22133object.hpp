@@ -142,6 +142,7 @@ protected:
 	//! Used to get estimated network delay 
 	std::chrono::milliseconds getNetworkDelay();
 
+	ISO22133::State* state;
 private:
 
 	//! TCP receiver loop that should be run in its own thread.
@@ -183,7 +184,6 @@ private:
 	std::thread monrThread;
 	std::thread heabTimeoutThread;
 	std::thread delayedStrtThread;
-	ISO22133::State* state;
 	std::string name = "unnamed";
 	TcpServer ctrlChannel;
 	UdpServer processChannel;

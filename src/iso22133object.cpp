@@ -345,7 +345,6 @@ void TestObject::handleHEAB(HeabMessageDataType& heab) {
 		std::cerr << ss.str();
 		// TODO: do something
 	}
-	// checkHeabTimeout();
 	std::scoped_lock lock(heabMutex);
 	lastHeabTime = steady_clock::now();
 	awaitingFirstHeab = false;
