@@ -199,9 +199,8 @@ private:
 	std::atomic<int> readyToArm { OBJECT_READY_TO_ARM_UNAVAILABLE };
 	std::atomic<int> transmitterID;
 	std::atomic<char> errorState { 0 };
-
-	bool awaitingFirstHeab = true;
-	bool on = true;
+	std::atomic<bool> awaitingFirstHeab { true };
+	std::atomic<bool> on { true };
 
 	std::chrono::milliseconds estimatedNetworkDelay = std::chrono::milliseconds(0);
 };
