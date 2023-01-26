@@ -60,6 +60,10 @@ TestObject::~TestObject() {
 		heabTimeoutThread.join();
 	} catch (std::system_error) {
 	}
+	try {
+		delayedStrtThread.join();
+	} catch (std::system_error) {
+	}
 };
 
 void TestObject::disconnect() {
@@ -323,8 +327,12 @@ void TestObject::handleHEAB(HeabMessageDataType& heab) {
 
 	// Check network delay: difference between
 	// timestamp in HEAB and local time
+	// Requires the system clocks of ATOS 
+	// and object to be synced!!
 	auto heabTime = seconds(heab.dataTimestamp.tv_sec) + microseconds(heab.dataTimestamp.tv_usec);
 	auto networkDelay = system_clock::now().time_since_epoch() - heabTime;
+	setNetworkDelay(duration_cast<milliseconds>(networkDelay));
+
 	if (networkDelay > maxSafeNetworkDelay) {
 		std::stringstream ss;
 		ss << "Network delay of " << duration_cast<milliseconds>(networkDelay).count()
@@ -352,6 +360,19 @@ void TestObject::handleHEAB(HeabMessageDataType& heab) {
 	}
 	ccStatus = heab.controlCenterStatus;
 	return;
+}
+
+std::chrono::milliseconds TestObject::getNetworkDelay() {
+	std::scoped_lock lock(netwrkDelayMutex);
+	if (awaitingFirstHeab) {
+		return std::chrono::milliseconds(0);
+	}
+	return estimatedNetworkDelay;
+}
+
+void TestObject::setNetworkDelay(std::chrono::milliseconds delay) {
+	std::scoped_lock lock(netwrkDelayMutex);
+	estimatedNetworkDelay = delay;
 }
 
 }  // namespace ISO22133

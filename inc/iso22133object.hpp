@@ -7,6 +7,8 @@
 #include <atomic>
 #include <optional>
 
+#include <bitset>
+
 #include "iso22133.h"
 #include "iso22133state.hpp"
 #include "trajDecoder.hpp"
@@ -61,7 +63,7 @@ public:
 	void setObjectState(const ObjectStateID& ost) { objectState = ost; }
 	void setName(const std::string nm) { name = nm; }
 	void setReadyToArm(const int& rdy) { readyToArm = rdy; }
-	void setErrorState(const char& err) { errorState = err; }
+	void setErrorState(const char err) { errorState = err; }
 
 	std::string getCurrentStateName() const { return state->getName(); }
 	std::string getName() const { return name; }
@@ -139,6 +141,9 @@ protected:
 	std::chrono::milliseconds heartbeatTimeout = 10*expectedHeartbeatPeriod;
 	std::chrono::milliseconds maxSafeNetworkDelay = std::chrono::milliseconds(200);
 
+	//! Used to get estimated network delay 
+	std::chrono::milliseconds getNetworkDelay();
+
 private:
 
 	//! TCP receiver loop that should be run in its own thread.
@@ -167,19 +172,24 @@ private:
 	//! Function that checks if HEABs arrive on time
 	void checkHeabTimeout();
 
+	//! Set estimated network delay from HEAB times
+	void setNetworkDelay(std::chrono::milliseconds);
+
 	sigslot::signal<>heabTimeout;
 	std::mutex recvMutex;
+	std::mutex heabMutex;
+	std::mutex netwrkDelayMutex;
 	std::string localIP;
 	std::thread tcpReceiveThread;
 	std::thread udpReceiveThread;
 	std::thread monrThread;
 	std::thread heabTimeoutThread;
+	std::thread delayedStrtThread;
 	ISO22133::State* state;
 	std::string name = "unnamed";
 	TcpServer ctrlChannel;
 	UdpServer processChannel;
 	TrajDecoder trajDecoder;
-	std::mutex heabMutex;
 	std::chrono::steady_clock::time_point lastHeabTime;
 	std::atomic<GeographicPositionType> origin;
 	std::atomic<ControlCenterStatusType> ccStatus;
@@ -194,6 +204,8 @@ private:
 
 	bool awaitingFirstHeab = true;
 	bool on = true;
+
+	std::chrono::milliseconds estimatedNetworkDelay = std::chrono::milliseconds(0);
 };
 } // namespace ISO22133
 
@@ -211,18 +223,18 @@ struct timeval to_timeval(Duration&& d) {
 	return tv;
 }
 
-template <typename Duration>
-void from_timeval(struct timeval& tv, Duration& d) {
-	// TODO
-	// const auto sec = std::chrono::seconds(tv.tv_sec);
-	// const auto usec = std::chrono::microseconds(tv.tv_usec);
-	// d = sec + usec;
-}
+// template <typename Duration>
+// void from_timeval(timeval&& tv, Duration& d) {
+// 	const auto sec = std::chrono::seconds(tv.tv_sec);
+// 	const auto usec = std::chrono::microseconds(tv.tv_usec);
+// 	d = sec + usec;
+// }
 }  // namespace std::chrono
 
-inline bool operator< (const timeval &lhs, const timeval &rhs){
+inline bool operator< (const timeval &lhs, const timeval &rhs) {
 	return (lhs.tv_sec + lhs.tv_usec/1e6) < (rhs.tv_sec + rhs.tv_usec/1e6);
 }
-inline bool operator> (const timeval &lhs, const timeval &rhs){
+inline bool operator> (const timeval &lhs, const timeval &rhs) {
 	return (lhs.tv_sec + lhs.tv_usec/1e6) > (rhs.tv_sec + rhs.tv_usec/1e6);
 }
+
