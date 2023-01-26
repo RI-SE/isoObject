@@ -163,6 +163,10 @@ void TestObject::sendMonrLoop() {
 		auto t = std::chrono::steady_clock::now();
 		std::this_thread::sleep_until(t + monrPeriod);
 	}
+
+	ss.str(std::string());
+	ss << "Exiting MONR thread." << std::endl;
+	std::cout << ss.str();
 }
 
 void TestObject::receiveUDP() {
@@ -185,6 +189,7 @@ void TestObject::receiveUDP() {
 			ss.str(std::string());
 			ss << "Received UDP data from ATOS" << std::endl;
 			std::cout << ss.str();
+
 			startSendMonr(); // UDP connection established, start sending MONR
 		}
 

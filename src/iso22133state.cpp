@@ -109,8 +109,10 @@ void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 	obj.transmitterID = osem.desiredID.transmitter;
 
 	std::stringstream msg;	// Remove risk of not printing the whole message due to threading
-	msg << "Got OSEM - set transmitter ID to " << osem.desiredID.transmitter << std::endl;
+	msg << "Got OSEM - set transmitter ID to " << obj.transmitterID << std::endl;
 	std::cout << msg.str();
+	// This sets the transmitter ID for ISO22133 encoder
+	setTransmitterID(obj.transmitterID);
 
 	msg.str(std::string());
 	msg << "Setting HEAB period to " << obj.expectedHeartbeatPeriod.count() << " ms. ("
@@ -129,8 +131,6 @@ void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 	std::cout << msg.str();
 	obj.monrPeriod = std::chrono::milliseconds(1000 / (uint)osem.rate.monr);
 
-
-	setTransmitterID(osem.desiredID.transmitter);
 	obj.osemSig(osem);
 	return;
 }
