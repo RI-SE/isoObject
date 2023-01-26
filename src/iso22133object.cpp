@@ -46,23 +46,23 @@ TestObject::~TestObject() {
 	on = false;
 	try {
 		udpReceiveThread.join();
-	} catch (std::system_error) {
+	} catch (std::system_error&) {
 	}
 	try {
 		monrThread.join();
-	} catch (std::system_error) {
+	} catch (std::system_error&) {
 	}
 	try {
 		tcpReceiveThread.join();
-	} catch (std::system_error) {
+	} catch (std::system_error&) {
 	}
 	try {
 		heabTimeoutThread.join();
-	} catch (std::system_error) {
+	} catch (std::system_error&) {
 	}
 	try {
 		delayedStrtThread.join();
-	} catch (std::system_error) {
+	} catch (std::system_error&) {
 	}
 };
 
