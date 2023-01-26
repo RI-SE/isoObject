@@ -7,8 +7,6 @@
 #include <atomic>
 #include <optional>
 
-#include <bitset>
-
 #include "iso22133.h"
 #include "iso22133state.hpp"
 #include "trajDecoder.hpp"
@@ -209,7 +207,6 @@ private:
 };
 } // namespace ISO22133
 
-// TODO: get this from maestroTime.h in the future
 namespace std::chrono {
 using quartermilliseconds = std::chrono::duration<int64_t, std::ratio<1, 4000>>;
 using weeks = std::chrono::duration<uint16_t, std::ratio<7 * 24 * 60 * 60, 1>>;
@@ -222,13 +219,6 @@ struct timeval to_timeval(Duration&& d) {
 	tv.tv_usec = std::chrono::duration_cast<std::chrono::microseconds>(d - sec).count();
 	return tv;
 }
-
-// template <typename Duration>
-// void from_timeval(timeval&& tv, Duration& d) {
-// 	const auto sec = std::chrono::seconds(tv.tv_sec);
-// 	const auto usec = std::chrono::microseconds(tv.tv_usec);
-// 	d = sec + usec;
-// }
 }  // namespace std::chrono
 
 inline bool operator< (const timeval &lhs, const timeval &rhs) {
