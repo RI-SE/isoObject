@@ -6,6 +6,12 @@
 #ifdef SWIGJAVA
 %javaconst(0);
 #endif
+
+#ifdef SWIGPYTHON
+%rename(timevalLessThan) operator< (const timeval &lhs, const timeval &rhs);
+%rename(timevalGreaterThan) operator> (const timeval &lhs, const timeval &rhs);
+#endif
+
 %pointer_functions(uint32_t, uint32ptr);
 %include <std_string.i>
 %include <std_vector.i>
@@ -45,6 +51,7 @@ struct timeval {
 long int tv_sec;
 long int tv_usec;
 };
+
 
 typedef struct {
 	double longitudinal_m_s;
