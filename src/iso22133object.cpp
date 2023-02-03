@@ -9,29 +9,6 @@
 #define UDP_BUFFER_SIZE 1024
 
 
-// Functions to convert between timeval and std::chrono::duration
-namespace std::chrono {
-using quartermilliseconds = std::chrono::duration<int64_t, std::ratio<1, 4000>>;
-using weeks = std::chrono::duration<uint16_t, std::ratio<7 * 24 * 60 * 60, 1>>;
-
-template <typename Duration>
-struct timeval to_timeval(Duration&& d) {
-	std::chrono::seconds const sec = std::chrono::duration_cast<std::chrono::seconds>(d);
-	struct timeval tv;
-	tv.tv_sec = sec.count();
-	tv.tv_usec = std::chrono::duration_cast<std::chrono::microseconds>(d - sec).count();
-	return tv;
-}
-
-template <typename Duration>
-void from_timeval(struct timeval& tv, Duration& d) {
-	// TODO
-	// const auto sec = std::chrono::seconds(tv.tv_sec);
-	// const auto usec = std::chrono::microseconds(tv.tv_usec);
-	// d = sec + usec;
-}
-}  // namespace std::chrono
-
 namespace ISO22133 {
 TestObject::TestObject(const std::string& listenIP)
 	: name("myTestObject"),
@@ -69,19 +46,23 @@ TestObject::~TestObject() {
 	on = false;
 	try {
 		udpReceiveThread.join();
-	} catch (std::system_error) {
+	} catch (std::system_error&) {
 	}
 	try {
 		monrThread.join();
-	} catch (std::system_error) {
+	} catch (std::system_error&) {
 	}
 	try {
 		tcpReceiveThread.join();
-	} catch (std::system_error) {
+	} catch (std::system_error&) {
 	}
 	try {
 		heabTimeoutThread.join();
-	} catch (std::system_error) {
+	} catch (std::system_error&) {
+	}
+	try {
+		delayedStrtThread.join();
+	} catch (std::system_error&) {
 	}
 };
 
@@ -182,6 +163,10 @@ void TestObject::sendMonrLoop() {
 		auto t = std::chrono::steady_clock::now();
 		std::this_thread::sleep_until(t + monrPeriod);
 	}
+
+	ss.str(std::string());
+	ss << "Exiting MONR thread." << std::endl;
+	std::cout << ss.str();
 }
 
 void TestObject::receiveUDP() {
@@ -204,6 +189,7 @@ void TestObject::receiveUDP() {
 			ss.str(std::string());
 			ss << "Received UDP data from ATOS" << std::endl;
 			std::cout << ss.str();
+
 			startSendMonr(); // UDP connection established, start sending MONR
 		}
 
@@ -346,8 +332,12 @@ void TestObject::handleHEAB(HeabMessageDataType& heab) {
 
 	// Check network delay: difference between
 	// timestamp in HEAB and local time
+	// Requires the system clocks of ATOS 
+	// and object to be synced!!
 	auto heabTime = seconds(heab.dataTimestamp.tv_sec) + microseconds(heab.dataTimestamp.tv_usec);
 	auto networkDelay = system_clock::now().time_since_epoch() - heabTime;
+	setNetworkDelay(duration_cast<milliseconds>(networkDelay));
+
 	if (networkDelay > maxSafeNetworkDelay) {
 		std::stringstream ss;
 		ss << "Network delay of " << duration_cast<milliseconds>(networkDelay).count()
@@ -374,6 +364,19 @@ void TestObject::handleHEAB(HeabMessageDataType& heab) {
 	}
 	ccStatus = heab.controlCenterStatus;
 	return;
+}
+
+std::chrono::milliseconds TestObject::getNetworkDelay() {
+	std::scoped_lock lock(netwrkDelayMutex);
+	if (awaitingFirstHeab) {
+		return std::chrono::milliseconds(0);
+	}
+	return estimatedNetworkDelay;
+}
+
+void TestObject::setNetworkDelay(std::chrono::milliseconds delay) {
+	std::scoped_lock lock(netwrkDelayMutex);
+	estimatedNetworkDelay = delay;
 }
 
 }  // namespace ISO22133

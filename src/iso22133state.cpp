@@ -109,8 +109,10 @@ void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 	obj.transmitterID = osem.desiredID.transmitter;
 
 	std::stringstream msg;	// Remove risk of not printing the whole message due to threading
-	msg << "Got OSEM - set transmitter ID to " << osem.desiredID.transmitter << std::endl;
+	msg << "Got OSEM - set transmitter ID to " << obj.transmitterID << std::endl;
 	std::cout << msg.str();
+	// This sets the transmitter ID for ISO22133 encoder
+	setTransmitterID(obj.transmitterID);
 
 	msg.str(std::string());
 	msg << "Setting HEAB period to " << obj.expectedHeartbeatPeriod.count() << " ms. ("
@@ -129,8 +131,6 @@ void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 	std::cout << msg.str();
 	obj.monrPeriod = std::chrono::milliseconds(1000 / (uint)osem.rate.monr);
 
-
-	setTransmitterID(osem.desiredID.transmitter);
 	obj.osemSig(osem);
 	return;
 }
@@ -142,11 +142,56 @@ void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
  * @param strt struct TODO
  */
 void ISO22133::State::handleSTRT(TestObject& obj, StartMessageType& strt) {
-	// Order matters here, below changes state
-	// causing the signal to not be triggered if placed
-	// after the handleEvent() calls
-	obj.strtSig(strt);
-	this->handleEvent(obj, ISO22133::Events::S);
+
+	// No delayed start, start immediately
+	if(!strt.isTimestampValid) {
+		// Order matters here, below changes state
+		// causing the signal to not be triggered if placed
+		// after the handleEvent() calls
+		obj.strtSig(strt);
+		this->handleEvent(obj, ISO22133::Events::S);
+		return;
+	}
+	
+	// Current time with compensation for network delay
+	auto currentTime =  std::chrono::to_timeval(
+		std::chrono::system_clock::now().time_since_epoch() - 
+		obj.getNetworkDelay()
+	);
+
+	struct timeval diff;
+	timersub(&strt.startTime, &currentTime, &diff);
+	uint32_t diffmySec = diff.tv_sec*1e6 + diff.tv_usec;
+	int diffint = diff.tv_sec*1e6 + diff.tv_usec;
+	
+	// Start time already passed. Request abort from Control Center
+	// resolution is 0,25ms (250 microseconds) in ISO spec.
+	if(diffint > -250) {
+		std::stringstream ss;
+		ss << "Got STRT message with start time in " << diff.tv_sec << " seconds, " << diff.tv_usec << " mySecs. Waiting" << std::endl;
+		std::cout << ss.str();
+
+		obj.delayedStrtThread = std::thread([&, diffmySec]() {
+			std::this_thread::sleep_for(std::chrono::microseconds(diffmySec));
+			// Order matters here, below changes state
+			// causing the signal to not be triggered if placed
+			// after the handleEvent() calls
+			obj.strtSig(strt);
+			this->handleEvent(obj, ISO22133::Events::S);
+		});		
+	}
+	else {
+		std::stringstream ss;
+		ss << "Got STRT message with start time in the past. Requesting abort." << std::endl;
+		ss << "Requested time: " << strt.startTime.tv_sec << " seconds, " << strt.startTime.tv_usec << " mySecs." << std::endl;
+		ss << "Current time: " << currentTime.tv_sec << " seconds, " << currentTime.tv_usec << " mySecs." << std::endl;
+		ss << "Estimated network delay: " << obj.getNetworkDelay().count() << " mySecs." << std::endl;
+		std::cout << ss.str();
+		uint8_t error = 0;
+		error |= 1 << 7; // Abort request is MSB of error mask 
+		obj.setErrorState(error);
+		return;
+	}
 	return;
 }
 
