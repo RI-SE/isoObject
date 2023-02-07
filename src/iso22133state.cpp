@@ -108,6 +108,10 @@ void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 	obj.origin = osem.coordinateSystemOrigin;
 	obj.transmitterID = osem.desiredID.transmitter;
 
+	if(osem.coordinateSystemRotation_rad != 0) {
+		throw std::runtime_error("Rotation of coordinate system not supported");
+	}
+
 	std::stringstream msg;	// Remove risk of not printing the whole message due to threading
 	msg << "Got OSEM - set transmitter ID to " << obj.transmitterID << std::endl;
 	std::cout << msg.str();
