@@ -110,4 +110,7 @@ sudo make install
 
 sudo ldconfig
 ```
+
+If you are using a Conda environment make sure to activate it **before** doing `make install` otherwise the library will be installed to you python system path and not you conda path.
+
 See example script in swig folder for how to use it.
