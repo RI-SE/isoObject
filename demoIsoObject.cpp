@@ -47,14 +47,17 @@ public:
         // Initialize required fields in MONR
         CartesianPosition pos;
         SpeedType spd;
-        pos.xCoord_m = 0;
-        pos.yCoord_m = 0;
-        pos.zCoord_m = 0;
-        pos.heading_rad = 0;
+        pos.xCoord_m = 1;
+        pos.yCoord_m = 2;
+        pos.zCoord_m = 3;
+        pos.heading_rad = 0.4;
         pos.isHeadingValid = true;
         pos.isPositionValid = true;
-        spd.lateral_m_s = 0;
-        spd.longitudinal_m_s = 0;
+        pos.isXcoordValid = true;
+        pos.isYcoordValid = true;
+        pos.isZcoordValid = true;
+        spd.lateral_m_s = 5;
+        spd.longitudinal_m_s = 6;
         spd.isLateralValid = true;
         spd.isLongitudinalValid = true;
 
