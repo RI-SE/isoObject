@@ -108,10 +108,6 @@ void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 	obj.origin = osem.coordinateSystemOrigin;
 	obj.transmitterID = osem.desiredID.transmitter;
 
-	if(osem.coordinateSystemRotation_rad != 0) {
-		throw std::runtime_error("Rotation of coordinate system not supported");
-	}
-
 	std::stringstream msg;	// Remove risk of not printing the whole message due to threading
 	msg << "Got OSEM - set transmitter ID to " << obj.transmitterID << std::endl;
 	std::cout << msg.str();
@@ -126,7 +122,7 @@ void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 
 	obj.heartbeatTimeout = 10*obj.expectedHeartbeatPeriod;
 	msg.str(std::string());
-	msg << "Set HEAB timeout to " << obj.heartbeatTimeout.count() << " ms."<< std::endl;
+	msg << "Set HEAB timeout to" << obj.heartbeatTimeout.count() << std::endl;
 	std::cout << msg.str();
 
 	msg.str(std::string());
