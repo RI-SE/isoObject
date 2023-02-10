@@ -61,13 +61,16 @@ typedef struct {
 } SpeedType;
 
 typedef struct {
-    double xCoord_m;
-    double yCoord_m;
-    double zCoord_m;
-    double heading_rad;
-    bool isPositionValid;
-    bool isHeadingValid;
-} CartesianPosition;
+	double xCoord_m;
+	double yCoord_m;
+	double zCoord_m;
+	double heading_rad;
+	bool isXcoordValid;
+	bool isYcoordValid;
+	bool isZcoordValid;
+	bool isPositionValid;
+	bool isHeadingValid;
+} CartesianPosition; 
 
 typedef struct {
     double latitude_deg;
