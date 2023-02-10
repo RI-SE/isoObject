@@ -45,24 +45,34 @@ TestObject::TestObject(const std::string& listenIP)
 TestObject::~TestObject() {
 	on = false;
 	try {
-		udpReceiveThread.join();
-	} catch (std::system_error&) {
+		if (udpReceiveThread.joinable()) {
+			udpReceiveThread.join();
+		}
+	} catch (...) {
 	}
 	try {
-		monrThread.join();
-	} catch (std::system_error&) {
+		if (monrThread.joinable()) {
+			monrThread.join();
+		}
+	} catch (...) {
 	}
 	try {
-		tcpReceiveThread.join();
-	} catch (std::system_error&) {
+		if (tcpReceiveThread.joinable()) {
+			tcpReceiveThread.join();
+		}
+	} catch (...) {
 	}
 	try {
-		heabTimeoutThread.join();
-	} catch (std::system_error&) {
+		if (heabTimeoutThread.joinable()) {
+			heabTimeoutThread.join();
+		}
+	} catch (...) {
 	}
 	try {
-		delayedStrtThread.join();
-	} catch (std::system_error&) {
+		if (delayedStrtThread.joinable()) {
+			delayedStrtThread.join();
+		}
+	} catch (...) {
 	}
 };
 
@@ -84,6 +94,9 @@ void TestObject::disconnect() {
 	} catch (std::system_error& e) {
 		std::cerr << "Disconnect error: " << e.what() << std::endl;
 		throw e;
+	}
+	catch(...){
+		std::cerr << "Disconnect error" << std::endl;
 	}
 }
 
