@@ -67,6 +67,9 @@ typedef struct {
     double heading_rad;
     bool isPositionValid;
     bool isHeadingValid;
+    bool isXcoordValid;
+    bool isYcoordValid;
+    bool isZcoordValid;
 } CartesianPosition;
 
 typedef struct {
