@@ -68,8 +68,8 @@ typedef struct {
     bool isPositionValid;
     bool isHeadingValid;
     bool isXcoordValid;
-	bool isYcoordValid;
-	bool isZcoordValid;
+    bool isYcoordValid;
+    bool isZcoordValid;
 } CartesianPosition;
 
 typedef struct {
