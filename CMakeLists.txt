@@ -63,7 +63,7 @@ endif()
 add_library(${ISOOBJECT_LIBRARY} SHARED
     ${CMAKE_CURRENT_SOURCE_DIR}/src/iso22133object.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/iso22133state.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/trajDec#oder.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/trajDecoder.cpp
 )
 
 target_include_directories(${ISOOBJECT_LIBRARY} PUBLIC
