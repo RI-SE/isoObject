@@ -4,6 +4,13 @@ cmake_minimum_required(VERSION 3.1)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Tell the linker to use RPATH instead of RUNPATH
+# RPATH/RUNPATH tells a binary where to look for libraries at runtime
+# It is useful e.g. when multiple copies of the same shared library exist in various paths (such as LD_LIBRARY_PATH, /usr/local/lib, etc..).
+# However, RPATH has higher priority than LD_LIBRARY_PATH, while RUNPATH has lower priority
+set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--disable-new-dtags")
+
+
 # Build flags
 set(BUILDING_FOR_ANDROID OFF CACHE BOOL "Building for Android")
 
@@ -21,7 +28,7 @@ endif()
 # Manage namespace of the project
 set(ISOOBJECT_LIBRARY ${PARENT_TARGET_NAMESPACE}${PROJECT_NAME})
 set(ISOOBJECT_TEST ${ISOOBJECT_LIBRARY}Demo)
-
+set(CMAKE_FIND_DEBUG_MODE TRUE)
 #ISO22133 library/headers
 add_subdirectory(../iso22133 ${CMAKE_CURRENT_BINARY_DIR}/iso22133)
 set(ISO22133_LIBRARY ISO22133)
@@ -33,6 +40,12 @@ find_path(ISO22133_HEADER_DIR
     PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../iso22133"
     REQUIRED
 )
+
+# Set the RPATH to the install directory
+SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib/")
+# Tell linker to set RPATH to the install directory, outside the build tree
+# Note: this has to be done before add_executable/add_library.
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 include(GNUInstallDirs)
 
@@ -104,6 +117,8 @@ target_include_directories(${ISOOBJECT_TEST} PUBLIC
 target_link_libraries(${ISOOBJECT_TEST} LINK_PUBLIC
     ${ISOOBJECT_LIBRARY}
 )
+#set(CMAKE_SKIP_BUILD_RPATH FALSE)
+#set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib") # set RPATH to e.g. /usr/local/lib on linux
 
 install(CODE "MESSAGE(STATUS \"Installing target ${ISOOBJECT_LIBRARY}\")")
 install(TARGETS ${ISOOBJECT_LIBRARY}
