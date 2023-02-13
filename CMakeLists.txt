@@ -20,6 +20,7 @@ endif()
 
 # Manage namespace of the project
 set(ISOOBJECT_LIBRARY ${PARENT_TARGET_NAMESPACE}${PROJECT_NAME})
+set(ISOOBJECT_LIBRARY2 ${PARENT_TARGET_NAMESPACE}${PROJECT_NAME}2)
 set(ISOOBJECT_TEST ${ISOOBJECT_LIBRARY}Demo)
 
 #ISO22133 library/headers
@@ -47,6 +48,20 @@ else() # Find boost normally
 endif()
 
 # Library target
+add_library(${ISOOBJECT_LIBRARY2} SHARED
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MessageDispatcher.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/connections.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/State.cpp
+)
+target_include_directories(${ISOOBJECT_LIBRARY2} PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc
+    ${ISO22133_HEADER_DIR}
+)
+target_link_libraries(${ISOOBJECT_LIBRARY2} LINK_PUBLIC
+    ${ISO22133_LIBRARY}
+    Boost::system
+)
+
 add_library(${ISOOBJECT_LIBRARY} SHARED
     ${CMAKE_CURRENT_SOURCE_DIR}/src/iso22133object.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/iso22133state.cpp
