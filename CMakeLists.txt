@@ -63,7 +63,7 @@ endif()
 add_library(${ISOOBJECT_LIBRARY} SHARED
     ${CMAKE_CURRENT_SOURCE_DIR}/src/iso22133object.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/iso22133state.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/trajDecoder.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/trajDec#oder.cpp
 )
 
 target_include_directories(${ISOOBJECT_LIBRARY} PUBLIC
@@ -117,8 +117,6 @@ target_include_directories(${ISOOBJECT_TEST} PUBLIC
 target_link_libraries(${ISOOBJECT_TEST} LINK_PUBLIC
     ${ISOOBJECT_LIBRARY}
 )
-#set(CMAKE_SKIP_BUILD_RPATH FALSE)
-#set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib") # set RPATH to e.g. /usr/local/lib on linux
 
 install(CODE "MESSAGE(STATUS \"Installing target ${ISOOBJECT_LIBRARY}\")")
 install(TARGETS ${ISOOBJECT_LIBRARY}
