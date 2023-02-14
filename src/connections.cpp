@@ -4,14 +4,14 @@
 
 ControlChannel::ptr ControlChannel::create(
     boost::asio::io_context& ioContext,
-    MessageDispatcher& dispatcher)
+    EventDispatcher& dispatcher)
 {
     return ptr(new ControlChannel(ioContext, dispatcher));
 }
 
 MonitorChannel::ptr MonitorChannel::create(
     boost::asio::executor executor,
-    MessageDispatcher& dispatcher,
+    EventDispatcher& dispatcher,
     const unsigned short port)
 {
     return ptr(new MonitorChannel(executor, dispatcher, port));

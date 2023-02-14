@@ -3,7 +3,7 @@
 #include <vector>
 #include <boost/asio.hpp>
 
-#include "MessageDispatcher.hpp"
+#include "EventDispatcher.hpp"
 
 class Channel : public std::enable_shared_from_this<Channel>
 {
@@ -20,13 +20,13 @@ public:
         boost::system::error_code ec,
         std::size_t length);
 protected:
-    Channel(MessageDispatcher& dispatcher)
+    Channel(EventDispatcher& dispatcher)
         : readData(MAX_LENGTH),
         dispatcher(dispatcher) {}
     enum { MAX_LENGTH = 4096 };
     std::vector<char> data;
     std::vector<char> readData;
-    MessageDispatcher& dispatcher;
+    EventDispatcher& dispatcher;
     
     /*!
     * \brief Receive data from the client. The call is nonblocking
@@ -57,7 +57,7 @@ public:
     */
     static ptr create(
         boost::asio::executor executor,
-        MessageDispatcher& dispatcher,
+        EventDispatcher& dispatcher,
         const unsigned short port = ISO_22133_DEFAULT_UDP_PORT);
 
     /*!
@@ -78,7 +78,7 @@ private:
 
     MonitorChannel(
         boost::asio::executor executor,
-        MessageDispatcher& dispatcher,
+        EventDispatcher& dispatcher,
         const unsigned short port = ISO_22133_DEFAULT_UDP_PORT)
     : sock(executor, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port)),
     Channel(dispatcher) {}
@@ -111,7 +111,7 @@ public:
     */
     static ptr create(
         boost::asio::io_context& ioContext,
-        MessageDispatcher& dispatcher);
+        EventDispatcher& dispatcher);
 
     /*!
     * \brief Get the socket used by the channel.
@@ -132,7 +132,7 @@ private:
 
     ControlChannel(
         boost::asio::io_context& ioContext,
-        MessageDispatcher& dispatcher)
+        EventDispatcher& dispatcher)
     : Channel(dispatcher),
     sock(ioContext) {}
 
@@ -156,7 +156,7 @@ private:
 public:
     TCPServer(
         boost::asio::io_context& ioContext,
-        MessageDispatcher& dispatcher,
+        EventDispatcher& dispatcher,
         const unsigned short port = ISO_22133_DEFAULT_TCP_PORT)
     : ioContext(ioContext),
     dispatcher(dispatcher),
@@ -169,7 +169,7 @@ public:
 private:
     boost::asio::ip::tcp::acceptor acceptor;
     boost::asio::io_context& ioContext;
-    MessageDispatcher& dispatcher;
+    EventDispatcher& dispatcher;
 
     /*!
     * \brief Handle the next TCP connection. The call is nonblocking

@@ -1,4 +1,4 @@
-#include "MessageDispatcher.hpp"
+#include "EventDispatcher.hpp"
 //#include "State.hpp"
 #include "Object.hpp"
 #include "TrajDecoder.hpp"
@@ -6,7 +6,7 @@
 #include "iso22133.h"
 #include <iostream>
 
-MessageDispatcher::MessageDispatcher(
+EventDispatcher::EventDispatcher(
 	ISO22133::State& state,
 	ISO22133::Object& object)
 	: state(state),
@@ -14,9 +14,9 @@ MessageDispatcher::MessageDispatcher(
 	trajDecoder(std::make_unique<ISO22133::TrajDecoder>())
 {}
 
-MessageDispatcher::~MessageDispatcher() = default;
+EventDispatcher::~EventDispatcher() = default;
 
-size_t MessageDispatcher::dispatch(
+size_t EventDispatcher::dispatch(
     const std::vector<char>& message)
 {
 	int bytesHandled = 0;

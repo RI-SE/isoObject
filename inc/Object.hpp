@@ -4,7 +4,7 @@
 #include <boost/asio/io_context.hpp>
 
 #include "connections.hpp"
-#include "MessageDispatcher.hpp"
+#include "EventDispatcher.hpp"
 
 //struct CartesianPosition;
 
@@ -30,7 +30,7 @@ public:
 private:
     //void sendMONR();
     boost::asio::io_context ioContext;
-    MessageDispatcher dispatcher;
+    EventDispatcher dispatcher;
 	ISO22133::State* state;
     TCPServer tcpServer;
 

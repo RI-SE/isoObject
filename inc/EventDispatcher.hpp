@@ -10,11 +10,11 @@ namespace ISO22133
     class TrajDecoder;
 }
 
-class MessageDispatcher
+class EventDispatcher
 {
 public:
-    MessageDispatcher(ISO22133::State& state, ISO22133::Object& object);
-    ~MessageDispatcher();
+    EventDispatcher(ISO22133::State& state, ISO22133::Object& object);
+    ~EventDispatcher();
 
     virtual size_t dispatch(const std::vector<char>& message);
 private:

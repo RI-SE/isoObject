@@ -50,7 +50,7 @@ endif()
 
 # Library target
 add_library(${ISOOBJECT_LIBRARY2} SHARED
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/MessageDispatcher.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/EventDispatcher.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/connections.cpp
     #${CMAKE_CURRENT_SOURCE_DIR}/src/State.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/Object.cpp
@@ -62,7 +62,8 @@ target_include_directories(${ISOOBJECT_LIBRARY2} PUBLIC
 )
 target_link_libraries(${ISOOBJECT_LIBRARY2} LINK_PUBLIC
     ${ISO22133_LIBRARY}
-    Boost::system
+    ${Boost_LIBRARIES}
+    pthread
 )
 
 add_library(${ISOOBJECT_LIBRARY} SHARED
