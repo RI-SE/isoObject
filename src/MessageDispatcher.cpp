@@ -4,6 +4,7 @@
 #include "TrajDecoder.hpp"
 #include "utilities.hpp"
 #include "iso22133.h"
+#include <iostream>
 
 MessageDispatcher::MessageDispatcher(
 	ISO22133::State& state,
