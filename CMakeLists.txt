@@ -1,4 +1,5 @@
 project(ISO_object LANGUAGES C CXX)
+set(CMAKE_PROJECT_VERSION 1.0.0)
 cmake_minimum_required(VERSION 3.1)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -51,7 +52,9 @@ endif()
 add_library(${ISOOBJECT_LIBRARY2} SHARED
     ${CMAKE_CURRENT_SOURCE_DIR}/src/MessageDispatcher.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/connections.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/State.cpp
+    #${CMAKE_CURRENT_SOURCE_DIR}/src/State.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Object.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/TrajDecoder.cpp
 )
 target_include_directories(${ISOOBJECT_LIBRARY2} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/inc
@@ -111,6 +114,7 @@ set_property(TARGET ${ISOOBJECT_LIBRARY} APPEND PROPERTY
 
 # Demo target
 add_executable(${ISOOBJECT_TEST} demoIsoObject.cpp)
+add_executable(${ISOOBJECT_TEST}2 demoIsoObject2.cpp)
 
 target_include_directories(${ISOOBJECT_TEST} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/inc
@@ -118,6 +122,14 @@ target_include_directories(${ISOOBJECT_TEST} PUBLIC
 
 target_link_libraries(${ISOOBJECT_TEST} LINK_PUBLIC
     ${ISOOBJECT_LIBRARY}
+)
+
+target_include_directories(${ISOOBJECT_TEST}2 PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc
+)
+
+target_link_libraries(${ISOOBJECT_TEST}2 LINK_PUBLIC
+    ${ISOOBJECT_LIBRARY2}
 )
 
 install(CODE "MESSAGE(STATUS \"Installing target ${ISOOBJECT_LIBRARY}\")")

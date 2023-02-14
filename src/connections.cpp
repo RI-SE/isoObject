@@ -1,5 +1,13 @@
 #include "connections.hpp"
+#include <functional>
 
+MonitorChannel::ptr MonitorChannel::create(
+    boost::asio::io_context& ioContext,
+    MessageDispatcher& dispatcher,
+    const unsigned short port)
+{
+    return ptr(new MonitorChannel(ioContext, dispatcher, port));
+}
 
 void ControlChannel::start()
 {
@@ -7,6 +15,8 @@ void ControlChannel::start()
         << sock.remote_endpoint().address().to_string()
         << " established." << std::endl;
     //state->handleEvent(*this, ISO22133::Events::B);
+    boost::asio::ip::udp::socket sock2 = boost::asio::ip::udp::socket(sock.get_executor;
+    monitorChannel = MonitorChannel::create(ioContext, dispatcher);
     
     startReceive();
 }
@@ -23,6 +33,7 @@ void Channel::handleRead(
     boost::system::error_code ec,
     std::size_t length)
 {
+    std::cout << "Received " << length << " bytes." << std::endl;
     if (ec) {
         std::cerr << "Error: " << ec.message() << std::endl;
         return;
@@ -43,10 +54,12 @@ void Channel::handleRead(
 
 void ControlChannel::startReceive()
 {
+    std::cout << "Waiting for data..." << std::endl;
     sock.async_receive(boost::asio::buffer(readData),
-        std::bind(&Channel::handleRead, shared_from_this(),
-        std::placeholders::_1,
-        std::placeholders::_2));
+        std::bind(&Channel::handleRead,
+            shared_from_this(),
+            std::placeholders::_1,
+            std::placeholders::_2));
 }
 
 void MonitorChannel::startReceive()
@@ -54,7 +67,29 @@ void MonitorChannel::startReceive()
     sock.async_receive_from(
         boost::asio::buffer(readData, MAX_LENGTH),
         remoteEndpoint,
-        std::bind(&Channel::handleRead, shared_from_this(),
-        std::placeholders::_1,
-        std::placeholders::_2));
+        std::bind(&Channel::handleRead,
+            shared_from_this(),
+            std::placeholders::_1,
+            std::placeholders::_2));
+}
+
+void TCPServer::startAccept()
+{
+    ControlChannel::ptr newConnection = ControlChannel::create(ioContext, dispatcher);
+    acceptor.async_accept(
+        newConnection->socket(),
+        std::bind(&TCPServer::handleAccept,
+            this,
+            newConnection,
+            std::placeholders::_1));
+}
+
+void TCPServer::handleAccept(
+    ControlChannel::ptr newConnection,
+    const boost::system::error_code& error)
+{
+    if (!error) {
+        newConnection->start();
+    }
+    startAccept();
 }

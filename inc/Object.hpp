@@ -1,9 +1,19 @@
 #pragma once
 
 #include <memory>
-#include <boost/asio.hpp>
+#include <boost/asio/io_context.hpp>
 
-class CartesianPosition;
+#include "connections.hpp"
+#include "MessageDispatcher.hpp"
+
+//struct CartesianPosition;
+
+namespace ISO22133
+{
+
+class State {
+
+};
 
 class Object
 {
@@ -11,14 +21,20 @@ public:
     Object();
     virtual ~Object();
 
-    void setPosition(const double x, const double y, const double z);
+    void run() {
+        ioContext.run();
+    }
+
+    void setPosition(const double x, const double y, const double z) {}
 
 private:
-    void sendMONR();
-    
+    //void sendMONR();
     boost::asio::io_context ioContext;
-    boost::asio::ip::tcp::socket ctrlChannel;
-    boost::asio::ip::udp::socket mntrChannel;
+    MessageDispatcher dispatcher;
+	ISO22133::State* state;
+    TCPServer tcpServer;
 
-    std::unique_ptr<CartesianPosition> position;
+    //std::unique_ptr<CartesianPosition> position;
 };
+
+}

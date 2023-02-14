@@ -9,13 +9,13 @@
 class Channel : public std::enable_shared_from_this<Channel>
 {
 public:
+    virtual void handleRead(
+        boost::system::error_code ec,
+        std::size_t length);
 protected:
     Channel(MessageDispatcher& dispatcher)
         : readData(MAX_LENGTH),
         dispatcher(dispatcher) {}
-    virtual void handleRead(
-        boost::system::error_code ec,
-        std::size_t length);
     enum { MAX_LENGTH = 4096 };
     std::vector<char> data;
     std::vector<char> readData;
@@ -32,16 +32,11 @@ public:
     typedef std::shared_ptr<MonitorChannel> ptr;
 
     static ptr create(
-        boost::asio::io_context& ioContext
-        MessageDispatcher& dispatcher)
-    {
-        return ptr(new MonitorChannel(ioContext, dispatcher));
-    }
+        boost::asio::io_context& ioContext,
+        MessageDispatcher& dispatcher,
+        const unsigned short port = ISO_22133_DEFAULT_UDP_PORT);
 
-    boost::asio::ip::udp::socket& socket()
-    {
-        return sock;
-    }
+    boost::asio::ip::udp::socket& socket() { return sock; }
 
     void start();
 private:
@@ -65,21 +60,19 @@ public:
     typedef std::shared_ptr<ControlChannel> ptr;
 
     static ptr create(
-        boost::asio::io_context& ioContext
+        boost::asio::io_context& ioContext,
         MessageDispatcher& dispatcher)
     {
         return ptr(new ControlChannel(ioContext, dispatcher));
     }
 
-    boost::asio::ip::tcp::socket& socket()
-    {
-        return sock;
-    }
+    boost::asio::ip::tcp::socket& socket() { return sock; }
 
     void start();
 
 private:
     boost::asio::ip::tcp::socket sock;
+    MonitorChannel::ptr monitorChannel;
 
     ControlChannel(
         boost::asio::io_context& ioContext,
@@ -107,24 +100,9 @@ private:
     boost::asio::ip::tcp::acceptor acceptor;
     boost::asio::io_context& ioContext;
     MessageDispatcher& dispatcher;
-    void startAccept()
-    {
-        ControlChannel::ptr newConnection = ControlChannel::create(ioContext, dispatcher);
-        acceptor.async_accept(
-            newConnection->socket(),
-            std::bind(&TCPServer::handleAccept,
-            this,
-            newConnection,
-            boost::asio::placeholders::error));
-    }
+    void startAccept();
 
     void handleAccept(
         ControlChannel::ptr newConnection,
-        const boost::system::error_code& error)
-    {
-        if (!error) {
-            newConnection->start();
-        }
-        startAccept();
-    }
+        const boost::system::error_code& error);
 };

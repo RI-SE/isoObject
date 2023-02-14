@@ -114,11 +114,6 @@ public:
 	virtual ObjectStateID getStateID() const final override { return OBJECT_STATE_UNKNOWN; }
 };
 
-class Off : public State {
-public:
-	virtual ObjectStateID getStateID() const final override { return OBJECT_STATE_OFF; }
-};
-
 class Init : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return OBJECT_STATE_INIT; }
@@ -135,7 +130,7 @@ public:
 	virtual ObjectStateID getStateID() const final override { return OBJECT_STATE_DISARMED; }
 	virtual void onEnter(Object& obj);
 	virtual void onExit(Object& obj);
-	virtual void handleOSEM(Object&, ObjectCommandType&) final override;
+	//virtual void handleOSEM(Object&, ObjectCommandType&) final override;
     virtual void handleTRAJ(Object&) final override;
 };
 
