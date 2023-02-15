@@ -40,6 +40,7 @@ if __name__ == "__main__":
 
     isoObject.setPosition(pos)
     isoObject.setSpeed(spd)
+    isoObject.setAcceleration(acc)
 
     x = -1.0
     y = 1.0
