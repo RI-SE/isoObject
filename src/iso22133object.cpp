@@ -4,6 +4,7 @@
 #include "iso22133.h"
 #include "iso22133object.hpp"
 #include "iso22133state.hpp"
+#include "defines.h"
 
 #define TCP_BUFFER_SIZE 1024
 #define UDP_BUFFER_SIZE 1024
@@ -159,7 +160,10 @@ void TestObject::sendMonrLoop() {
 	std::cout << ss.str();
 
 	while (this->on && ctrlChannel.isOpen()) {
-		sendMONR();
+		// Only send monr if transmitterID has been set by an OSEM message
+		if (this->transmitterID != TRANSMITTER_ID_UNAVAILABLE_VALUE){
+			sendMONR();
+		}
 		auto t = std::chrono::steady_clock::now();
 		std::this_thread::sleep_until(t + monrPeriod);
 	}
