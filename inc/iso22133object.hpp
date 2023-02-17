@@ -178,7 +178,8 @@ private:
 	std::mutex recvMutex;
 	std::mutex heabMutex;
 	std::mutex netwrkDelayMutex;
-	std::string localIP;
+    std::mutex disconnectMutex;
+    std::string localIP;
 	std::thread tcpReceiveThread;
 	std::thread udpReceiveThread;
 	std::thread monrThread;
@@ -200,6 +201,7 @@ private:
 	std::atomic<int> transmitterID;
 	std::atomic<char> errorState { 0 };
 	std::atomic<bool> awaitingFirstHeab { true };
+	std::atomic<bool> isDisconnected { true };
 	std::atomic<bool> on { true };
 
 	std::chrono::milliseconds estimatedNetworkDelay = std::chrono::milliseconds(0);

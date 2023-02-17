@@ -15,8 +15,8 @@ set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--disable-new-dtags")
 set(BUILDING_FOR_ANDROID OFF CACHE BOOL "Building for Android")
 
 # Swig flags
-set(WITH_SWIG OFF CACHE BOOL "Enable swigging")
-set(SWIG_WITH_JAVA OFF CACHE BOOL "Swig to target-language java")
+set(WITH_SWIG TRUE CACHE BOOL "Enable swigging")
+set(SWIG_WITH_JAVA TRUE CACHE BOOL "Swig to target-language java")
 set(SWIG_WITH_PYTHON OFF CACHE BOOL "Swig to target-language python")
 
 if(SWIG_WITH_JAVA)

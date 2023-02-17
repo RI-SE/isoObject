@@ -5,6 +5,7 @@
 #include "iso22133object.hpp"
 #include "iso22133state.hpp"
 #include "defines.h"
+#include "android/log.h"
 
 #define TCP_BUFFER_SIZE 1024
 #define UDP_BUFFER_SIZE 1024
@@ -28,6 +29,7 @@ TestObject::TestObject(const std::string& listenIP)
 	initSpd.isLongitudinalValid = false;
 	initAcc.isLateralValid = false;
 	initAcc.isLongitudinalValid = false;
+	this->transmitterID = TRANSMITTER_ID_UNAVAILABLE_VALUE;
 	this->setPosition(initPos);
 	this->setSpeed(initSpd);
 	this->setAcceleration(initAcc);
@@ -41,10 +43,12 @@ TestObject::TestObject(const std::string& listenIP)
 	this->trajSig.connect(&TestObject::onTRAJ, this);
 	this->strtSig.connect(&TestObject::onSTRT, this);
 	this->heabTimeout.connect(&TestObject::onHeabTimeout, this);
+	__android_log_print(6, "isoObject:TestObject", "TestObject created");
 }
 
 TestObject::~TestObject() {
 	on = false;
+	__android_log_print(6, "isoObject:TestObject", "TestObject deconstructed");
 	try {
 		udpReceiveThread.join();
 	} catch (std::system_error&) {
@@ -68,24 +72,32 @@ TestObject::~TestObject() {
 };
 
 void TestObject::disconnect() {
-	try {
-		ctrlChannel.disconnect();  // Close TCP socket
-	} catch (const std::exception& e) {
-		std::cerr << "TCP socket close error: " << e.what() << '\n';
-	}
+		std::scoped_lock lock(disconnectMutex);
+		try {
+			ctrlChannel.disconnect();  // Close TCP socket
+		} catch (const std::exception& e) {
+			std::cerr << "TCP socket close error: " << e.what() << '\n';
+		}
 
-	processChannel.disconnect();  // Close UDP socket
-	awaitingFirstHeab = true;	  // Reset HEAB timeout check
+		processChannel.disconnect();  // Close UDP socket
+		awaitingFirstHeab = true;	  // Reset HEAB timeout check
 
-	try {
-		if (udpReceiveThread.joinable())
-			udpReceiveThread.join();
-		if (monrThread.joinable())
-			monrThread.join();
-	} catch (std::system_error& e) {
-		std::cerr << "Disconnect error: " << e.what() << std::endl;
-		throw e;
-	}
+		try {
+			__android_log_print(6, "isoObject:disconnect", "Joining udpReceiveThread");
+			if (udpReceiveThread.joinable()){
+				udpReceiveThread.join();
+				__android_log_print(6, "isoObject:disconnect", "Joined udpReceiveThread");
+			}
+			__android_log_print(6, "isoObject:disconnect", "Joining monrThread");
+			if (monrThread.joinable()){
+				monrThread.join();
+				__android_log_print(6, "isoObject:disconnect", "Joined monrThread");
+			}
+		} catch (std::system_error& e) {
+			std::cerr << "Disconnect error: " << e.what() << std::endl;
+			__android_log_print(6, "isoObject:disconnect", "Catch system_error %s", e.what() );
+			//throw e;
+		}
 }
 
 void TestObject::receiveTCP() {
@@ -113,7 +125,7 @@ void TestObject::receiveTCP() {
 
 		state->handleEvent(*this, ISO22133::Events::B);
 		try {
-			while (true) {
+			while (ctrlChannel.isOpen()) {
 				auto data = ctrlChannel.receive();
 				int nBytesHandled = 0;
 				do {
@@ -128,6 +140,7 @@ void TestObject::receiveTCP() {
 			}
 		} catch (boost::system::system_error&) {
 			std::cerr << "Connection to ATOS lost" << std::endl;
+			__android_log_print(6, "isoObject:receiveTCP", "Connection to ATOS lost");
 			disconnect();
 			state->handleEvent(*this, ISO22133::Events::L);
 		}
@@ -161,6 +174,7 @@ void TestObject::sendMonrLoop() {
 
 	while (this->on && ctrlChannel.isOpen()) {
 		// Only send monr if transmitterID has been set by an OSEM message
+		__android_log_print(6, "TestObject", "sendMonrLoop, transmitterID: %d", this->transmitterID.load());	
 		if (this->transmitterID != TRANSMITTER_ID_UNAVAILABLE_VALUE){
 			sendMONR();
 		}
@@ -245,6 +259,7 @@ void TestObject::checkHeabLoop() {
 }
 
 void TestObject::onHeabTimeout() {
+	__android_log_print(6, "isoBoject:onHeabTimeout", "onHeabTimeout!");
 	disconnect();
 	this->state->handleEvent(*this, Events::L);
 }
@@ -280,6 +295,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 			throw std::invalid_argument("Error decoding OSEM");
 		}
 		std::cout << "Received OSEM \n";
+		__android_log_print(6, "isoObject:handleMessage", "Handle OSEM.");
 		this->state->handleOSEM(*this, OSEMstruct);
 		break;
 

@@ -1,5 +1,6 @@
 #include <algorithm>
 
+#include "android/log.h"
 #include "iso22133object.hpp"
 #include "iso22133state.hpp"
 
@@ -107,6 +108,8 @@ void ISO22133::State::handleOSTM(TestObject& obj, ObjectCommandType& ostm) {
 void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 	obj.origin = osem.coordinateSystemOrigin;
 	obj.transmitterID = osem.desiredID.transmitter;
+	__android_log_print(6, "TestObject", "Handle OSEM, recived transmitterID: %d", osem.desiredID.transmitter);
+
 
 	std::stringstream msg;	// Remove risk of not printing the whole message due to threading
 	msg << "Got OSEM - set transmitter ID to " << obj.transmitterID << std::endl;
