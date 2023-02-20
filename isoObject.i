@@ -34,7 +34,7 @@
 %include "trajDecoder.hpp"
 %include "iso22133state.hpp"
 %include "iso22133object.hpp"
-%include "iso22133.h"
+%include "iso22133/iso22133.h"
 %include "udpServer.hpp"
 %include "tcpServer.hpp"
 
