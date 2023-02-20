@@ -30,16 +30,9 @@ set(ISOOBJECT_LIBRARY ${PARENT_TARGET_NAMESPACE}${PROJECT_NAME})
 set(ISOOBJECT_TEST ${ISOOBJECT_LIBRARY}Demo)
 
 #ISO22133 library/headers
-add_subdirectory(../iso22133 ${CMAKE_CURRENT_BINARY_DIR}/iso22133)
+add_subdirectory(iso22133)
 set(ISO22133_LIBRARY ISO22133)
-find_path(ISO22133_HEADER_DIR
-    NAMES "iso22133.h"
-    NO_DEFAULT_PATH
-    NO_CMAKE_FIND_ROOT_PATH
-    NO_CACHE
-    PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../iso22133"
-    REQUIRED
-)
+
 
 # Set the RPATH to the install directory
 SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib/")
@@ -69,13 +62,15 @@ add_library(${ISOOBJECT_LIBRARY} SHARED
 target_include_directories(${ISOOBJECT_LIBRARY} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
-    ${ISO22133_HEADER_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/iso22133
 )
-set(ISO_OBJ_LIBS ${ISO22133_LIBRARY} atomic pthread Boost::system)
-set(ISO_OBJ_LIBS_JAVA ${ISO22133_LIBRARY} atomic ${boost_system})
-if (SWIG_WITH_JAVA)
+set(ISO_OBJ_LIBS 
+    ${ISO22133_LIBRARY} atomic pthread Boost::system)
+set(ISO_OBJ_LIBS_ANDROID 
+    ${ISO22133_LIBRARY} atomic ${boost_system})
+if (BUILDING_FOR_ANDROID)
     target_link_libraries(${ISOOBJECT_LIBRARY}
-        ${ISO_OBJ_LIBS_JAVA}
+        ${ISO_OBJ_LIBS_ANDROID}
     )
 else()
     target_link_libraries(${ISOOBJECT_LIBRARY}
@@ -97,6 +92,10 @@ set_property(TARGET ${ISOOBJECT_LIBRARY} APPEND PROPERTY
 
 set_property(TARGET ${ISOOBJECT_LIBRARY} APPEND PROPERTY
     PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot/signal.hpp
+)
+
+set_property(TARGET ${ISOOBJECT_LIBRARY} APPEND PROPERTY
+    PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/iso22133/iso22133.h
 )
 
 set_property(TARGET ${ISOOBJECT_LIBRARY} APPEND PROPERTY
@@ -155,7 +154,7 @@ if (WITH_SWIG)
         set_property(SOURCE isoObject.i PROPERTY INCLUDE_DIRECTORIES
             ${CMAKE_CURRENT_SOURCE_DIR}/inc
             ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
-            ${ISO22133_HEADER_DIR}
+            ${CMAKE_CURRENT_SOURCE_DIR}/iso22133
             ${Python_INCLUDE_DIRS} #Note that cmake ignored empty variables
             ${JNI_INCLUDE_DIRS}
             ${Boost_INCLUDE_DIRS}
@@ -169,7 +168,7 @@ if (WITH_SWIG)
         target_include_directories(${ISO22133_SWIGGED} PUBLIC
             ${CMAKE_CURRENT_SOURCE_DIR}/inc
             ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
-            ${ISO22133_HEADER_DIR}
+            ${CMAKE_CURRENT_SOURCE_DIR}/iso22133
             ${Python_INCLUDE_DIRS}
             ${JNI_INCLUDE_DIRS}
         )
@@ -187,6 +186,5 @@ if (WITH_SWIG)
             install(TARGETS ${ISO22133_SWIGGED} DESTINATION ${PYTHON_SITE_PACKAGES})
             install(FILES ${CMAKE_BINARY_DIR}/isoObject_wrap.py DESTINATION ${PYTHON_SITE_PACKAGES})
         endif()
-
     endif()
 endif()
