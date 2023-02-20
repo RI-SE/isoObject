@@ -4,7 +4,7 @@
 #include "iso22133.h"
 #include "iso22133object.hpp"
 #include "iso22133state.hpp"
-#include "defines.h"
+#include "defines.h"  // From ISO22133 lib
 
 #define TCP_BUFFER_SIZE 1024
 #define UDP_BUFFER_SIZE 1024
