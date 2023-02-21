@@ -6,6 +6,17 @@ anyone who needs to implement a test object following the ISO22133 protocol.
 The object contains all communication and message handling for ISO22133, meaning 
 you only need to create a new object instance and the rest takes care of itself.
 
+## Building
+Clone the repository
+```
+git clone git@github.com:RI-SE/isoObject.git
+```
+Build the project:
+```
+cd isoObject && mkdir build && cd build && cmake .. && make
+```
+Now the dynamic library ```libISO_object.so``` and the demo binary application ```ISO_objectDemo``` should be built in the build directory
+
 ## Usage
 Since this is an abstract base class the first step is to create a new class and 
 inherit the TestObject class, like so:
