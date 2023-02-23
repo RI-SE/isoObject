@@ -68,6 +68,7 @@ TestObject::~TestObject() {
 };
 
 void TestObject::disconnect() {
+	std::scoped_lock lock(disconnectMutex);
 	try {
 		ctrlChannel.disconnect();  // Close TCP socket
 	} catch (const std::exception& e) {
@@ -86,6 +87,7 @@ void TestObject::disconnect() {
 		std::cerr << "Disconnect error: " << e.what() << std::endl;
 		throw e;
 	}
+	std::cerr << "Done with disconnect" << '\n';
 }
 
 void TestObject::receiveTCP() {
@@ -343,10 +345,10 @@ void TestObject::handleHEAB(HeabMessageDataType& heab) {
 	setNetworkDelay(duration_cast<milliseconds>(networkDelay));
 
 	if (networkDelay > maxSafeNetworkDelay) {
-		std::stringstream ss;
-		ss << "Network delay of " << duration_cast<milliseconds>(networkDelay).count()
-		   << " ms exceeds safe limit of " << maxSafeNetworkDelay.count() << " ms." << std::endl;
-		std::cerr << ss.str();
+		// std::stringstream ss;
+		// ss << "Network delay of " << duration_cast<milliseconds>(networkDelay).count()
+		//    << " ms exceeds safe limit of " << maxSafeNetworkDelay.count() << " ms." << std::endl;
+		// std::cerr << ss.str();
 		// TODO: do something
 	}
 	std::scoped_lock lock(heabMutex);

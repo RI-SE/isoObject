@@ -178,6 +178,7 @@ private:
 	std::mutex recvMutex;
 	std::mutex heabMutex;
 	std::mutex netwrkDelayMutex;
+    std::mutex disconnectMutex;
 	std::string localIP;
 	std::thread tcpReceiveThread;
 	std::thread udpReceiveThread;

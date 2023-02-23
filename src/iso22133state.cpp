@@ -10,6 +10,7 @@
  * @param event Event according to ISO22133::EventType
  */
 void ISO22133::State::handleEvent(TestObject& obj, const ISO22133::Events::EventType event) {
+	std::scoped_lock lock(eventMutex);
 	auto transition
 		= std::find_if(language.begin(), language.end(), [&event, this](const ISO22133::Transition& tr) {
 			  return event == tr.event && this->getStateID() == tr.source;
@@ -64,6 +65,7 @@ void ISO22133::State::handleEvent(TestObject& obj, const ISO22133::Events::Event
 		break;
 	}
 	delete temp;
+
 	std::cout << "Entering state: " << obj.state->getName() << std::endl;
 	obj.stateChangeSig();
 	obj.state->onEnter(obj);
