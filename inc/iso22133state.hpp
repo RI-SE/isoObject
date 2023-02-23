@@ -2,6 +2,7 @@
 
 #include <set>
 #include <map>
+#include <mutex>
 #include <iostream>
 #include <functional>
 extern "C"{
@@ -104,6 +105,7 @@ protected:
 	//! overridden by the inheriting class if necessary
 	virtual void onEnter(TestObject&) {}
 	virtual void onExit(TestObject&) {}
+    std::mutex eventMutex;
 
 	//! When a message arrives, these methods are
 	//! the 'front line' handlers.

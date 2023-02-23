@@ -28,6 +28,7 @@ TestObject::TestObject(const std::string& listenIP)
 	initSpd.isLongitudinalValid = false;
 	initAcc.isLateralValid = false;
 	initAcc.isLongitudinalValid = false;
+	transmitterID = TRANSMITTER_ID_UNAVAILABLE_VALUE;
 	this->setPosition(initPos);
 	this->setSpeed(initSpd);
 	this->setAcceleration(initAcc);
@@ -68,6 +69,7 @@ TestObject::~TestObject() {
 };
 
 void TestObject::disconnect() {
+	std::scoped_lock lock(disconnectMutex);
 	try {
 		ctrlChannel.disconnect();  // Close TCP socket
 	} catch (const std::exception& e) {
