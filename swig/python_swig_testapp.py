@@ -1,6 +1,7 @@
 from isoObject_wrap import TestObject, CartesianPosition, \
     SpeedType, AccelerationType
 from time import sleep
+from math import cos, sin
 
 
 class myTestObject(TestObject):
@@ -42,12 +43,26 @@ if __name__ == "__main__":
     isoObject.setSpeed(spd)
     isoObject.setAcceleration(acc)
 
-    x = -1.0
-    y = 1.0
+    # Let the object move in a circle around the origin, jumping up and down
+    originX = 0.0
+    originY = 0.0
+    originZ = 0.0
+    radius = 5.0
+    angle = 0.0
+    x = 0.0
+    y = 0.0
+    z = 0.0
     while (True):
-        sleep(1)
-        x -= 1.0
-        y += 1.0
+        sleep(0.05)
+        angle += 0.05
+        if (angle > 2*3.14159):
+            angle = 0.0
+        x = originX + cos(angle)*radius
+        y = originY + sin(angle)*radius
+        z = originZ + sin(angle)*radius/2.0
+        if (z < 0.0):
+            z = 0.0
         pos.xCoord_m = x
         pos.yCoord_m = y
+        pos.zCoord_m = z
         isoObject.setPosition(pos)
