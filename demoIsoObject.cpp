@@ -43,26 +43,34 @@ public:
 
 class myObject : public ISO22133::TestObject {
 public:
-    myObject() : dummyMember(0) {
+    void setMonr(double x,
+                 double y, 
+                 double z, 
+                 double heading_rad, 
+                 double lateral_m_s, 
+                 double lonitudinal_m_s) {
         // Initialize required fields in MONR
         CartesianPosition pos;
         SpeedType spd;
-        pos.xCoord_m = 1;
-        pos.yCoord_m = 2;
-        pos.zCoord_m = 3;
-        pos.heading_rad = 0.4;
+        pos.xCoord_m = x;
+        pos.yCoord_m = y;
+        pos.zCoord_m = z;
+        pos.heading_rad = heading_rad;
         pos.isHeadingValid = true;
         pos.isPositionValid = true;
         pos.isXcoordValid = true;
         pos.isYcoordValid = true;
         pos.isZcoordValid = true;
-        spd.lateral_m_s = 5;
-        spd.longitudinal_m_s = 6;
+        spd.lateral_m_s = lateral_m_s;
+        spd.longitudinal_m_s = lonitudinal_m_s;
         spd.isLateralValid = true;
         spd.isLongitudinalValid = true;
 
         this->setPosition(pos);
         this->setSpeed(spd);
+    }
+    myObject() : dummyMember(0) {
+        setMonr(1,2,3,0.4,5,6);
     }
     /**
      * @brief User must override this function for handling internal
@@ -138,9 +146,30 @@ private:
 int main(int c, char** argv ) {
 
 	myObject obj;
+
+    double originX = 0.0;
+    double originY = 0.0;
+    double originZ = 0.0;
+    double radius = 5.0;
+    double angle = 0.0;
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
     
     while (true) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));  
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        angle += 0.005;
+        if (angle > 2 * M_PI) {
+            angle = 0.0;
+        }
+        x = originX + radius * cos(angle);
+        y = originY + radius * sin(angle);
+        z = originZ + radius/2 * sin(angle);
+        if (z < 0) {
+            z = 0;
+        }
+        // Todo calculate heading and speed
+        obj.setMonr(x, y, z, 0.0, 0.0, 0.0);
     }
     
     std::cout << "done\n";
