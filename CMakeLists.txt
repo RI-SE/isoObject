@@ -106,7 +106,10 @@ set_property(TARGET ${ISOOBJECT_LIBRARY} APPEND PROPERTY
     PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/inc/udpServer.hpp
 )
 
-# Demo target
+if (NOT WITH_SWIG AND NOT BUILDING_FOR_ANDROID)
+find_package(Boost REQUIRED COMPONENTS program_options)
+
+# Demo target, only build if not swigging
 add_executable(${ISOOBJECT_TEST} demoIsoObject.cpp)
 
 target_include_directories(${ISOOBJECT_TEST} PUBLIC
@@ -115,7 +118,9 @@ target_include_directories(${ISOOBJECT_TEST} PUBLIC
 
 target_link_libraries(${ISOOBJECT_TEST} LINK_PUBLIC
     ${ISOOBJECT_LIBRARY}
+    Boost::program_options
 )
+endif()
 
 install(CODE "MESSAGE(STATUS \"Installing target ${ISOOBJECT_LIBRARY}\")")
 install(TARGETS ${ISOOBJECT_LIBRARY}
