@@ -49,7 +49,7 @@ class TestObject {
 	friend class PreRunning;
 
 public:
-	TestObject(const std::string& listenIP = "");
+	TestObject(const std::string& listenIP = "0.0.0.0");
 	virtual ~TestObject();
 
 	void disconnect();
