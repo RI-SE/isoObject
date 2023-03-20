@@ -14,7 +14,7 @@
  */
 class TcpServer {
    public:
-	TcpServer(uint32_t port) : acceptor(context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)), socket(context) {
+	TcpServer(std::string ip, uint32_t port) : acceptor(context, boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::from_string(ip), port)), socket(context) {
 		setBufferSize(defaultBufferSize);
 	};
 	virtual ~TcpServer() = default;

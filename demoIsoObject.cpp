@@ -3,7 +3,34 @@
 
 
 #include "iso22133object.hpp"
+#include <boost/program_options.hpp>
 
+namespace po = boost::program_options;
+/*!
+ * \brief Parse the command line arguments. If the user has specified the
+ *        --help option, print the help message and exit.
+ * \param argc The number of arguments.
+ * \param argv The arguments.
+ * \return The parsed arguments.
+ */
+static po::variables_map parseArguments(
+	int argc,
+	char** argv)
+{
+	po::variables_map ret;
+	po::options_description desc("Allowed options");
+	desc.add_options()
+		("help,h", "print this message")
+		("listen-ip,i", po::value<std::string>()->default_value("0.0.0.0"), "The IP address that the isoObject will listen on.")
+	;
+	po::store(po::parse_command_line(argc, argv, desc), ret);
+	po::notify(ret);
+	if (ret.count("help")){
+		std::cout << desc << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	return ret;
+}
 
 class myDisarmed : public ISO22133::Disarmed {
 public:
@@ -69,7 +96,9 @@ public:
         this->setPosition(pos);
         this->setSpeed(spd);
     }
-    myObject() : dummyMember(0) {
+    myObject(std::string ip) : 
+                ISO22133::TestObject(ip), 
+                dummyMember(0) {
         setMonr(1,2,3,0.4,5,6);
     }
     /**
@@ -143,9 +172,11 @@ private:
 
 
 
-int main(int c, char** argv ) {
+int main(int argc, char** argv ) {
+    auto args = parseArguments(argc, argv);
 
-	myObject obj;
+    std::string ip = args["listen-ip"].as<std::string>();
+	myObject obj(ip);
 
     double originX = 0.0;
     double originY = 0.0;

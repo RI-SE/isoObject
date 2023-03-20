@@ -14,8 +14,8 @@ namespace ISO22133 {
 TestObject::TestObject(const std::string& listenIP)
 	: name("myTestObject"),
 	  trajDecoder(),
-	  ctrlChannel(ISO_22133_DEFAULT_OBJECT_TCP_PORT),
-	  processChannel(ISO_22133_OBJECT_UDP_PORT),
+	  ctrlChannel(listenIP, ISO_22133_DEFAULT_OBJECT_TCP_PORT),
+	  processChannel(listenIP, ISO_22133_OBJECT_UDP_PORT),
 	  on(true) {
 	CartesianPosition initPos;
 	SpeedType initSpd;

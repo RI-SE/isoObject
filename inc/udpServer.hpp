@@ -15,7 +15,7 @@
  */
 class UdpServer {
    public:
-	UdpServer(uint32_t port) : socket(context, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), port)) {
+	UdpServer(std::string ip, uint32_t port) : socket(context, boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::from_string(ip), port)) {
 		setBufferSize(defaultBufferSize);
 	};
 
