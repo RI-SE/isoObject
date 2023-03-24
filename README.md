@@ -6,16 +6,46 @@ anyone who needs to implement a test object following the ISO22133 protocol.
 The object contains all communication and message handling for ISO22133, meaning 
 you only need to create a new object instance and the rest takes care of itself.
 
+It supports swig, and can therefore be used in e.g. python and java. See the swig directory for a python example.
+
 ## Building
 Clone the repository
 ```
 git clone git@github.com:RI-SE/isoObject.git
 ```
+Pull the submodules:
+```
+cd isoObject && git submodule update --init --recursive
+```
 Build the project:
 ```
-cd isoObject && mkdir build && cd build && cmake .. && make
+mkdir build && cd build && cmake .. && make
 ```
+If swigging, replace above ```cmake ..``` command with ```cmake .. -DWITH_SWIG=ON -DSWIG_WITH_X=ON```
+
+Where X is either ```PYTHON``` or ```JAVA```.
+
 Now the dynamic library ```libISO_object.so``` and the demo binary application ```ISO_objectDemo``` should be built in the build directory
+
+### Installing
+System wide install:
+```
+sudo make install
+```
+Reconfigure linker run-time bindings:
+```
+sudo ldconfig
+```
+
+## Standalone swig for java
+
+To swig the ISOobject to Java the following command in terminal:
+
+```
+swig -java -c++ -package com.isoObject isoObject.i
+```
+
+The generated files can then be included and used in a Java project. 
 
 ## Usage
 Since this is an abstract base class the first step is to create a new class and 
@@ -99,27 +129,3 @@ ISO22133::PreArming* myObject::createPreArming() const override {
     return dynamic_cast<ISO22133::PreArming*>(new myPreArming);
 }
 ```
-
-
-
-## SWIG
-
-### Java
-To swig the ISOobject to Java the following command in terminal:
-
-```
-swig -java -c++ -package com.isoObject isoObject.i
-```
-
-The generated files can then be included and used in a Java project. 
-
-### Python
-To swig the ISOobject to Python build the project with 
-```cmake
-cmake . -DWITH_SWIG=ON -DSWIG_WITH_PYTHON=ON
-
-sudo make install
-
-sudo ldconfig
-```
-See example script in swig folder for how to use it.
