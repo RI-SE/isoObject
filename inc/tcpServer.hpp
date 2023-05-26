@@ -59,6 +59,23 @@ class TcpServer {
 		}
 	};
 
+	void send(std::vector<char> data, size_t nbytes) {
+		std::vector<char> sendBuffer(data);
+		sendBuffer.resize(nbytes);
+		socket.async_send(boost::asio::buffer(sendBuffer, nbytes), 
+			[](const boost::system::error_code& error, std::size_t bytes_transferred) {
+				if (!error) {
+					std::cerr << "TCP socket: " << bytes_transferred << " bytes sent, " << std::endl;
+					throw boost::system::system_error(boost::asio::error::eof);
+				} else {
+					// Sending failed, handle the error
+					// Print the error message for example
+					std::cout << "Send error: " << error.message() << std::endl;
+				}
+			}
+		);
+	};
+
    private:
 	std::vector<char> dataBuffer;
 	size_t defaultBufferSize = 4096;

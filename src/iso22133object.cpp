@@ -149,14 +149,23 @@ void TestObject::sendMONR(bool debug) {
 	time.tv_sec = nanos / 1e9;
 	time.tv_usec = nanos / 1e3 - time.tv_sec * 1e6;
 
-	auto result = encodeMONRMessage(&time, this->position, this->speed, this->acceleration,
+	auto nBytesWritten = encodeMONRMessage(&time, this->position, this->speed, this->acceleration,
 									this->driveDirection, this->state->getStateID(), this->readyToArm,
 									this->errorState, 0x0000, buffer.data(), buffer.size(), debug);
-	if (result < 0) {
-		throw(std::invalid_argument("Failed to encode MONR data"));
-	} else {
-		processChannel.send(buffer, static_cast<size_t>(result));
-	}
+
+	if (nBytesWritten < 0) { throw(std::invalid_argument("Failed to encode MONR data"));}
+    processChannel.send(buffer, static_cast<size_t>(nBytesWritten));
+}
+
+void TestObject::sendGREM(bool debug) {
+	std::vector<char> buffer(TCP_BUFFER_SIZE);
+
+	GeneralResponseMessageType grem;
+	grem.responseCode = GREM_OK;
+	auto nBytesWritten = encodeGREMMessage(&grem, buffer.data(), buffer.size(), debug);
+
+	if (nBytesWritten < 0) { throw(std::invalid_argument("Failed to encode GREM data"));}
+    ctrlChannel.send(buffer, static_cast<size_t>(nBytesWritten));
 }
 
 void TestObject::sendMonrLoop() {
@@ -276,6 +285,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 		}
 		if (!this->trajDecoder.ExpectingTrajPoints()) {
 			this->state->handleTRAJ(*this);
+			this->sendGREM(debug);
 		}
 		break;
 	case MESSAGE_ID_OSEM:

@@ -167,6 +167,8 @@ private:
 	void handleHEAB(HeabMessageDataType& heab);
 	//! Sends MONR message on process channel
 	void sendMONR(bool debug = false);
+	//! Sends GREM message on control channel
+	void sendGREM(bool debug = false);
 	//! Called if HEAB messages do not arrive on time
 	void onHeabTimeout();
 	//! Function that checks if HEABs arrive on time
