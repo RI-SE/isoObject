@@ -20,6 +20,7 @@ TestObject::TestObject(const std::string& listenIP)
 	CartesianPosition initPos;
 	SpeedType initSpd;
 	AccelerationType initAcc;
+	TestModeType initTm;
 	std::cout << "Listen IP: " << listenIP << std::endl;
 	localIP = listenIP;
 	initPos.isHeadingValid = false;
@@ -29,9 +30,11 @@ TestObject::TestObject(const std::string& listenIP)
 	initAcc.isLateralValid = false;
 	initAcc.isLongitudinalValid = false;
 	transmitterID = TRANSMITTER_ID_UNAVAILABLE_VALUE;
+	initTm = TEST_MODE_UNAVAILABLE;
 	this->setPosition(initPos);
 	this->setSpeed(initSpd);
 	this->setAcceleration(initAcc);
+	this->setTestMode(initTm);
 	this->state = this->createInit();
 	this->startHandleTCP();
 	this->startHEABCheck();
@@ -267,7 +270,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 
 	switch (msgType) {
 	case MESSAGE_ID_TRAJ:
-		bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer);
+		bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer, this->testMode);
 		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding TRAJ");
 		}

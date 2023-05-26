@@ -60,6 +60,7 @@ public:
 	void setDriveDirection(const DriveDirectionType& drd) { driveDirection = drd; }
 	void setObjectState(const ObjectStateID& ost) { objectState = ost; }
 	void setName(const std::string nm) { name = nm; }
+	void setTestMode(const TestModeType tm) {testMode = tm; }
 	void setReadyToArm(const int& rdy) { readyToArm = rdy; }
 	void setErrorState(const char err) { errorState = err; }
 
@@ -128,11 +129,11 @@ protected:
 	//! Preferable using threads as to not slow down
 	//! the main thread.
 	virtual void onStateChange() {};
-	virtual void onOSEM(ObjectSettingsType&) {};
-	virtual void onHEAB(HeabMessageDataType&) {};
+    virtual void onOSEM(ObjectSettingsType& osem){};
+    virtual void onHEAB(HeabMessageDataType& heab) {};
 	virtual void onTRAJ() {};
-	virtual void onOSTM(ObjectCommandType&) {};
-	virtual void onSTRT(StartMessageType&) {};
+	virtual void onOSTM(ObjectCommandType& ostm) {};
+	virtual void onSTRT(StartMessageType& strt) {};
 
 	std::chrono::milliseconds expectedHeartbeatPeriod = std::chrono::milliseconds(1000 / HEAB_FREQUENCY_HZ);
 	std::chrono::milliseconds monrPeriod = std::chrono::milliseconds(1000 / MONR_EXPECTED_FREQUENCY_HZ);
@@ -197,6 +198,7 @@ private:
 	std::atomic<AccelerationType> acceleration;
 	std::atomic<DriveDirectionType> driveDirection { OBJECT_DRIVE_DIRECTION_UNAVAILABLE };
 	std::atomic<ObjectStateID> objectState  { ISO_OBJECT_STATE_UNKNOWN };
+	std::atomic<TestModeType> testMode  { TEST_MODE_UNAVAILABLE };
 	std::atomic<int> readyToArm { OBJECT_READY_TO_ARM_UNAVAILABLE };
 	std::atomic<int> transmitterID;
 	std::atomic<char> errorState { 0 };

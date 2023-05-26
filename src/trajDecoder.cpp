@@ -4,7 +4,7 @@
 #include "trajDecoder.hpp"
 #include "iso22133.h"
 
-ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>& dataBuffer) {
+ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>& dataBuffer, TestModeType testmode) {
     std::lock_guard<std::mutex> lock(this->guard);
 	copiedData = dataBuffer;
     int tmpByteCounter;
@@ -20,7 +20,12 @@ ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>& dataBuffer) {
         copiedData.erase(copiedData.begin(), copiedData.begin()+tmpByteCounter);	
         // The rest will be TRAJ waypoints
         expectingTRAJPoints = true;
-        trajectoryWaypoints.resize(trajecoryHeader.nWaypoints);
+        // Check delete bit.
+        if (trajecoryHeader.trajectoryInfo == TRAJECTORY_INFO_DELETE_TRAJECTORY) {
+            trajectoryWaypoints.clear();
+        // In case of dynamic trajectories (online mode), the new trajectory points are appended to the existing ones
+        }
+        trajectoryWaypoints.reserve(testmode == TEST_MODE_ONLINE ? trajectoryWaypoints.size() + trajecoryHeader.nWaypoints : trajecoryHeader.nWaypoints);
     }
     else {
         // Insert previously not treated bytes
@@ -50,14 +55,14 @@ ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>& dataBuffer) {
         }
         // Remove the decoded bytes 
         copiedData.erase(copiedData.begin(), copiedData.begin()+tmpByteCounter);	
-        trajectoryWaypoints[i+tmpCounter] = waypoint;
+        trajectoryWaypoints.push_back(waypoint);
         nPointsHandled += 1;
     }
-    std::cout << "Handling TRAJ point, ignore error" << std::endl;	
+    std::cout << "Handling TRAJ point" << std::endl;
 
     if(nPointsHandled == trajecoryHeader.nWaypoints) {
-        std::cout << "TRAJ received; " << 
-            trajecoryHeader.nWaypoints << " points." << std::endl;
+        std::cout << "TRAJ received with " << trajecoryHeader.nWaypoints << " points." << std::endl;
+        std::cout << "TRAJ " << trajecoryHeader.trajectoryID << " is now " << trajectoryWaypoints.size() << " points." << std::endl;
         expectingTRAJPoints = false; // Complete TRAJ received
         nPointsHandled = 0; // reset
         unhandledBytes.clear();

@@ -3,6 +3,7 @@
 
 
 #include "iso22133object.hpp"
+#include "printUtil.hpp"
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
@@ -124,17 +125,18 @@ public:
 	}
 
     //! overridden on*message* function.
-    void onOSEM(ObjectSettingsType&) override {
-        std::cout << "overridden onOSEM, inc private member" << std::endl;
-        dummyMember++;
-        std::cout << "dummyMember is now " << dummyMember << std::endl;
-        std::cout << "We can now also add arbitrary functions: " << std::endl;
-        dummyFunc();
+    void onOSEM(ObjectSettingsType& osem) override {
+        std::cout << "Object Settings Received" << std::endl;
+        STRUCT(ObjectSettingsType, &osem,
+            FIELD(TestModeType, testMode)
+        )
 
     }
 
     void onSTRT(StartMessageType&) override {
         std::cout << "Object Starting" << std::endl;
+        int trajSize = this->getTrajectory().size();
+        std::cout << "Trajectory size: " << trajSize << std::endl;
     }
 
     //! overridden vendor specific message handling

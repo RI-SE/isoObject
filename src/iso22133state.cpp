@@ -116,6 +116,11 @@ void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 	// This sets the transmitter ID for ISO22133 encoder
 	setTransmitterID(obj.transmitterID);
 
+	obj.testMode = osem.testMode;
+	msg.str(std::string());
+	msg << "Setting test mode to " << obj.testMode << " (0 = Preplanned, 1 = Online)" << std::endl;
+	std::cout << msg.str();
+
 	obj.expectedHeartbeatPeriod = std::chrono::milliseconds(1000 / (uint)osem.rate.heab);
 	msg.str(std::string());
 	msg << "Setting HEAB period to " << obj.expectedHeartbeatPeriod.count() << " ms. ("
