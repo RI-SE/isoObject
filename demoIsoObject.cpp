@@ -71,6 +71,8 @@ public:
 
 class myObject : public ISO22133::TestObject {
 public:
+    std::vector<TrajectoryWaypointType> trajectory;
+
     void setMonr(double x,
                  double y, 
                  double z, 
@@ -100,7 +102,10 @@ public:
     myObject(std::string ip) : 
                 ISO22133::TestObject(ip), 
                 dummyMember(0) {
+        ObjectSettingsType osem; 
+        osem.testMode = TEST_MODE_UNAVAILABLE;
         setMonr(1,2,3,0.4,5,6);
+        setObjectSettings(osem);
     }
     /**
      * @brief User must override this function for handling internal
@@ -127,10 +132,25 @@ public:
     //! overridden on*message* function.
     void onOSEM(ObjectSettingsType& osem) override {
         std::cout << "Object Settings Received" << std::endl;
-        STRUCT(ObjectSettingsType, &osem,
-            FIELD(TestModeType, testMode)
+        setObjectSettings(osem);
+        PRINT_STRUCT(ObjectSettingsType, &osem,
+            PRINT_FIELD(TestModeType, testMode)
         )
 
+    }
+
+    void onTRAJ() override {
+        std::cout << "Got onTRAJ signal, fetching new traj segments" << std::endl;
+        std::vector<TrajectoryWaypointType> newTraj;
+        newTraj = this->getTrajectory();
+        if (this->getObjectSettings().testMode == TEST_MODE_ONLINE){
+            std::cout << "Test mode is online planned, appending new trajectory to existing" << std::endl;
+            this->trajectory.insert(this->trajectory.end(), newTraj.begin(), newTraj.end());
+        } else {
+            std::cout << "Test mode is preplanned, replacing existing trajectory" << std::endl;
+            this->trajectory = newTraj;
+        }
+        std::cout << "Trajectory size: " << this->trajectory.size() << std::endl;
     }
 
     void onSTRT(StartMessageType&) override {

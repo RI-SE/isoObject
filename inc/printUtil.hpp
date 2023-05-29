@@ -1,5 +1,5 @@
 
-#define STRUCT(type, pInstance, ...) \
+#define PRINT_STRUCT(type, pInstance, ...) \
     {                                \
         std::cout << #type << " "    \
                   << #pInstance      \
@@ -9,7 +9,7 @@
         std::cout << std::endl;      \
     }
 
-#define FIELD(type, name)           \
+#define PRINT_FIELD(type, name)           \
     {                               \
         std::cout << "    "         \
                   << #type << " "   \
