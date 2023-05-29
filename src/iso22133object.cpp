@@ -34,7 +34,6 @@ TestObject::TestObject(const std::string& listenIP)
 	this->setPosition(initPos);
 	this->setSpeed(initSpd);
 	this->setAcceleration(initAcc);
-	this->setTestMode(initTm);
 	this->state = this->createInit();
 	this->startHandleTCP();
 	this->startHEABCheck();
@@ -279,7 +278,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 
 	switch (msgType) {
 	case MESSAGE_ID_TRAJ:
-		bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer, this->testMode);
+		bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer);
 		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding TRAJ");
 		}

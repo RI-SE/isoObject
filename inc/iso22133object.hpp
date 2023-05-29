@@ -56,11 +56,11 @@ public:
 
 	void setPosition(const CartesianPosition& pos) { position = pos; }
 	void setSpeed(const SpeedType& spd) { speed = spd; }
+	void setObjectSettings(const ObjectSettingsType& osem) { objectSettings = osem; }
 	void setAcceleration(const AccelerationType& acc) { acceleration = acc; }
 	void setDriveDirection(const DriveDirectionType& drd) { driveDirection = drd; }
 	void setObjectState(const ObjectStateID& ost) { objectState = ost; }
 	void setName(const std::string nm) { name = nm; }
-	void setTestMode(const TestModeType tm) {testMode = tm; }
 	void setReadyToArm(const int& rdy) { readyToArm = rdy; }
 	void setErrorState(const char err) { errorState = err; }
 
@@ -75,6 +75,7 @@ public:
 	GeographicPositionType getOrigin() const { return origin; }
 	std::string getLocalIP() const { return localIP; }
 	uint32_t getTransmitterID() const { return transmitterID; }
+	ObjectSettingsType getObjectSettings() const { return objectSettings; }
 
 
 
@@ -197,10 +198,10 @@ private:
 	std::atomic<ControlCenterStatusType> ccStatus;
 	std::atomic<CartesianPosition> position;
 	std::atomic<SpeedType> speed;
+	std::atomic<ObjectSettingsType> objectSettings;
 	std::atomic<AccelerationType> acceleration;
 	std::atomic<DriveDirectionType> driveDirection { OBJECT_DRIVE_DIRECTION_UNAVAILABLE };
 	std::atomic<ObjectStateID> objectState  { ISO_OBJECT_STATE_UNKNOWN };
-	std::atomic<TestModeType> testMode  { TEST_MODE_UNAVAILABLE };
 	std::atomic<int> readyToArm { OBJECT_READY_TO_ARM_UNAVAILABLE };
 	std::atomic<int> transmitterID;
 	std::atomic<char> errorState { 0 };
