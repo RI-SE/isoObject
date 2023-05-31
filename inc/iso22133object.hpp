@@ -7,6 +7,7 @@
 #include <atomic>
 #include <optional>
 
+#include "header.h"
 #include "iso22133.h"
 #include "iso22133state.hpp"
 #include "trajDecoder.hpp"
@@ -169,7 +170,7 @@ private:
 	//! Sends MONR message on process channel
 	void sendMONR(bool debug = false);
 	//! Sends GREM message on control channel
-	void sendGREM(bool debug = false);
+	void sendGREM(HeaderType header, GeneralResponseStatus responseCode, bool debug = false);
 	//! Called if HEAB messages do not arrive on time
 	void onHeabTimeout();
 	//! Function that checks if HEABs arrive on time
@@ -194,6 +195,7 @@ private:
 	UdpServer processChannel;
 	TrajDecoder trajDecoder;
 	std::chrono::steady_clock::time_point lastHeabTime;
+	std::atomic<HeaderType> lastReceivedMsgHeader;
 	std::atomic<GeographicPositionType> origin;
 	std::atomic<ControlCenterStatusType> ccStatus;
 	std::atomic<CartesianPosition> position;

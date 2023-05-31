@@ -110,7 +110,7 @@ protected:
 	//! When a message arrives, these methods are
 	//! the 'front line' handlers.
 	//! Handles ISO22133 required actions from contorl center
-	virtual void handleTRAJ(TestObject&);
+	virtual void handleTRAJ(TestObject&,std::atomic<HeaderType>&);
 	virtual void handleOSEM(TestObject&,ObjectSettingsType&);
 	virtual void handleOSTM(TestObject&,ObjectCommandType&);
 	virtual void handleSTRT(TestObject&,StartMessageType&);
@@ -130,7 +130,7 @@ class Unknown : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_UNKNOWN; }
 private:
-	void handleTRAJ(TestObject&) final override { unexpectedMessageWarning("TRAJ"); }
+	void handleTRAJ(TestObject&, std::atomic<HeaderType>&) final override { unexpectedMessageWarning("TRAJ"); }
 	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageWarning("OSEM"); }
 	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageWarning("OSTM"); }
 	void handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageWarning("STRT"); }
@@ -140,7 +140,7 @@ class Off : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_OFF; }
 private:
-	void handleTRAJ(TestObject&) final override { unexpectedMessageWarning("TRAJ"); }
+	void handleTRAJ(TestObject&, std::atomic<HeaderType>&) final override { unexpectedMessageWarning("TRAJ"); }
 	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageWarning("OSEM"); }
 	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageWarning("OSTM"); }
 	void handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageWarning("STRT"); }
@@ -151,7 +151,7 @@ public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_INIT; }
 	virtual void onExit(TestObject&) override;
 private:
-	void handleTRAJ(TestObject&) final override { unexpectedMessageWarning("TRAJ"); }
+	void handleTRAJ(TestObject&, std::atomic<HeaderType>&) final override { unexpectedMessageWarning("TRAJ"); }
 	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageWarning("OSEM"); }
 	void handleOSTM(TestObject&, ObjectCommandType&) final override { unexpectedMessageWarning("OSTM"); }
 	void handleSTRT(TestObject&, StartMessageType&) final override { unexpectedMessageWarning("STRT"); }

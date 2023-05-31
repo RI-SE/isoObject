@@ -198,15 +198,18 @@ void ISO22133::State::handleSTRT(TestObject& obj, StartMessageType& strt) {
 }
 
 /**
- * @brief TODO
- *
+ * @brief Signals that a new TRAJ is available and sends GREM if in online planned mode
+ *		  and object is receiving TRAJ chunks. 
  * @param obj
- * @param traj
+ * @param msgHeader
  */
-void ISO22133::State::handleTRAJ(TestObject& obj) {
+void ISO22133::State::handleTRAJ(TestObject& obj, std::atomic<HeaderType>& msgHeader) {
 	// Signal TRAJ is now available
 	obj.trajSig();
-	return;
+	if (obj.getObjectSettings().testMode == TEST_MODE_ONLINE) {
+		// Acknowledge TRAJ chunk with GREM when in online planned mode
+		obj.sendGREM(msgHeader, GREM_CHUNK_RECEIVED, false);
+	}
 }
 
 void ISO22133::Init::onExit(TestObject& obj) {

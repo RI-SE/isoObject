@@ -156,11 +156,14 @@ void TestObject::sendMONR(bool debug) {
     processChannel.send(buffer, static_cast<size_t>(nBytesWritten));
 }
 
-void TestObject::sendGREM(bool debug) {
+void TestObject::sendGREM(HeaderType msgHeader, GeneralResponseStatus responseCode, bool debug) {
 	std::vector<char> buffer(TCP_BUFFER_SIZE);
-
 	GeneralResponseMessageType grem;
-	grem.responseCode = GREM_OK;
+
+	grem.receivedHeaderTransmitterID = msgHeader.transmitterID;
+	grem.receivedHeaderMessageID = msgHeader.messageID;
+	grem.receivedHeaderMessageCounter = msgHeader.messageCounter;
+	grem.responseCode = responseCode;
 	auto nBytesWritten = encodeGREMMessage(&grem, buffer.data(), buffer.size(), debug);
 
 	if (nBytesWritten < 0) { throw(std::invalid_argument("Failed to encode GREM data"));}
@@ -270,21 +273,25 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 
 	currentTime = std::chrono::to_timeval(std::chrono::system_clock::now().time_since_epoch());
 
-	ISOMessageID msgType = getISOMessageType(dataBuffer.data(), dataBuffer.size(), false);
+
+	HeaderType msgHeader;
+	enum ISOMessageReturnValue retval = getISOMessageHeader(dataBuffer.data(), dataBuffer.size(), &msgHeader, debug);
+	if (retval == MESSAGE_OK) {
+		lastReceivedMsgHeader = msgHeader;
+	}
 	// Ugly check here since we don't know if it is UDP or the rest of TRAJ
-	if (msgType == MESSAGE_ID_INVALID && this->trajDecoder.ExpectingTrajPoints()) {
-		msgType = MESSAGE_ID_TRAJ;
+	if (retval != MESSAGE_OK && this->trajDecoder.ExpectingTrajPoints()) {
+		msgHeader.messageID = MESSAGE_ID_TRAJ;
 	}
 
-	switch (msgType) {
+	switch (msgHeader.messageID) {
 	case MESSAGE_ID_TRAJ:
 		bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer);
 		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding TRAJ");
 		}
 		if (!this->trajDecoder.ExpectingTrajPoints()) {
-			this->state->handleTRAJ(*this);
-			this->sendGREM(debug);
+			this->state->handleTRAJ(*this, lastReceivedMsgHeader);
 		}
 		break;
 	case MESSAGE_ID_OSEM:
@@ -326,10 +333,10 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 		this->handleHEAB(HEABdata);
 		break;
 	default:
-		bytesHandled = handleVendorSpecificMessage(msgType, dataBuffer);
+		bytesHandled = handleVendorSpecificMessage(msgHeader.messageID, dataBuffer);
 		if (bytesHandled < 0) {
 			throw std::invalid_argument(std::string("Unable to decode ISO-22133 message with MsgID ")
-										+ std::to_string(msgType));
+										+ std::to_string(msgHeader.messageID));
 		}
 		bytesHandled = static_cast<int>(dataBuffer.size());
 		break;
