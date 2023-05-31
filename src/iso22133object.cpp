@@ -153,7 +153,7 @@ void TestObject::sendMONR(bool debug) {
 									this->errorState, 0x0000, buffer.data(), buffer.size(), debug);
 
 	if (nBytesWritten < 0) { throw(std::invalid_argument("Failed to encode MONR data"));}
-    processChannel.send(buffer, static_cast<size_t>(nBytesWritten));
+	processChannel.send(buffer, static_cast<size_t>(nBytesWritten));
 }
 
 void TestObject::sendGREM(HeaderType msgHeader, GeneralResponseStatus responseCode, bool debug) {
@@ -167,7 +167,7 @@ void TestObject::sendGREM(HeaderType msgHeader, GeneralResponseStatus responseCo
 	auto nBytesWritten = encodeGREMMessage(&grem, buffer.data(), buffer.size(), debug);
 
 	if (nBytesWritten < 0) { throw(std::invalid_argument("Failed to encode GREM data"));}
-    ctrlChannel.send(buffer, static_cast<size_t>(nBytesWritten));
+	ctrlChannel.send(buffer, static_cast<size_t>(nBytesWritten));
 }
 
 void TestObject::sendMonrLoop() {

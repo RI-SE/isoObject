@@ -131,8 +131,8 @@ protected:
 	//! Preferable using threads as to not slow down
 	//! the main thread.
 	virtual void onStateChange() {};
-    virtual void onOSEM(ObjectSettingsType& osem){};
-    virtual void onHEAB(HeabMessageDataType& heab) {};
+	virtual void onOSEM(ObjectSettingsType& osem){};
+	virtual void onHEAB(HeabMessageDataType& heab) {};
 	virtual void onTRAJ() {};
 	virtual void onOSTM(ObjectCommandType& ostm) {};
 	virtual void onSTRT(StartMessageType& strt) {};

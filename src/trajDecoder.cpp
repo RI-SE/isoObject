@@ -20,7 +20,6 @@ ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>& dataBuffer) {
         copiedData.erase(copiedData.begin(), copiedData.begin()+tmpByteCounter);	
         // The rest will be TRAJ waypoints
         expectingTRAJPoints = true;
-        // Check delete bit.
         trajectoryWaypoints.clear();
         trajectoryWaypoints.reserve(trajecoryHeader.nWaypoints);
     }
@@ -52,13 +51,14 @@ ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>& dataBuffer) {
         }
         // Remove the decoded bytes 
         copiedData.erase(copiedData.begin(), copiedData.begin()+tmpByteCounter);	
-        trajectoryWaypoints.push_back(waypoint);
+        trajectoryWaypoints[i+tmpCounter] = waypoint;
         nPointsHandled += 1;
     }
-    std::cout << "Handling TRAJ point" << std::endl;
+    std::cout << "Handling TRAJ point, ignore decoding errors" << std::endl;	
 
     if(nPointsHandled == trajecoryHeader.nWaypoints) {
-        std::cout << "TRAJ received with " << trajecoryHeader.nWaypoints << " points." << std::endl;
+        std::cout << "TRAJ received; " << 
+            trajecoryHeader.nWaypoints << " points." << std::endl;
         expectingTRAJPoints = false; // Complete TRAJ received
         nPointsHandled = 0; // reset
         unhandledBytes.clear();
