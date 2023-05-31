@@ -155,8 +155,6 @@ public:
 
     void onSTRT(StartMessageType&) override {
         std::cout << "Object Starting" << std::endl;
-        int trajSize = this->getTrajectory().size();
-        std::cout << "Trajectory size: " << trajSize << std::endl;
     }
 
     //! overridden vendor specific message handling
