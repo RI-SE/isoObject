@@ -1,7 +1,6 @@
 #include <chrono>
 #include <thread>
 
-#include "iso22133.h"
 #include "iso22133object.hpp"
 #include "iso22133state.hpp"
 #include "defines.h"  // From ISO22133 lib
@@ -275,7 +274,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 
 
 	HeaderType msgHeader;
-	enum ISOMessageReturnValue retval = getISOMessageHeader(dataBuffer.data(), dataBuffer.size(), &msgHeader, debug);
+	enum ISOMessageReturnValue retval = decodeISOHeader(dataBuffer.data(), dataBuffer.size(), &msgHeader, debug);
 	if (retval == MESSAGE_OK) {
 		lastReceivedMsgHeader = msgHeader;
 	}
