@@ -51,7 +51,7 @@ ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>& dataBuffer) {
         }
         // Remove the decoded bytes 
         copiedData.erase(copiedData.begin(), copiedData.begin()+tmpByteCounter);	
-        trajectoryWaypoints[i+tmpCounter] = waypoint;
+        trajectoryWaypoints.push_back(waypoint);
         nPointsHandled += 1;
     }
     std::cout << "Handling TRAJ point, ignore decoding errors" << std::endl;	
