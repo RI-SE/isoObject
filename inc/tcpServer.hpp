@@ -64,13 +64,11 @@ class TcpServer {
 		sendBuffer.resize(nbytes);
 		socket.async_send(boost::asio::buffer(sendBuffer, nbytes), 
 			[](const boost::system::error_code& error, std::size_t bytes_transferred) {
-				if (!error) {
-					std::cerr << "TCP socket: " << bytes_transferred << " bytes sent, " << std::endl;
-					throw boost::system::system_error(boost::asio::error::eof);
-				} else {
+				if (error) {
 					// Sending failed, handle the error
 					// Print the error message for example
-					std::cout << "Send error: " << error.message() << std::endl;
+					std::cerr << "Send error: " << error.message() << std::endl;
+					throw boost::system::system_error(boost::asio::error::eof);
 				}
 			}
 		);
