@@ -6,7 +6,7 @@
 
 ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>& dataBuffer) {
     std::lock_guard<std::mutex> lock(this->guard);
-	copiedData = dataBuffer;
+    copiedData = dataBuffer;
     int tmpByteCounter;
     // Decode TRAJ Header
     if(!expectingTRAJPoints) {
@@ -20,7 +20,8 @@ ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>& dataBuffer) {
         copiedData.erase(copiedData.begin(), copiedData.begin()+tmpByteCounter);	
         // The rest will be TRAJ waypoints
         expectingTRAJPoints = true;
-        trajectoryWaypoints.resize(trajecoryHeader.nWaypoints);
+        trajectoryWaypoints.clear();
+        trajectoryWaypoints.reserve(trajecoryHeader.nWaypoints);
     }
     else {
         // Insert previously not treated bytes
@@ -50,10 +51,10 @@ ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>& dataBuffer) {
         }
         // Remove the decoded bytes 
         copiedData.erase(copiedData.begin(), copiedData.begin()+tmpByteCounter);	
-        trajectoryWaypoints[i+tmpCounter] = waypoint;
+        trajectoryWaypoints.push_back(waypoint);
         nPointsHandled += 1;
     }
-    std::cout << "Handling TRAJ point, ignore error" << std::endl;	
+    std::cout << "Handling TRAJ point, ignore decoding errors" << std::endl;	
 
     if(nPointsHandled == trajecoryHeader.nWaypoints) {
         std::cout << "TRAJ received; " << 

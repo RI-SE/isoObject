@@ -1,7 +1,6 @@
 #include <chrono>
 #include <thread>
 
-#include "iso22133.h"
 #include "iso22133object.hpp"
 #include "iso22133state.hpp"
 #include "defines.h"  // From ISO22133 lib
@@ -20,6 +19,7 @@ TestObject::TestObject(const std::string& listenIP)
 	CartesianPosition initPos;
 	SpeedType initSpd;
 	AccelerationType initAcc;
+	TestModeType initTm;
 	std::cout << "Listen IP: " << listenIP << std::endl;
 	localIP = listenIP;
 	initPos.isHeadingValid = false;
@@ -29,6 +29,7 @@ TestObject::TestObject(const std::string& listenIP)
 	initAcc.isLateralValid = false;
 	initAcc.isLongitudinalValid = false;
 	transmitterID = TRANSMITTER_ID_UNAVAILABLE_VALUE;
+	initTm = TEST_MODE_UNAVAILABLE;
 	this->setPosition(initPos);
 	this->setSpeed(initSpd);
 	this->setAcceleration(initAcc);
@@ -146,14 +147,26 @@ void TestObject::sendMONR(bool debug) {
 	time.tv_sec = nanos / 1e9;
 	time.tv_usec = nanos / 1e3 - time.tv_sec * 1e6;
 
-	auto result = encodeMONRMessage(&time, this->position, this->speed, this->acceleration,
+	auto nBytesWritten = encodeMONRMessage(&time, this->position, this->speed, this->acceleration,
 									this->driveDirection, this->state->getStateID(), this->readyToArm,
 									this->errorState, 0x0000, buffer.data(), buffer.size(), debug);
-	if (result < 0) {
-		throw(std::invalid_argument("Failed to encode MONR data"));
-	} else {
-		processChannel.send(buffer, static_cast<size_t>(result));
-	}
+
+	if (nBytesWritten < 0) { throw(std::invalid_argument("Failed to encode MONR data"));}
+	processChannel.send(buffer, static_cast<size_t>(nBytesWritten));
+}
+
+void TestObject::sendGREM(HeaderType msgHeader, GeneralResponseStatus responseCode, bool debug) {
+	std::vector<char> buffer(TCP_BUFFER_SIZE);
+	GeneralResponseMessageType grem;
+
+	grem.receivedHeaderTransmitterID = msgHeader.transmitterID;
+	grem.receivedHeaderMessageID = msgHeader.messageID;
+	grem.receivedHeaderMessageCounter = msgHeader.messageCounter;
+	grem.responseCode = responseCode;
+	auto nBytesWritten = encodeGREMMessage(&grem, buffer.data(), buffer.size(), debug);
+
+	if (nBytesWritten < 0) { throw(std::invalid_argument("Failed to encode GREM data"));}
+	ctrlChannel.send(buffer, static_cast<size_t>(nBytesWritten));
 }
 
 void TestObject::sendMonrLoop() {
@@ -259,20 +272,25 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 
 	currentTime = std::chrono::to_timeval(std::chrono::system_clock::now().time_since_epoch());
 
-	ISOMessageID msgType = getISOMessageType(dataBuffer.data(), dataBuffer.size(), false);
+
+	HeaderType msgHeader;
+	enum ISOMessageReturnValue retval = decodeISOHeader(dataBuffer.data(), dataBuffer.size(), &msgHeader, debug);
+	if (retval == MESSAGE_OK) {
+		lastReceivedMsgHeader = msgHeader;
+	}
 	// Ugly check here since we don't know if it is UDP or the rest of TRAJ
-	if (msgType == MESSAGE_ID_INVALID && this->trajDecoder.ExpectingTrajPoints()) {
-		msgType = MESSAGE_ID_TRAJ;
+	if (retval != MESSAGE_OK && this->trajDecoder.ExpectingTrajPoints()) {
+		msgHeader.messageID = MESSAGE_ID_TRAJ;
 	}
 
-	switch (msgType) {
+	switch (msgHeader.messageID) {
 	case MESSAGE_ID_TRAJ:
 		bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer);
 		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding TRAJ");
 		}
 		if (!this->trajDecoder.ExpectingTrajPoints()) {
-			this->state->handleTRAJ(*this);
+			this->state->handleTRAJ(*this, lastReceivedMsgHeader);
 		}
 		break;
 	case MESSAGE_ID_OSEM:
@@ -314,10 +332,10 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 		this->handleHEAB(HEABdata);
 		break;
 	default:
-		bytesHandled = handleVendorSpecificMessage(msgType, dataBuffer);
+		bytesHandled = handleVendorSpecificMessage(msgHeader.messageID, dataBuffer);
 		if (bytesHandled < 0) {
 			throw std::invalid_argument(std::string("Unable to decode ISO-22133 message with MsgID ")
-										+ std::to_string(msgType));
+										+ std::to_string(msgHeader.messageID));
 		}
 		bytesHandled = static_cast<int>(dataBuffer.size());
 		break;

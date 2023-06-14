@@ -15,13 +15,13 @@ class TrajDecoder {
 public: 
     TrajDecoder(bool debug) : debug(debug), expectingTRAJPoints(false) {};
     TrajDecoder() : debug(false), expectingTRAJPoints(false) {};
-	ssize_t DecodeTRAJ(std::vector<char>&);
+    ssize_t DecodeTRAJ(std::vector<char>&);
     bool ExpectingTrajPoints() const { return this->expectingTRAJPoints; }
-	TrajectoryHeaderType getTrajHeader() const;
-	std::vector<TrajectoryWaypointType> getTraj() const;
+    TrajectoryHeaderType getTrajHeader() const;
+    std::vector<TrajectoryWaypointType> getTraj() const;
 
 private:
-	mutable std::mutex guard;
+    mutable std::mutex guard;
     bool debug;
     std::atomic<bool> expectingTRAJPoints;
     int nPointsHandled = 0;

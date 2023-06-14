@@ -7,6 +7,7 @@
 #include <atomic>
 #include <optional>
 
+#include "header.h"
 #include "iso22133.h"
 #include "iso22133state.hpp"
 #include "trajDecoder.hpp"
@@ -56,6 +57,7 @@ public:
 
 	void setPosition(const CartesianPosition& pos) { position = pos; }
 	void setSpeed(const SpeedType& spd) { speed = spd; }
+	void setObjectSettings(const ObjectSettingsType& osem) { objectSettings = osem; }
 	void setAcceleration(const AccelerationType& acc) { acceleration = acc; }
 	void setDriveDirection(const DriveDirectionType& drd) { driveDirection = drd; }
 	void setObjectState(const ObjectStateID& ost) { objectState = ost; }
@@ -74,6 +76,7 @@ public:
 	GeographicPositionType getOrigin() const { return origin; }
 	std::string getLocalIP() const { return localIP; }
 	uint32_t getTransmitterID() const { return transmitterID; }
+	ObjectSettingsType getObjectSettings() const { return objectSettings; }
 
 
 
@@ -128,11 +131,11 @@ protected:
 	//! Preferable using threads as to not slow down
 	//! the main thread.
 	virtual void onStateChange() {};
-	virtual void onOSEM(ObjectSettingsType&) {};
-	virtual void onHEAB(HeabMessageDataType&) {};
+	virtual void onOSEM(ObjectSettingsType& osem){};
+	virtual void onHEAB(HeabMessageDataType& heab) {};
 	virtual void onTRAJ() {};
-	virtual void onOSTM(ObjectCommandType&) {};
-	virtual void onSTRT(StartMessageType&) {};
+	virtual void onOSTM(ObjectCommandType& ostm) {};
+	virtual void onSTRT(StartMessageType& strt) {};
 
 	std::chrono::milliseconds expectedHeartbeatPeriod = std::chrono::milliseconds(1000 / HEAB_FREQUENCY_HZ);
 	std::chrono::milliseconds monrPeriod = std::chrono::milliseconds(1000 / MONR_EXPECTED_FREQUENCY_HZ);
@@ -166,6 +169,8 @@ private:
 	void handleHEAB(HeabMessageDataType& heab);
 	//! Sends MONR message on process channel
 	void sendMONR(bool debug = false);
+	//! Sends GREM message on control channel
+	void sendGREM(HeaderType header, GeneralResponseStatus responseCode, bool debug = false);
 	//! Called if HEAB messages do not arrive on time
 	void onHeabTimeout();
 	//! Function that checks if HEABs arrive on time
@@ -190,10 +195,12 @@ private:
 	UdpServer processChannel;
 	TrajDecoder trajDecoder;
 	std::chrono::steady_clock::time_point lastHeabTime;
+	std::atomic<HeaderType> lastReceivedMsgHeader;
 	std::atomic<GeographicPositionType> origin;
 	std::atomic<ControlCenterStatusType> ccStatus;
 	std::atomic<CartesianPosition> position;
 	std::atomic<SpeedType> speed;
+	std::atomic<ObjectSettingsType> objectSettings;
 	std::atomic<AccelerationType> acceleration;
 	std::atomic<DriveDirectionType> driveDirection { OBJECT_DRIVE_DIRECTION_UNAVAILABLE };
 	std::atomic<ObjectStateID> objectState  { ISO_OBJECT_STATE_UNKNOWN };
