@@ -76,6 +76,7 @@ public:
 	GeographicPositionType getOrigin() const { return origin; }
 	std::string getLocalIP() const { return localIP; }
 	uint32_t getTransmitterID() const { return transmitterID; }
+	uint32_t getServerID() const { return serverID; }
 	ObjectSettingsType getObjectSettings() const { return objectSettings; }
 
 
@@ -179,6 +180,12 @@ private:
 	//! Set estimated network delay from HEAB times
 	void setNetworkDelay(std::chrono::milliseconds);
 
+	//! Get the Next message counter to send
+	char getMessageCounter() { return sentMessageCounter = (sentMessageCounter + 1) % 256; }
+
+	//! Check if the received message counter is correct and update regardless to the next expected
+	void checkAndUpdateMessageCounter(const char receivedMessageCounter);
+
 	sigslot::signal<>heabTimeout;
 	std::mutex recvMutex;
 	std::mutex heabMutex;
@@ -206,6 +213,9 @@ private:
 	std::atomic<ObjectStateID> objectState  { ISO_OBJECT_STATE_UNKNOWN };
 	std::atomic<int> readyToArm { OBJECT_READY_TO_ARM_UNAVAILABLE };
 	std::atomic<int> transmitterID;
+	std::atomic<int> serverID;
+	std::atomic<char> expectedMessageCounter;
+	std::atomic<char> sentMessageCounter;
 	std::atomic<char> errorState { 0 };
 	std::atomic<bool> awaitingFirstHeab { true };
 	std::atomic<bool> on { true };

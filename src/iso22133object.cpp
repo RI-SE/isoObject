@@ -30,6 +30,9 @@ TestObject::TestObject(const std::string& listenIP)
 	initAcc.isLongitudinalValid = false;
 	transmitterID = TRANSMITTER_ID_UNAVAILABLE_VALUE;
 	initTm = TEST_MODE_UNAVAILABLE;
+	serverID = 0;
+	expectedMessageCounter = 0;
+	sentMessageCounter = 0;
 	this->setPosition(initPos);
 	this->setSpeed(initSpd);
 	this->setAcceleration(initAcc);
@@ -147,7 +150,7 @@ void TestObject::sendMONR(bool debug) {
 	time.tv_sec = nanos / 1e9;
 	time.tv_usec = nanos / 1e3 - time.tv_sec * 1e6;
 
-	auto nBytesWritten = encodeMONRMessage(&time, this->position, this->speed, this->acceleration,
+	auto nBytesWritten = encodeMONRMessage(this->serverID, this->getMessageCounter(), &time, this->position, this->speed, this->acceleration,
 									this->driveDirection, this->state->getStateID(), this->readyToArm,
 									this->errorState, 0x0000, buffer.data(), buffer.size(), debug);
 
@@ -163,7 +166,8 @@ void TestObject::sendGREM(HeaderType msgHeader, GeneralResponseStatus responseCo
 	grem.receivedHeaderMessageID = msgHeader.messageID;
 	grem.receivedHeaderMessageCounter = msgHeader.messageCounter;
 	grem.responseCode = responseCode;
-	auto nBytesWritten = encodeGREMMessage(&grem, buffer.data(), buffer.size(), debug);
+
+	auto nBytesWritten = encodeGREMMessage(this->serverID, this->getMessageCounter(), &grem, buffer.data(), buffer.size(), debug);
 
 	if (nBytesWritten < 0) { throw(std::invalid_argument("Failed to encode GREM data"));}
 	ctrlChannel.send(buffer, static_cast<size_t>(nBytesWritten));
@@ -283,6 +287,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 		msgHeader.messageID = MESSAGE_ID_TRAJ;
 	}
 
+	this->checkAndUpdateMessageCounter(msgHeader.messageCounter);
 	switch (msgHeader.messageID) {
 	case MESSAGE_ID_TRAJ:
 		bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer);
@@ -324,7 +329,6 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 
 	case MESSAGE_ID_HEAB:
 		HeabMessageDataType HEABdata;
-
 		bytesHandled = decodeHEABMessage(dataBuffer.data(), dataBuffer.size(), currentTime, &HEABdata, debug);
 		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding HEAB");
@@ -401,6 +405,16 @@ std::chrono::milliseconds TestObject::getNetworkDelay() {
 void TestObject::setNetworkDelay(std::chrono::milliseconds delay) {
 	std::scoped_lock lock(netwrkDelayMutex);
 	estimatedNetworkDelay = delay;
+}
+
+void TestObject::checkAndUpdateMessageCounter(const char receivedMessageCounter) {
+	if (expectedMessageCounter != receivedMessageCounter) {
+		std::stringstream ss;
+		ss << "Received message counter " << receivedMessageCounter << " does not match expected "
+		<< expectedMessageCounter << std::endl;
+		std::cerr << ss.str();
+	}
+	expectedMessageCounter = receivedMessageCounter + 1;
 }
 
 }  // namespace ISO22133
