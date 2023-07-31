@@ -51,6 +51,7 @@ class TestObject {
 
 public:
 	TestObject(const std::string& listenIP = "0.0.0.0");
+	TestObject(int tcpSocket);
 	virtual ~TestObject();
 
 	void disconnect();
@@ -79,8 +80,8 @@ public:
 	uint32_t getServerID() const { return serverID; }
 	ObjectSettingsType getObjectSettings() const { return objectSettings; }
 
-
-
+	int handleUDPMessage(std::vector<char>&, int udpSocket, boost::asio::ip::udp::endpoint& ep);
+	int handleTCPMessage(std::vector<char>&);
 protected:
 
 	//! Pure virtual safety function that must be implemented by the user.
@@ -148,6 +149,8 @@ protected:
 
 	ISO22133::State* state;
 private:
+	//! Initializer for commonalities of the constructs
+	void initialize();
 
 	//! TCP receiver loop that should be run in its own thread.
 	void receiveTCP();
@@ -216,6 +219,7 @@ private:
 	std::atomic<int> serverID;
 	std::atomic<char> expectedMessageCounter;
 	std::atomic<char> sentMessageCounter;
+	std::atomic<bool> sendOnlySockets { false };
 	std::atomic<char> errorState { 0 };
 	std::atomic<bool> awaitingFirstHeab { true };
 	std::atomic<bool> on { true };

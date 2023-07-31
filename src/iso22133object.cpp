@@ -15,30 +15,49 @@ TestObject::TestObject(const std::string& listenIP)
 	  trajDecoder(),
 	  ctrlChannel(listenIP, ISO_22133_DEFAULT_OBJECT_TCP_PORT),
 	  processChannel(listenIP, ISO_22133_OBJECT_UDP_PORT),
+	  transmitterID(TRANSMITTER_ID_UNAVAILABLE_VALUE),
+	  serverID(0),
+	  expectedMessageCounter(0),
+	  sentMessageCounter(0),
+	  sendOnlySockets(true),
 	  on(true) {
+	this->initialize();
+	this->startHandleTCP();
+	this->startHEABCheck();
+}
+
+TestObject::TestObject(int tcpSocket)
+	: name("myTestObject"),
+	  trajDecoder(),
+	  ctrlChannel(tcpSocket),
+	  processChannel(),
+	  transmitterID(TRANSMITTER_ID_UNAVAILABLE_VALUE),
+	  serverID(0),
+	  expectedMessageCounter(0),
+	  sentMessageCounter(0),
+	  sendOnlySockets(true),
+	  on(true) {
+	this->initialize();
+	state->handleEvent(*this, ISO22133::Events::B);
+}
+
+void TestObject::initialize() {
 	CartesianPosition initPos;
 	SpeedType initSpd;
 	AccelerationType initAcc;
 	TestModeType initTm;
-	std::cout << "Listen IP: " << listenIP << std::endl;
-	localIP = listenIP;
+	localIP = "0.0.0.0";
 	initPos.isHeadingValid = false;
 	initPos.isPositionValid = false;
 	initSpd.isLateralValid = false;
 	initSpd.isLongitudinalValid = false;
 	initAcc.isLateralValid = false;
 	initAcc.isLongitudinalValid = false;
-	transmitterID = TRANSMITTER_ID_UNAVAILABLE_VALUE;
 	initTm = TEST_MODE_UNAVAILABLE;
-	serverID = 0;
-	expectedMessageCounter = 0;
-	sentMessageCounter = 0;
 	this->setPosition(initPos);
 	this->setSpeed(initSpd);
 	this->setAcceleration(initAcc);
 	this->state = this->createInit();
-	this->startHandleTCP();
-	this->startHEABCheck();
 	this->stateChangeSig.connect(&TestObject::onStateChange, this);
 	this->osemSig.connect(&TestObject::onOSEM, this);
 	this->heabSig.connect(&TestObject::onHEAB, this);
@@ -80,17 +99,21 @@ void TestObject::disconnect() {
 		std::cerr << "TCP socket close error: " << e.what() << '\n';
 	}
 
-	processChannel.disconnect();  // Close UDP socket
+	if (!sendOnlySockets) {
+		processChannel.disconnect();  // Close UDP socket
+	}
 	awaitingFirstHeab = true;	  // Reset HEAB timeout check
 
-	try {
-		if (udpReceiveThread.joinable())
-			udpReceiveThread.join();
-		if (monrThread.joinable())
-			monrThread.join();
-	} catch (std::system_error& e) {
-		std::cerr << "Disconnect error: " << e.what() << std::endl;
-		throw e;
+	if (!sendOnlySockets) {
+		try {
+			if (udpReceiveThread.joinable())
+				udpReceiveThread.join();
+			if (monrThread.joinable())
+				monrThread.join();
+		} catch (std::system_error& e) {
+			std::cerr << "Disconnect error: " << e.what() << std::endl;
+			throw e;
+		}
 	}
 }
 
@@ -193,6 +216,10 @@ void TestObject::sendMonrLoop() {
 }
 
 void TestObject::receiveUDP() {
+	if (sendOnlySockets) {
+		return;
+	}
+	
 	std::stringstream ss;
 	ss << "Started UDP communication thread." << std::endl;
 	ss << "Awaiting UDP data from ATOS..." << std::endl;
@@ -266,6 +293,22 @@ void TestObject::checkHeabLoop() {
 void TestObject::onHeabTimeout() {
 	disconnect();
 	this->state->handleEvent(*this, Events::L);
+}
+
+int TestObject::handleTCPMessage(std::vector<char>& dataBuffer) {
+	return handleMessage(dataBuffer);
+}
+
+int TestObject::handleUDPMessage(std::vector<char>& dataBuffer, int native_socket, boost::asio::ip::udp::endpoint& ep) {
+	if (awaitingFirstHeab) {
+		std::stringstream ss;
+		ss.str(std::string());
+		ss << "Received UDP data from ATOS" << std::endl;
+		std::cout << ss.str();
+		processChannel.setEndpoint(native_socket, ep);
+		startSendMonr(); // UDP connection established, start sending MONR
+	}
+	return handleMessage(dataBuffer);
 }
 
 int TestObject::handleMessage(std::vector<char>& dataBuffer) {
