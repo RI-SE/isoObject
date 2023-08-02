@@ -82,6 +82,7 @@ public:
 
 	int handleUDPMessage(std::vector<char>&, int udpSocket, boost::asio::ip::udp::endpoint& ep);
 	int handleTCPMessage(std::vector<char>&);
+	void shutdown_threads();
 protected:
 
 	//! Pure virtual safety function that must be implemented by the user.

@@ -38,7 +38,8 @@ TestObject::TestObject(int tcpSocket)
 	  sendOnlySockets(true),
 	  on(true) {
 	this->initialize();
-	state->handleEvent(*this, ISO22133::Events::B);
+	this->startHandleTCP();
+	this->startHEABCheck();
 }
 
 void TestObject::initialize() {
@@ -67,28 +68,41 @@ void TestObject::initialize() {
 	this->heabTimeout.connect(&TestObject::onHeabTimeout, this);
 }
 
-TestObject::~TestObject() {
+void TestObject::shutdown_threads() {
 	on = false;
 	try {
 		udpReceiveThread.join();
-	} catch (std::system_error&) {
+	} catch (std::system_error& eaccess) {
+		std::cerr << "Error joining UDP thread: " << eaccess.what() << std::endl;
 	}
 	try {
-		monrThread.join();
-	} catch (std::system_error&) {
+		if(monrThread.joinable())
+			monrThread.join();
+	} catch (std::system_error& e) {
+		std::cerr << "Error joining MONR thread: " << e.what() << std::endl;
 	}
 	try {
-		tcpReceiveThread.join();
-	} catch (std::system_error&) {
+		if (tcpReceiveThread.joinable())
+			tcpReceiveThread.join();
+	} catch (std::system_error& e) {
+		std::cerr << "Error joining TCP thread: " << e.what() << std::endl;
 	}
 	try {
-		heabTimeoutThread.join();
-	} catch (std::system_error&) {
+		if (heabTimeoutThread.joinable())
+			heabTimeoutThread.join();
+	} catch (std::system_error& e) {
+		std::cerr << "Error joining HEAB timeout thread: " << e.what() << std::endl;
 	}
 	try {
-		delayedStrtThread.join();
-	} catch (std::system_error&) {
+		if (delayedStrtThread.joinable())
+			delayedStrtThread.join();
+	} catch (std::system_error& e) {
+		std::cerr << "Error joining delayed STRT thread: " << e.what() << std::endl;
 	}
+}
+
+TestObject::~TestObject() {
+	this->shutdown_threads();
 };
 
 void TestObject::disconnect() {
@@ -104,16 +118,15 @@ void TestObject::disconnect() {
 	}
 	awaitingFirstHeab = true;	  // Reset HEAB timeout check
 
-	if (!sendOnlySockets) {
-		try {
-			if (udpReceiveThread.joinable())
-				udpReceiveThread.join();
-			if (monrThread.joinable())
-				monrThread.join();
-		} catch (std::system_error& e) {
-			std::cerr << "Disconnect error: " << e.what() << std::endl;
-			throw e;
-		}
+
+	try {
+		if (!sendOnlySockets && udpReceiveThread.joinable())
+			udpReceiveThread.join();
+		if (monrThread.joinable())
+			monrThread.join();
+	} catch (std::system_error& e) {
+		std::cerr << "Disconnect error: " << e.what() << std::endl;
+		throw e;
 	}
 }
 
@@ -121,29 +134,35 @@ void TestObject::receiveTCP() {
 	std::stringstream ss;
 	ss << "Started TCP thread." << std::endl;
 	std::cout << ss.str();
+	bool continueReceiving = true;
 
-	while (this->on) {
-		ss.str(std::string());
-		ss << "Awaiting TCP connection from ATOS..." << std::endl;
-		std::cout << ss.str();
-
-		try {
-			ctrlChannel.acceptConnection();
-		} catch (boost::system::system_error& e) {
+	while (this->on && continueReceiving) {
+		if (!sendOnlySockets) {
 			ss.str(std::string());
-			ss << "TCP accept failed: " << e.what() << std::endl;
+			ss << "Awaiting TCP connection from ATOS..." << std::endl;
 			std::cout << ss.str();
-			throw e;
+
+			try {
+				ctrlChannel.acceptConnection();
+			} catch (boost::system::system_error& e) {
+				ss.str(std::string());
+				ss << "TCP accept failed: " << e.what() << std::endl;
+				std::cout << ss.str();
+				throw e;
+			}
+			ss.str(std::string());
+			ss << "TCP connection to ATOS running at " << ctrlChannel.getEndPoint().address().to_string()
+			<< " established." << std::endl;
+			std::cout << ss.str();
 		}
-		ss.str(std::string());
-		ss << "TCP connection to ATOS running at " << ctrlChannel.getEndPoint().address().to_string()
-		   << " established." << std::endl;
-		std::cout << ss.str();
 
 		state->handleEvent(*this, ISO22133::Events::B);
 		try {
 			while (true) {
+				std::cerr << "Waiting for tcp messages" << std::endl;
 				auto data = ctrlChannel.receive();
+				std::cerr << "Received tcp message: " << data.size() << std::endl;
+
 				int nBytesHandled = 0;
 				do {
 					try {
@@ -159,6 +178,9 @@ void TestObject::receiveTCP() {
 			std::cerr << "Connection to ATOS lost" << std::endl;
 			disconnect();
 			state->handleEvent(*this, ISO22133::Events::L);
+			if (sendOnlySockets) {
+				continueReceiving = false;
+			}
 		}
 	}
 	ss.str(std::string());
@@ -167,6 +189,7 @@ void TestObject::receiveTCP() {
 }
 
 void TestObject::sendMONR(bool debug) {
+	std::cerr << "Sending MONR" << std::endl;
 	std::vector<char> buffer(UDP_BUFFER_SIZE);
 	struct timeval time;
 	auto nanos = std::chrono::system_clock::now().time_since_epoch().count();
@@ -217,9 +240,9 @@ void TestObject::sendMonrLoop() {
 
 void TestObject::receiveUDP() {
 	if (sendOnlySockets) {
+		std::cout << "SendOnlySockets is true, not starting UDP thread." << std::endl;
 		return;
 	}
-	
 	std::stringstream ss;
 	ss << "Started UDP communication thread." << std::endl;
 	ss << "Awaiting UDP data from ATOS..." << std::endl;
