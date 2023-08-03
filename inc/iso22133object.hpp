@@ -51,7 +51,7 @@ class TestObject {
 
 public:
 	TestObject(const std::string& listenIP = "0.0.0.0");
-	TestObject(int tcpSocket);
+	TestObject(int tcpSocket, int id);
 	virtual ~TestObject();
 
 	void disconnect();
@@ -82,7 +82,6 @@ public:
 
 	int handleUDPMessage(std::vector<char>&, int udpSocket, boost::asio::ip::udp::endpoint& ep);
 	int handleTCPMessage(std::vector<char>&);
-	void shutdown_threads();
 protected:
 
 	//! Pure virtual safety function that must be implemented by the user.
@@ -190,11 +189,19 @@ private:
 	//! Check if the received message counter is correct and update regardless to the next expected
 	void checkAndUpdateMessageCounter(const char receivedMessageCounter);
 
+	void join(std::thread &t) {
+		std::scoped_lock lock(joinMutex);
+		if (t.joinable()) {
+			t.join();
+		}
+	}
+
 	sigslot::signal<>heabTimeout;
 	std::mutex recvMutex;
 	std::mutex heabMutex;
 	std::mutex netwrkDelayMutex;
     std::mutex disconnectMutex;
+	std::mutex joinMutex;
 	std::string localIP;
 	std::thread tcpReceiveThread;
 	std::thread udpReceiveThread;
@@ -220,9 +227,10 @@ private:
 	std::atomic<int> serverID;
 	std::atomic<char> expectedMessageCounter;
 	std::atomic<char> sentMessageCounter;
-	std::atomic<bool> sendOnlySockets { false };
+	std::atomic<bool> socketsReceivedFromController { false };
 	std::atomic<char> errorState { 0 };
 	std::atomic<bool> awaitingFirstHeab { true };
+	std::atomic<bool> osemReceived { false };
 	std::atomic<bool> on { true };
 
 	std::chrono::milliseconds estimatedNetworkDelay = std::chrono::milliseconds(0);

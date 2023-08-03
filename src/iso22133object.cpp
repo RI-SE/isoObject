@@ -19,23 +19,23 @@ TestObject::TestObject(const std::string& listenIP)
 	  serverID(0),
 	  expectedMessageCounter(0),
 	  sentMessageCounter(0),
-	  sendOnlySockets(true),
+	  socketsReceivedFromController(true),
 	  on(true) {
 	this->initialize();
 	this->startHandleTCP();
 	this->startHEABCheck();
 }
 
-TestObject::TestObject(int tcpSocket)
+TestObject::TestObject(int tcpSocket, int id)
 	: name("myTestObject"),
 	  trajDecoder(),
 	  ctrlChannel(tcpSocket),
 	  processChannel(),
-	  transmitterID(TRANSMITTER_ID_UNAVAILABLE_VALUE),
+	  transmitterID(id),
 	  serverID(0),
 	  expectedMessageCounter(0),
 	  sentMessageCounter(0),
-	  sendOnlySockets(true),
+	  socketsReceivedFromController(true),
 	  on(true) {
 	this->initialize();
 	this->startHandleTCP();
@@ -68,41 +68,23 @@ void TestObject::initialize() {
 	this->heabTimeout.connect(&TestObject::onHeabTimeout, this);
 }
 
-void TestObject::shutdown_threads() {
+TestObject::~TestObject() {
 	on = false;
 	try {
-		udpReceiveThread.join();
-	} catch (std::system_error& eaccess) {
-		std::cerr << "Error joining UDP thread: " << eaccess.what() << std::endl;
-	}
+		join(monrThread);
+	} catch (std::system_error& e) {}
 	try {
-		if(monrThread.joinable())
-			monrThread.join();
-	} catch (std::system_error& e) {
-		std::cerr << "Error joining MONR thread: " << e.what() << std::endl;
-	}
+		join(heabTimeoutThread);
+	} catch (std::system_error& e) {}
 	try {
-		if (tcpReceiveThread.joinable())
-			tcpReceiveThread.join();
-	} catch (std::system_error& e) {
-		std::cerr << "Error joining TCP thread: " << e.what() << std::endl;
-	}
+		join(udpReceiveThread);
+	} catch (std::system_error& eaccess) {}
 	try {
-		if (heabTimeoutThread.joinable())
-			heabTimeoutThread.join();
-	} catch (std::system_error& e) {
-		std::cerr << "Error joining HEAB timeout thread: " << e.what() << std::endl;
-	}
+		join(tcpReceiveThread);
+	} catch (std::system_error& e) {}
 	try {
-		if (delayedStrtThread.joinable())
-			delayedStrtThread.join();
-	} catch (std::system_error& e) {
-		std::cerr << "Error joining delayed STRT thread: " << e.what() << std::endl;
-	}
-}
-
-TestObject::~TestObject() {
-	this->shutdown_threads();
+		join(delayedStrtThread);
+	} catch (std::system_error& e) {}
 };
 
 void TestObject::disconnect() {
@@ -113,20 +95,18 @@ void TestObject::disconnect() {
 		std::cerr << "TCP socket close error: " << e.what() << '\n';
 	}
 
-	if (!sendOnlySockets) {
+	if (!socketsReceivedFromController) {
 		processChannel.disconnect();  // Close UDP socket
 	}
 	awaitingFirstHeab = true;	  // Reset HEAB timeout check
 
-
-	try {
-		if (!sendOnlySockets && udpReceiveThread.joinable())
-			udpReceiveThread.join();
-		if (monrThread.joinable())
-			monrThread.join();
-	} catch (std::system_error& e) {
-		std::cerr << "Disconnect error: " << e.what() << std::endl;
-		throw e;
+	if (!socketsReceivedFromController) {
+		try {
+			join(udpReceiveThread);
+		} catch (std::system_error& eaccess) {}
+		try {
+			join(monrThread);
+		} catch (std::system_error& eaccess) {}
 	}
 }
 
@@ -137,7 +117,7 @@ void TestObject::receiveTCP() {
 	bool continueReceiving = true;
 
 	while (this->on && continueReceiving) {
-		if (!sendOnlySockets) {
+		if (!socketsReceivedFromController) {
 			ss.str(std::string());
 			ss << "Awaiting TCP connection from ATOS..." << std::endl;
 			std::cout << ss.str();
@@ -159,9 +139,7 @@ void TestObject::receiveTCP() {
 		state->handleEvent(*this, ISO22133::Events::B);
 		try {
 			while (true) {
-				std::cerr << "Waiting for tcp messages" << std::endl;
 				auto data = ctrlChannel.receive();
-				std::cerr << "Received tcp message: " << data.size() << std::endl;
 
 				int nBytesHandled = 0;
 				do {
@@ -175,21 +153,20 @@ void TestObject::receiveTCP() {
 				} while (data.size() > 0);
 			}
 		} catch (boost::system::system_error&) {
-			std::cerr << "Connection to ATOS lost" << std::endl;
+			std::cerr << transmitterID << " lost connection to ATOS" << std::endl;
 			disconnect();
 			state->handleEvent(*this, ISO22133::Events::L);
-			if (sendOnlySockets) {
+			if (socketsReceivedFromController) {
 				continueReceiving = false;
 			}
 		}
 	}
 	ss.str(std::string());
-	ss << "Exiting TCP thread." << std::endl;
+	ss << transmitterID << " is exiting TCP thread." << std::endl;
 	std::cout << ss.str();
 }
 
 void TestObject::sendMONR(bool debug) {
-	std::cerr << "Sending MONR" << std::endl;
 	std::vector<char> buffer(UDP_BUFFER_SIZE);
 	struct timeval time;
 	auto nanos = std::chrono::system_clock::now().time_since_epoch().count();
@@ -220,27 +197,27 @@ void TestObject::sendGREM(HeaderType msgHeader, GeneralResponseStatus responseCo
 }
 
 void TestObject::sendMonrLoop() {
+
 	std::stringstream ss;
-	ss << "Started MONR thread." << std::endl;
+	ss << transmitterID << " has started MONR thread." << std::endl;
 	std::cout << ss.str();
 
 	while (this->on && ctrlChannel.isOpen()) {
 		// Only send monr if transmitterID has been set by an OSEM message
-		if (this->transmitterID != TRANSMITTER_ID_UNAVAILABLE_VALUE){
+		if (osemReceived){
 			sendMONR();
 		}
 		auto t = std::chrono::steady_clock::now();
 		std::this_thread::sleep_until(t + monrPeriod);
 	}
-
 	ss.str(std::string());
-	ss << "Exiting MONR thread." << std::endl;
+	ss << transmitterID << " is exiting MONR thread." << std::endl;
 	std::cout << ss.str();
+
 }
 
 void TestObject::receiveUDP() {
-	if (sendOnlySockets) {
-		std::cout << "SendOnlySockets is true, not starting UDP thread." << std::endl;
+	if (socketsReceivedFromController) {
 		return;
 	}
 	std::stringstream ss;
@@ -262,7 +239,6 @@ void TestObject::receiveUDP() {
 			ss.str(std::string());
 			ss << "Received UDP data from ATOS" << std::endl;
 			std::cout << ss.str();
-
 			startSendMonr(); // UDP connection established, start sending MONR
 		}
 
@@ -277,9 +253,11 @@ void TestObject::receiveUDP() {
 			data.erase(data.begin(), data.begin() + nBytesHandled);
 		} while (data.size() > 0);
 	}
+
 	ss.str(std::string());
 	ss << "Exiting UDP communication thread." << std::endl;
 	std::cout << ss.str();
+
 }
 
 void TestObject::checkHeabTimeout() {
@@ -371,6 +349,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 			throw std::invalid_argument("Error decoding OSEM");
 		}
 		std::cout << "Received OSEM \n";
+		this->osemReceived = true;
 		this->state->handleOSEM(*this, OSEMstruct);
 		break;
 

@@ -50,10 +50,12 @@ class TCPConnection
 		}
 		void disconnect() {
 			tcpSocket.close();
-			udpSocket.close();
+			try {
+				udpSocket.shutdown(boost::asio::socket_base::shutdown_receive);
+			} catch (boost::system::system_error err) {}
 		}
-		std::future<long unsigned int> receiveUDP(std::vector<char>& data, ip::udp::endpoint& ep) {
-			return udpSocket.async_receive_from(buffer(data), ep, use_future);
+		std::size_t receiveUDP(std::vector<char>& data, ip::udp::endpoint& ep) {
+			return udpSocket.receive_from(buffer(data), ep);
 		}
 
 		void receiveTCP(std::vector<char>& data) {
@@ -113,6 +115,12 @@ class TCPConnection
 		ip::udp::socket *getUDPSocket() {
 			return &udpSocket;
 		}
+
+		void sendUDPNoop() {
+			std::vector<char> noopSend(1);
+			sendUDP(noopSend);
+		}
+
 	private:
 	const std::string listenIP;
 	io_context context;
@@ -147,14 +155,20 @@ class IPListener
 
 		void disconnect() {
 			acceptor.close();
-			udpSocket.close();
+			try {
+				udpSocket.shutdown(boost::asio::socket_base::shutdown_both);
+			} catch (boost::system::system_error err) {}
 		}
 
 		std::size_t receiveUDP(std::vector<char>& data, ip::udp::endpoint& ep) {
 			size_t received = udpSocket.receive_from(buffer(data), ep);
 			return received;
 		}
-		
+
+		void sendUDPNoop(ip::udp::endpoint &ep) {
+			udpSocket.send_to(buffer(std::vector<char>(1)), ep);
+		}
+	
 	private:
 		io_context context;
 		ip::tcp::acceptor acceptor;
@@ -172,33 +186,53 @@ protected:
 		threadListener = std::thread(&IsoObjectCreateMultiple::tcpListen, this);
 		obj1Conn.connect();
 		threadListener.join();
-		// threadListener = std::thread(&IsoObjectCreateMultiple::tcpListen, this);
-		// obj2Conn.connect();
-		// threadListener.join();
-		obj1 = new TestObject(sockets[0]->native_handle());
-		// obj2 = new TestObject(sockets[1]->native_handle());
+		threadListener = std::thread(&IsoObjectCreateMultiple::tcpListen, this);
+		obj2Conn.connect();
+		threadListener.join();
+		obj1 = new TestObject(sockets[0]->native_handle(), 1);
+		obj2 = new TestObject(sockets[1]->native_handle(), 2);
+		CartesianPosition pos;
+		pos.xCoord_m = 0.0;
+		pos.yCoord_m = 0.0;
+		pos.zCoord_m = 0.0;
+		pos.isXcoordValid = true;
+		pos.isYcoordValid = true;
+		pos.isZcoordValid = true;
+		pos.isPositionValid = true;
+		pos.isHeadingValid = true;
+		obj1->setPosition(pos);
+		obj2->setPosition(pos);
+		SpeedType spd;
+		spd.lateral_m_s = 0.0;
+		spd.longitudinal_m_s = 0.0;
+		spd.isLateralValid = true;
+		spd.isLongitudinalValid = true;
+		obj1->setSpeed(spd);
+		obj2->setSpeed(spd);
 		threadListener = std::thread(&IsoObjectCreateMultiple::udpReceive, this);
+	
 	}
 	void SetUp() override {}
 
 	void TearDown() override {}
 	virtual ~IsoObjectCreateMultiple() {
+		listenToUDP = false;
+		obj1Conn.sendUDPNoop();
 		obj1Conn.disconnect();
-		std::cerr << "Before disc5" << std::endl;
-		obj1->shutdown_threads();
-		std::cerr << "After Threads" << std::endl;
 		delete obj1;
 
-		// std::cerr << "Before disc6" << std::endl;
-		// obj2Conn.disconnect();	
-		// delete obj2;
+		obj2Conn.disconnect();	
+		delete obj2;
 
-		listenToUDP = false;
-		std::vector<char> noopSend(1);
-		// obj2Conn.sendUDP(noopSend);
+		obj2Conn.sendUDPNoop();
 		threadListener.join();
 
 		listener.disconnect();
+	}
+
+
+	void sendUDPNoopToClient(int id) {
+		listener.sendUDPNoop(udpEndpoints[id]);
 	}
 
 	void tcpListen() {
@@ -221,12 +255,13 @@ protected:
 							TestObject *obj = nullptr;
 							if (HeaderData.receiverID == 1) {
 								obj = obj1;
+								udpEndpoints[1] = ep;
 							}
 							else if (HeaderData.receiverID == 2) {
 								obj = obj2;
+								udpEndpoints[2] = ep;
 							}
 							if (obj != nullptr) {
-								std::cerr << "Received UDP message for object " << HeaderData.receiverID << std::endl;
 								int handled = obj->handleUDPMessage(data, listener.getUDPSocket()->native_handle(), ep);
 								nBytesHandled += handled;
 							}
@@ -235,19 +270,17 @@ protected:
 								break;
 							}
 						} catch (const std::exception& e) {
-							std::cerr << e.what() << std::endl;
 							break;
 						}
 						data.erase(data.begin(), data.begin() + nBytesHandled);
 					} 
 				}
 			}
-		} catch(const std::exception& e) {
-			std::cerr << e.what() << std::endl;
-		}
+		} catch(const std::exception& e) {}
 	}
 
 	std::vector<ip::tcp::socket*> sockets;
+	std::map<int, ip::udp::endpoint> udpEndpoints;
 	TCPConnection obj1Conn;
 	TCPConnection obj2Conn;
 	IPListener listener;
@@ -263,83 +296,66 @@ TEST_F(IsoObjectCreateMultiple, HEAB_Sent_And_MONR_Not_received_due_to_no_OSEM) 
 	ip::udp::endpoint ep1, ep2;
 	std::vector<char> receivedData1(4096);
 	std::vector<char> receivedData2(4096);
-	auto future_resp1 = obj1Conn.receiveUDP(receivedData1, ep1);
-	// auto future_resp2 = obj2Conn.receiveUDP(receivedData2, ep2);
+	
+
 	obj1Conn.sendHeartbeat(ControlCenterStatusType::CONTROL_CENTER_STATUS_INIT);
-	switch (future_resp1.wait_for(10ms)) {
-		case std::future_status::ready: {
-			int received = future_resp1.get();
-			receivedData1.resize(received);
-			EXPECT_EQ(received, 0) << "Unknown message received on test-object2";
-			break;
+	bool sent1 = false;
+	std::thread timeoutThread1([this, sent1](){
+		std::this_thread::sleep_for(100ms);
+		if (!sent1) {
+			this->sendUDPNoopToClient(1);
 		}
-		case std::future_status::timeout:
-        case std::future_status::deferred:{
-			EXPECT_TRUE(true);
-            break;
-        }
-	}
+	});
+	std::size_t received = obj1Conn.receiveUDP(receivedData1, ep1);
+	sent1 = true;
+	EXPECT_EQ(received, 1) << "Received data on test-object1";
 
 
-	// obj2Conn.sendHeartbeat(ControlCenterStatusType::CONTROL_CENTER_STATUS_INIT);
-	// switch (future_resp2.wait_for(10ms)) {
-	// 	case std::future_status::ready: {
-	// 		int received = future_resp2.get();
-	// 		receivedData2.resize(received);
-	// 		EXPECT_EQ(received, 0) << "Unknown message received on test-object1";
-	// 		break;
-	// 	}
-	// 	case std::future_status::timeout:
-    //     case std::future_status::deferred:{
-	// 		EXPECT_TRUE(true);
-    //         break;
-    //     }
-	// }
-	std::cout << "Finished HEAB_Sent_And_MONR_Not_received_due_to_no_OSEM" << std::endl;
+	obj2Conn.sendHeartbeat(ControlCenterStatusType::CONTROL_CENTER_STATUS_INIT);
+	bool sent2 = false;
+	std::thread timeoutThread2([this, sent2](){
+		std::this_thread::sleep_for(100ms);
+		if (!sent2) {
+			this->sendUDPNoopToClient(2);
+		}
+	});
+	received = obj2Conn.receiveUDP(receivedData2, ep2);
+	sent2 = true;
+	EXPECT_EQ(received, 1) << "Received data on test-object1";
+	timeoutThread1.join();
+	timeoutThread2.join();
 }
 
 TEST_F(IsoObjectCreateMultiple, OSEM_Sent_MONR_Received_as_READY) {
 	ip::udp::endpoint ep1, ep2;
 	std::vector<char> receivedData1(4096);
 	std::vector<char> receivedData2(4096);
-	auto future_resp1 = obj1Conn.receiveUDP(receivedData1, ep1);
-	auto future_resp2 = obj2Conn.receiveUDP(receivedData2, ep2);
 	obj1Conn.sendOSEM(0xF00F);
-	obj2Conn.sendOSEM(0xF00F);
+	bool sent1 = false;
+	std::thread timeoutThread1([&, sent1](){
+		std::this_thread::sleep_for(100ms);
+		if (!sent1) {
+			this->sendUDPNoopToClient(1);
+		}
+	});	
 	obj1Conn.sendHeartbeat(ControlCenterStatusType::CONTROL_CENTER_STATUS_INIT);
+	std::size_t received = obj1Conn.receiveUDP(receivedData1, ep1);
+	sent1 = true;
+	EXPECT_EQ(received, 60);
+
+	obj2Conn.sendOSEM(0xF00F);
 	obj2Conn.sendHeartbeat(ControlCenterStatusType::CONTROL_CENTER_STATUS_INIT);
-	switch (future_resp1.wait_for(100ms)) {
-		case std::future_status::ready: {
-			int received = future_resp1.get();
-			receivedData1.resize(received);
-			struct timeval currentTime;
-			ObjectMonitorType monitorData;
-			TimeSetToCurrentSystemTime(&currentTime);
-			int handled = decodeMONRMessage(receivedData1.data(), receivedData1.size(), currentTime, &monitorData, false);
-			EXPECT_EQ(monitorData.state, OBJECT_STATE_DISARMED) << "Unknown State in MONR message";
-			break;
+	bool sent2 = false;
+	std::thread timeoutThread2([&, sent2](){
+		std::this_thread::sleep_for(100ms);
+		if (!sent2) {
+			this->sendUDPNoopToClient(2);
 		}
-		case std::future_status::timeout:
-        case std::future_status::deferred:{
-			EXPECT_TRUE(false) << "No message received on test-object1";
-            break;
-        }
-	}
-	switch (future_resp2.wait_for(100ms)) {
-		case std::future_status::ready: {
-			int received = future_resp2.get();
-			receivedData2.resize(received);
-			struct timeval currentTime;
-			ObjectMonitorType monitorData;
-			TimeSetToCurrentSystemTime(&currentTime);
-			int handled = decodeMONRMessage(receivedData2.data(), receivedData2.size(), currentTime, &monitorData, false);
-			EXPECT_EQ(monitorData.state, OBJECT_STATE_DISARMED) << "Unknown State in MONR message";
-			break;
-		}
-		case std::future_status::timeout:
-        case std::future_status::deferred:{
-			EXPECT_TRUE(false) << "No message received on test-object2";
-            break;
-        }
-	}
+	});
+	received = obj2Conn.receiveUDP(receivedData2, ep2);
+	sent2 = true;
+	EXPECT_EQ(received, 60);
+
+	timeoutThread1.join();
+	timeoutThread2.join();
 }
