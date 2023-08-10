@@ -110,6 +110,14 @@ void TestObject::disconnect() {
 	}
 }
 
+HeaderType *TestObject::populateMessageHeader(HeaderType *header) {
+	memset(header, 0, sizeof(HeaderType));
+	header->transmitterID = this->transmitterID;
+	header->receiverID = this->serverID;
+	header->messageCounter = this->sentMessageCounter++;
+	return header;
+}
+
 void TestObject::receiveTCP() {
 	std::stringstream ss;
 	ss << "Started TCP thread." << std::endl;
@@ -173,7 +181,8 @@ void TestObject::sendMONR(bool debug) {
 	time.tv_sec = nanos / 1e9;
 	time.tv_usec = nanos / 1e3 - time.tv_sec * 1e6;
 
-	auto nBytesWritten = encodeMONRMessage(this->serverID, this->getMessageCounter(), &time, this->position, this->speed, this->acceleration,
+	HeaderType header;
+	auto nBytesWritten = encodeMONRMessage(this->populateMessageHeader(&header), &time, this->position, this->speed, this->acceleration,
 									this->driveDirection, this->state->getStateID(), this->readyToArm,
 									this->errorState, 0x0000, buffer.data(), buffer.size(), debug);
 
@@ -190,7 +199,8 @@ void TestObject::sendGREM(HeaderType msgHeader, GeneralResponseStatus responseCo
 	grem.receivedHeaderMessageCounter = msgHeader.messageCounter;
 	grem.responseCode = responseCode;
 
-	auto nBytesWritten = encodeGREMMessage(this->serverID, this->getMessageCounter(), &grem, buffer.data(), buffer.size(), debug);
+	HeaderType header;
+	auto nBytesWritten = encodeGREMMessage(this->populateMessageHeader(&header), &grem, buffer.data(), buffer.size(), debug);
 
 	if (nBytesWritten < 0) { throw(std::invalid_argument("Failed to encode GREM data"));}
 	ctrlChannel.send(buffer, static_cast<size_t>(nBytesWritten));
@@ -296,18 +306,28 @@ void TestObject::onHeabTimeout() {
 	this->state->handleEvent(*this, Events::L);
 }
 
-int TestObject::handleTCPMessage(std::vector<char>& dataBuffer) {
+int TestObject::handleTCPMessage(const char *buffer, size_t bufLen) {
+	std::vector<char> dataBuffer;
+	for (size_t i = 0; i < bufLen; i++) {
+		dataBuffer.push_back(buffer[i]);
+		printf("%02x ", buffer[i]);
+	}
 	return handleMessage(dataBuffer);
 }
 
-int TestObject::handleUDPMessage(std::vector<char>& dataBuffer, int native_socket, boost::asio::ip::udp::endpoint& ep) {
+int TestObject::handleUDPMessage(const char *buffer, size_t bufLen, int udpSocket, const std::string &addr, const uint32_t port) {
 	if (awaitingFirstHeab) {
 		std::stringstream ss;
 		ss.str(std::string());
 		ss << "Received UDP data from ATOS" << std::endl;
 		std::cout << ss.str();
-		processChannel.setEndpoint(native_socket, ep);
+		boost::asio::ip::udp::endpoint udpEp = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(addr), port);
+		processChannel.setEndpoint(udpSocket, udpEp);
 		startSendMonr(); // UDP connection established, start sending MONR
+	}
+	std::vector<char> dataBuffer;
+	for (size_t i = 0; i < bufLen; i++) {
+		dataBuffer.push_back(buffer[i]);
 	}
 	return handleMessage(dataBuffer);
 }

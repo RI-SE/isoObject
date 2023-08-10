@@ -80,9 +80,11 @@ public:
 	uint32_t getServerID() const { return serverID; }
 	ObjectSettingsType getObjectSettings() const { return objectSettings; }
 
-	int handleUDPMessage(std::vector<char>&, int udpSocket, boost::asio::ip::udp::endpoint& ep);
-	int handleTCPMessage(std::vector<char>&);
+	int handleUDPMessage(const char *buffer, size_t bufLen, int udpSocket, const std::string &addr, const uint32_t port);
+	int handleTCPMessage(const char *buffer, size_t bufLen);
 protected:
+	//! Fill message header with receiver/transmitter id and messageCounter. Returns pointer to input header.
+	HeaderType *populateMessageHeader(HeaderType *header);
 
 	//! Pure virtual safety function that must be implemented by the user.
 	virtual void handleAbort() { throw std::logic_error("Use of unimplemented abort handler"); }

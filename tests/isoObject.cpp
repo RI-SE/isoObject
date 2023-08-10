@@ -25,13 +25,14 @@ struct timeval * TimeSetToCurrentSystemTime(struct timeval *time)
 class TCPConnection
 {
 	public:
-		TCPConnection(const std::string& ip = "0.0.0.0", int id = 1, char messCnt = 0) : 
+		TCPConnection(const std::string& ip = "0.0.0.0", int id = 1, int transmitterID = -1, char messCnt = 0) : 
 		listenIP(ip),
 		tcpSocket(context),
 		udpSocket(context, ip::udp::v4()),
 		ep(ip::address_v4::from_string(ip), ISO_22133_OBJECT_UDP_PORT),
 		receiverID(id),
-		messageCounter(messCnt) {
+		messageCounter(messCnt),
+		transmitterID(transmitterID) {
 		}
 		virtual ~TCPConnection() = default;
 		void connect() {
@@ -67,17 +68,21 @@ class TCPConnection
 			TimeSetToCurrentSystemTime(&heartbeat.dataTimestamp);
 			heartbeat.controlCenterStatus = ccStatus;
 			std::vector<char> transmitBuffer(1024);
-			auto nBytesWritten = encodeHEABMessage(this->receiverID, this->messageCounter, &heartbeat.dataTimestamp, heartbeat.controlCenterStatus,
+			HeaderType header;
+			header.receiverID = this->receiverID;
+			header.messageCounter = this->messageCounter;
+			header.transmitterID = this->transmitterID;
+			auto nBytesWritten = encodeHEABMessage(&header, &heartbeat.dataTimestamp, heartbeat.controlCenterStatus,
 								transmitBuffer.data(), transmitBuffer.size(), false);
 			transmitBuffer.resize(nBytesWritten);
 			sendUDP(transmitBuffer);
 		}
 
-		void sendOSEM(const int transmitterID) {
+		void sendOSEM() {
 			ObjectSettingsType objSettings;
 			objSettings.desiredID.transmitter = receiverID;
 			objSettings.desiredID.controlCentre = transmitterID;
-			objSettings.desiredID.subTransmitter = 0;
+			objSettings.desiredID.subTransmitter = this->transmitterID;
 
 			memset(&objSettings.coordinateSystemOrigin, 0, sizeof(objSettings.coordinateSystemOrigin));
 			objSettings.coordinateSystemType = COORDINATE_SYSTEM_WGS84;
@@ -103,7 +108,11 @@ class TCPConnection
 
 
 			std::vector<char> transmitBuffer(1024);
-			auto nBytesWritten = encodeOSEMMessage(receiverID, 0, &objSettings, transmitBuffer.data(), transmitBuffer.size(), false);
+			HeaderType header;
+			header.receiverID = this->receiverID;
+			header.messageCounter = this->messageCounter;
+			header.transmitterID = this->transmitterID;
+			auto nBytesWritten = encodeOSEMMessage(&header, &objSettings, transmitBuffer.data(), transmitBuffer.size(), false);
 			transmitBuffer.resize(nBytesWritten);
 			std::cout << "Sending TCP " << nBytesWritten << " bytes" << std::endl;
 			sendTCP(transmitBuffer);
@@ -129,6 +138,7 @@ class TCPConnection
 	ip::udp::endpoint ep;
 	const int receiverID;
 	char messageCounter;
+	const int transmitterID;
 };
 
 class IPListener
@@ -180,8 +190,8 @@ class IsoObjectCreateMultiple : public ::testing::Test
 {
 protected:
 	IsoObjectCreateMultiple():
-	obj1Conn("127.0.0.1", 1),
-	obj2Conn("127.0.0.1", 2)
+	obj1Conn("127.0.0.1", 1, 0xF00F),
+	obj2Conn("127.0.0.1", 2, 0xF00F)
 	{
 		threadListener = std::thread(&IsoObjectCreateMultiple::tcpListen, this);
 		obj1Conn.connect();
@@ -262,7 +272,7 @@ protected:
 								udpEndpoints[2] = ep;
 							}
 							if (obj != nullptr) {
-								int handled = obj->handleUDPMessage(data, listener.getUDPSocket()->native_handle(), ep);
+								int handled = obj->handleUDPMessage(data.data(), data.size(), listener.getUDPSocket()->native_handle(), ep.address().to_string().c_str(), ep.port());
 								nBytesHandled += handled;
 							}
 							else {
@@ -330,7 +340,7 @@ TEST_F(IsoObjectCreateMultiple, OSEM_Sent_MONR_Received_as_READY) {
 	ip::udp::endpoint ep1, ep2;
 	std::vector<char> receivedData1(4096);
 	std::vector<char> receivedData2(4096);
-	obj1Conn.sendOSEM(0xF00F);
+	obj1Conn.sendOSEM();
 	bool sent1 = false;
 	std::thread timeoutThread1([&, sent1](){
 		std::this_thread::sleep_for(100ms);
@@ -343,7 +353,7 @@ TEST_F(IsoObjectCreateMultiple, OSEM_Sent_MONR_Received_as_READY) {
 	sent1 = true;
 	EXPECT_EQ(received, 60);
 
-	obj2Conn.sendOSEM(0xF00F);
+	obj2Conn.sendOSEM();
 	obj2Conn.sendHeartbeat(ControlCenterStatusType::CONTROL_CENTER_STATUS_INIT);
 	bool sent2 = false;
 	std::thread timeoutThread2([&, sent2](){

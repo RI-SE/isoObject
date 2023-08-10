@@ -2,6 +2,10 @@
 %module(directors="1") isoObject_wrap
 %feature("director") TestObject; 
 
+%begin %{
+#define SWIG_PYTHON_STRICT_BYTE_CHAR
+%}
+
 
 #ifdef SWIGJAVA
 %javaconst(0);
@@ -18,7 +22,10 @@
 %include <stdint.i>
 %include <cpointer.i>
 %include <typemaps.i>
+%include <pybuffer.i>
 %rename(LessThan) operator<(const Transition &lhs, const Transition &rhs);
+// change "(const char* data, int len)" to match your functions declaration
+%apply (char *STRING, size_t LENGTH) { (const char* data, int len) }
 
 %{
 #include <boost/asio.hpp>
@@ -28,6 +35,7 @@
 #include "iso22133.h"
 #include "udpServer.hpp"
 #include "tcpServer.hpp"
+#include "positioning.h"
 %}
 
 %include <boost/asio.hpp>
@@ -37,55 +45,17 @@
 %include "iso22133/iso22133.h"
 %include "udpServer.hpp"
 %include "tcpServer.hpp"
+%include "positioning.h"
 
 
 namespace std {                                                                  
-    %template(TrajectoryWaypointVector) vector<TrajectoryWaypointType>;                                      
+    %template(TrajectoryWaypointVector) vector<TrajectoryWaypointType>;
 }; 
 
 typedef double double_t;
 typedef long int ssize_t;
 
-
 struct timeval {
 long int tv_sec;
 long int tv_usec;
 };
-
-
-typedef struct {
-	double longitudinal_m_s;
-	double lateral_m_s;
-	bool isLongitudinalValid;
-	bool isLateralValid;
-} SpeedType;
-
-typedef struct {
-    double xCoord_m;
-    double yCoord_m;
-    double zCoord_m;
-    double heading_rad;
-    bool isPositionValid;
-    bool isHeadingValid;
-    bool isXcoordValid;
-    bool isYcoordValid;
-    bool isZcoordValid;
-} CartesianPosition;
-
-typedef struct {
-    double latitude_deg;
-    double longitude_deg;
-    double altitude_m;
-    bool isLatitudeValid;
-    bool isLongitudeValid;
-    bool isAltitudeValid;
-} GeographicPositionType;
-
-
-
-typedef struct {
-	double longitudinal_m_s2;
-	double lateral_m_s2;
-	bool isLongitudinalValid;
-	bool isLateralValid;
-} AccelerationType;
