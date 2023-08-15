@@ -1,17 +1,7 @@
 project(ISO_object LANGUAGES C CXX)
 cmake_minimum_required(VERSION 3.14)
 # Dependencies
-include(FetchContent)
-execute_process(
-	COMMAND ping www.github.com -c 1 -q
-	ERROR_QUIET
-	RESULT_VARIABLE NO_CONNECTION
-)
-FetchContent_Declare(googletest
-	GIT_REPOSITORY https://github.com/google/googletest.git
-	GIT_TAG main
-)
-FetchContent_MakeAvailable(googletest)
+find_package(GTest REQUIRED)
 
 
 set(CMAKE_CXX_STANDARD 17)

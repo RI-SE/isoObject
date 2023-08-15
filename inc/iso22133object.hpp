@@ -80,8 +80,22 @@ public:
 	uint32_t getServerID() const { return serverID; }
 	ObjectSettingsType getObjectSettings() const { return objectSettings; }
 
-	int handleUDPMessage(char *buffer, int bufferLen, int udpSocket, char* addr, const uint32_t port);
-	int handleTCPMessage(char *buffer, int bufferLen);
+
+	/** SWIG Wrappers **/
+	bool isAwaitingFirstHeab() { return awaitingFirstHeab;}
+	//! Set the endpoint for the process channel
+	void setProcessChannelEndpoint(int udpSocket, char *addr, const uint32_t port);
+	//! Wrapper for handling function that converts to char vector
+	int handleMessage(char *buffer, int bufferLen);
+	//! Wrapper for state change requests
+	void requestStateChange(ISO22133::Events::EventType event) { state->handleEvent(*this, event); }
+
+	//! Used to start the threads
+	void startHandleTCP() { tcpReceiveThread = std::thread(&TestObject::receiveTCP, this); }
+	void startHandleUDP() { udpReceiveThread = std::thread(&TestObject::receiveUDP, this); }
+	void startHEABCheck() { heabTimeoutThread = std::thread(&TestObject::checkHeabLoop, this); }
+	void startSendMonr()  { monrThread = std::thread(&TestObject::sendMonrLoop, this); }
+
 protected:
 	//! Fill message header with receiver/transmitter id and messageCounter. Returns pointer to input header.
 	MessageHeaderType *populateMessageHeader(MessageHeaderType *header);
@@ -119,7 +133,6 @@ protected:
 	virtual PreArming* createPreArming() const { return new PreArming; }
 	//! Must be overridden if modifying the Pre-Running state
 	virtual PreRunning* createPreRunning() const { return new PreRunning; }
-
 
 	//! Signals for events
 	sigslot::signal<> stateChangeSig;
@@ -162,12 +175,6 @@ private:
 	void checkHeabLoop();
 	//! MONR sending loop that should be run in its own thread.
 	void sendMonrLoop();
-	
-	//! Used to start the threads
-	void startHandleTCP() { tcpReceiveThread = std::thread(&TestObject::receiveTCP, this); }
-	void startHandleUDP() { udpReceiveThread = std::thread(&TestObject::receiveUDP, this); }
-	void startHEABCheck() { heabTimeoutThread = std::thread(&TestObject::checkHeabLoop, this); }
-	void startSendMonr()  { monrThread = std::thread(&TestObject::sendMonrLoop, this); }
 	
 	//! Function for handling received ISO messages. Calls corresponding
 	//! handler in the current state.

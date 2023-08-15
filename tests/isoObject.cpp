@@ -22,19 +22,42 @@ struct timeval * TimeSetToCurrentSystemTime(struct timeval *time)
 	return time;
 }
 
-class TCPConnection
+class SimulatedTestObject : public TestObject {
+	public:
+	SimulatedTestObject(int tcpSocket, int id) : TestObject(tcpSocket, id) {}
+	int handleTCPMessage(char *buffer, int bufferLen) {
+		state->handleEvent(*this, ISO22133::Events::B);
+
+		int nBytesHandled = handleMessage(buffer, bufferLen);
+
+		this->startHandleTCP();
+		return nBytesHandled;
+	}
+	int handleUDPMessage(char *buffer, int bufferLen, int udpSocket, char *addr, const uint32_t port) {
+		if (isAwaitingFirstHeab()) {
+			std::stringstream ss;
+			ss.str(std::string());
+			ss << "Received UDP data from ATOS" << std::endl;
+			std::cout << ss.str();
+			this->setProcessChannelEndpoint(udpSocket, addr, port);
+			startSendMonr(); // UDP connection established, start sending MONR
+		}
+		return handleMessage(buffer, bufferLen);
+	}
+};
+
+class ATOSEmulator
 {
 	public:
-		TCPConnection(const std::string& ip = "0.0.0.0", int id = 1, int transmitterID = -1, char messCnt = 0) : 
+		ATOSEmulator(const std::string& ip = "0.0.0.0", int id = 1, int transmitterID = -1, char messCnt = 0) : 
 		listenIP(ip),
 		tcpSocket(context),
 		udpSocket(context, ip::udp::v4()),
-		ep(ip::address_v4::from_string(ip), ISO_22133_OBJECT_UDP_PORT),
 		receiverID(id),
 		messageCounter(messCnt),
 		transmitterID(transmitterID) {
 		}
-		virtual ~TCPConnection() = default;
+		virtual ~ATOSEmulator() = default;
 		void connect() {
 			try {
 				tcpSocket.connect(ip::tcp::endpoint(ip::address_v4::from_string(listenIP), ISO_22133_DEFAULT_OBJECT_TCP_PORT));
@@ -135,19 +158,18 @@ class TCPConnection
 	io_context context;
 	ip::tcp::socket tcpSocket;
 	ip::udp::socket udpSocket;
-	ip::udp::endpoint ep;
 	const int receiverID;
 	char messageCounter;
 	const int transmitterID;
 };
 
-class IPListener
+class ControllerEmulator
 {
 	public:
-		IPListener(const std::string& listenIP = "127.0.0.1") : 
+		ControllerEmulator(const std::string& listenIP = "127.0.0.1") : 
 		acceptor(context, ip::tcp::endpoint(ip::address_v4::from_string(listenIP), ISO_22133_DEFAULT_OBJECT_TCP_PORT)),
 		udpSocket(context, ip::udp::endpoint(ip::address_v4::from_string(listenIP), ISO_22133_OBJECT_UDP_PORT)) {}
-		virtual ~IPListener() = default;
+		virtual ~ControllerEmulator() = default;
 		/*
 		* Remember to delete the socket after!!
 		* Not done here! 
@@ -199,8 +221,8 @@ protected:
 		threadListener = std::thread(&IsoObjectCreateMultiple::tcpListen, this);
 		obj2Conn.connect();
 		threadListener.join();
-		obj1 = new TestObject(sockets[0]->native_handle(), 1);
-		obj2 = new TestObject(sockets[1]->native_handle(), 2);
+		obj1 = new SimulatedTestObject(sockets[0]->native_handle(), 1);
+		obj2 = new SimulatedTestObject(sockets[1]->native_handle(), 2);
 		CartesianPosition pos;
 		pos.xCoord_m = 0.0;
 		pos.yCoord_m = 0.0;
@@ -262,14 +284,16 @@ protected:
 						try {
 							HeaderType HeaderData;
 							decodeISOHeader(data.data(), num_received, &HeaderData, false);
-							TestObject *obj = nullptr;
+							for (int i = 0; i < num_received; i++) {
+								printf("0x%02X ", data.at(i));
+							}
+							SimulatedTestObject *obj = nullptr;
+							udpEndpoints[HeaderData.receiverID] = ep;
 							if (HeaderData.receiverID == 1) {
 								obj = obj1;
-								udpEndpoints[1] = ep;
 							}
 							else if (HeaderData.receiverID == 2) {
 								obj = obj2;
-								udpEndpoints[2] = ep;
 							}
 							if (obj != nullptr) {
 								char address[ep.address().to_string().length() +1];
@@ -294,11 +318,11 @@ protected:
 
 	std::vector<ip::tcp::socket*> sockets;
 	std::map<int, ip::udp::endpoint> udpEndpoints;
-	TCPConnection obj1Conn;
-	TCPConnection obj2Conn;
-	IPListener listener;
-	TestObject *obj1;
-	TestObject *obj2;
+	ATOSEmulator obj1Conn;
+	ATOSEmulator obj2Conn;
+	ControllerEmulator listener;
+	SimulatedTestObject *obj1;
+	SimulatedTestObject *obj2;
 	std::thread threadListener;
 	std::thread threadObj1;
 	std::thread threadObj2;

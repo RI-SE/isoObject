@@ -305,30 +305,12 @@ void TestObject::onHeabTimeout() {
 	this->state->handleEvent(*this, Events::L);
 }
 
-int TestObject::handleTCPMessage(char *buffer, int bufferLen) {
-	state->handleEvent(*this, ISO22133::Events::B);
-
-	std::vector<char> data;
-	for (int i = 0; i < bufferLen; i++) {
-		data.push_back(buffer[i]);
-	}
-
-	int nBytesHandled = handleMessage(data);
-
-	this->startHandleTCP();
-	return nBytesHandled;
+void TestObject::setProcessChannelEndpoint(int udpSocket, char *addr, const uint32_t port) { 
+	boost::asio::ip::udp::endpoint udpEp = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(addr), port);
+	processChannel.setEndpoint(udpSocket, udpEp);
 }
 
-int TestObject::handleUDPMessage(char *buffer, int bufferLen, int udpSocket, char *addr, const uint32_t port) {
-	if (awaitingFirstHeab) {
-		std::stringstream ss;
-		ss.str(std::string());
-		ss << "Received UDP data from ATOS" << std::endl;
-		std::cout << ss.str();
-		boost::asio::ip::udp::endpoint udpEp = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(addr), port);
-		processChannel.setEndpoint(udpSocket, udpEp);
-		startSendMonr(); // UDP connection established, start sending MONR
-	}
+int TestObject::handleMessage(char *buffer, int bufferLen) {
 	std::vector<char> data;
 	for (int i = 0; i < bufferLen; i++) {
 		data.push_back(buffer[i]);
@@ -355,7 +337,14 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 		msgHeader.messageID = MESSAGE_ID_TRAJ;
 	}
 
-	this->checkAndUpdateMessageCounter(msgHeader.messageCounter);
+	if (expectedMessageCounter != msgHeader.messageCounter) {
+		std::stringstream ss;
+		ss << "Received message counter " << msgHeader.messageCounter << " does not match expected "
+		<< expectedMessageCounter << std::endl;
+		std::cerr << ss.str();
+	}
+
+	expectedMessageCounter = msgHeader.messageCounter + 1;
 	switch (msgHeader.messageID) {
 	case MESSAGE_ID_TRAJ:
 		bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer);
@@ -474,16 +463,6 @@ std::chrono::milliseconds TestObject::getNetworkDelay() {
 void TestObject::setNetworkDelay(std::chrono::milliseconds delay) {
 	std::scoped_lock lock(netwrkDelayMutex);
 	estimatedNetworkDelay = delay;
-}
-
-void TestObject::checkAndUpdateMessageCounter(const char receivedMessageCounter) {
-	if (expectedMessageCounter != receivedMessageCounter) {
-		std::stringstream ss;
-		ss << "Received message counter " << receivedMessageCounter << " does not match expected "
-		<< expectedMessageCounter << std::endl;
-		std::cerr << ss.str();
-	}
-	expectedMessageCounter = receivedMessageCounter + 1;
 }
 
 }  // namespace ISO22133
