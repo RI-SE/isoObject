@@ -68,7 +68,7 @@ class TCPConnection
 			TimeSetToCurrentSystemTime(&heartbeat.dataTimestamp);
 			heartbeat.controlCenterStatus = ccStatus;
 			std::vector<char> transmitBuffer(1024);
-			HeaderType header;
+			MessageHeaderType header;
 			header.receiverID = this->receiverID;
 			header.messageCounter = this->messageCounter;
 			header.transmitterID = this->transmitterID;
@@ -108,7 +108,7 @@ class TCPConnection
 
 
 			std::vector<char> transmitBuffer(1024);
-			HeaderType header;
+			MessageHeaderType header;
 			header.receiverID = this->receiverID;
 			header.messageCounter = this->messageCounter;
 			header.transmitterID = this->transmitterID;
@@ -272,7 +272,10 @@ protected:
 								udpEndpoints[2] = ep;
 							}
 							if (obj != nullptr) {
-								int handled = obj->handleUDPMessage(data.data(), data.size(), listener.getUDPSocket()->native_handle(), ep.address().to_string().c_str(), ep.port());
+								char address[ep.address().to_string().length() +1];
+								memset(address, 0, sizeof(address));
+								memcpy(address, ep.address().to_string().c_str(), ep.address().to_string().length());
+								int handled = obj->handleUDPMessage(data.data(), data.size(), listener.getUDPSocket()->native_handle(), address, ep.port());
 								nBytesHandled += handled;
 							}
 							else {

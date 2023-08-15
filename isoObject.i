@@ -2,11 +2,6 @@
 %module(directors="1") isoObject_wrap
 %feature("director") TestObject; 
 
-%begin %{
-#define SWIG_PYTHON_STRICT_BYTE_CHAR
-%}
-
-
 #ifdef SWIGJAVA
 %javaconst(0);
 #endif
@@ -17,15 +12,17 @@
 #endif
 
 %pointer_functions(uint32_t, uint32ptr);
-%include <std_string.i>
 %include <std_vector.i>
 %include <stdint.i>
 %include <cpointer.i>
 %include <typemaps.i>
-%include <pybuffer.i>
 %rename(LessThan) operator<(const Transition &lhs, const Transition &rhs);
-// change "(const char* data, int len)" to match your functions declaration
-%apply (char *STRING, size_t LENGTH) { (const char* data, int len) }
+
+%typemap(in) (char *buffer, int bufferLen) {
+    Py_ssize_t len;
+    PyBytes_AsStringAndSize($input, &$1, &len);
+    $2 = (int)len;
+}
 
 %{
 #include <boost/asio.hpp>
