@@ -109,12 +109,11 @@ void ISO22133::State::handleOSTM(TestObject& obj, ObjectCommandType& ostm) {
 void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 	obj.origin = osem.coordinateSystemOrigin;
 	obj.transmitterID = osem.desiredID.transmitter;
+	obj.serverID = osem.desiredID.controlCentre;
 
 	std::stringstream msg;	// Remove risk of not printing the whole message due to threading
 	msg << "Got OSEM - set transmitter ID to " << obj.transmitterID << std::endl;
 	std::cout << msg.str();
-	// This sets the transmitter ID for ISO22133 encoder
-	setTransmitterID(obj.transmitterID);
 
 	obj.expectedHeartbeatPeriod = std::chrono::milliseconds(1000 / (uint)osem.rate.heab);
 	msg.str(std::string());
