@@ -79,6 +79,7 @@ public:
 	uint32_t getTransmitterID() const { return transmitterID; }
 	uint32_t getServerID() const { return serverID; }
 	ObjectSettingsType getObjectSettings() const { return objectSettings; }
+	ObjectStateID getStateID() const { return state->getStateID(); }
 
 
 	/** SWIG Wrappers **/
@@ -201,7 +202,9 @@ private:
 	void join(std::thread &t) {
 		std::scoped_lock lock(joinMutex);
 		if (t.joinable()) {
-			t.join();
+			try {
+				t.join();
+			} catch (std::system_error& e) {}
 		}
 	}
 

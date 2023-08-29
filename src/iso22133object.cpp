@@ -69,21 +69,11 @@ void TestObject::initialize() {
 
 TestObject::~TestObject() {
 	on = false;
-	try {
-		join(monrThread);
-	} catch (std::system_error& e) {}
-	try {
-		join(heabTimeoutThread);
-	} catch (std::system_error& e) {}
-	try {
-		join(udpReceiveThread);
-	} catch (std::system_error& eaccess) {}
-	try {
-		join(tcpReceiveThread);
-	} catch (std::system_error& e) {}
-	try {
-		join(delayedStrtThread);
-	} catch (std::system_error& e) {}
+	join(monrThread);
+	join(heabTimeoutThread);
+	join(udpReceiveThread);
+	join(tcpReceiveThread);
+	join(delayedStrtThread);
 };
 
 void TestObject::disconnect() {
@@ -100,12 +90,8 @@ void TestObject::disconnect() {
 	awaitingFirstHeab = true;	  // Reset HEAB timeout check
 
 	if (!socketsReceivedFromController) {
-		try {
-			join(udpReceiveThread);
-		} catch (std::system_error& eaccess) {}
-		try {
-			join(monrThread);
-		} catch (std::system_error& eaccess) {}
+		join(udpReceiveThread);
+		join(monrThread);
 	}
 }
 
@@ -338,10 +324,10 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 	}
 
 	if (expectedMessageCounter != msgHeader.messageCounter) {
-		std::stringstream ss;
-		ss << "Received message counter " << msgHeader.messageCounter << " does not match expected "
-		<< expectedMessageCounter << std::endl;
-		std::cerr << ss.str();
+		// std::stringstream ss;
+		// ss << "Received message counter " << msgHeader.messageCounter << " does not match expected "
+		// << expectedMessageCounter << std::endl;
+		// std::cerr << ss.str();
 	}
 
 	expectedMessageCounter = msgHeader.messageCounter + 1;
