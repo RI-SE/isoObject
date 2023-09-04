@@ -14,21 +14,9 @@
  */
 class TcpServer {
    public:
-	TcpServer(std::string ip, uint32_t port) :
-	acceptor(context, boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::from_string(ip), port)),
-	socket(context),
-	acceptIncoming(true) {
+	TcpServer(std::string ip, uint32_t port) : acceptor(context, boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::from_string(ip), port)), socket(context) {
 		setBufferSize(defaultBufferSize);
 	};
-
-	TcpServer(int sock) : 
-	socket(context),
-	acceptor(context),
-	acceptIncoming(false) {
-		setBufferSize(defaultBufferSize);
-		socket.assign(boost::asio::ip::tcp::v4(), sock);
-	};
-
 	virtual ~TcpServer() = default;
 	void disconnect() {
 		try {
@@ -38,10 +26,6 @@ class TcpServer {
 	};
 
 	void acceptConnection() {
-		if (acceptIncoming == false) {
-			return;
-		}
-		
 		try {
 			acceptor.accept(socket);
 		} catch (boost::system::system_error& e) {
@@ -93,7 +77,6 @@ class TcpServer {
    private:
 	std::vector<char> dataBuffer;
 	size_t defaultBufferSize = 4096;
-	bool acceptIncoming;
 
 	boost::asio::io_context context;
 	boost::asio::ip::tcp::acceptor acceptor;
