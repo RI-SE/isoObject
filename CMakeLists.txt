@@ -28,6 +28,7 @@ endif()
 # Manage namespace of the project
 set(ISOOBJECT_LIBRARY ${PARENT_TARGET_NAMESPACE}${PROJECT_NAME})
 set(ISOOBJECT_TEST ${ISOOBJECT_LIBRARY}Demo)
+set(ISOOBJECT_INTEGRATION_TESTING ${ISOOBJECT_LIBRARY}IntegrationTesting)
 
 #ISO22133 library/headers
 add_subdirectory(iso22133)
@@ -111,12 +112,22 @@ find_package(Boost REQUIRED COMPONENTS program_options)
 
 # Demo target, only build if not swigging
 add_executable(${ISOOBJECT_TEST} demoIsoObject.cpp)
+add_executable(${ISOOBJECT_INTEGRATION_TESTING} integrationTestingIsoObject.cpp)
 
 target_include_directories(${ISOOBJECT_TEST} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/inc
 )
 
 target_link_libraries(${ISOOBJECT_TEST} LINK_PUBLIC
+    ${ISOOBJECT_LIBRARY}
+    Boost::program_options
+)
+
+target_include_directories(${ISOOBJECT_INTEGRATION_TESTING} PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc
+)
+
+target_link_libraries(${ISOOBJECT_INTEGRATION_TESTING} LINK_PUBLIC
     ${ISOOBJECT_LIBRARY}
     Boost::program_options
 )
