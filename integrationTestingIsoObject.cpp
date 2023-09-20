@@ -220,14 +220,19 @@ int main(int argc, char** argv ) {
 
     bool sendMonr = true;
     while (sendMonr) {
-        obj.setMonr(startX, startY, startZ, startYaw, 0.0, 0.0);
+        obj.setMonr(startX, startY, startZ, startYaw, 1.0, 1.0);
         if (obj.getCurrentStateName() == "Running") {
             for (const auto& t : traj) {
-                obj.setMonr(t.pos.xCoord_m, t.pos.yCoord_m, t.pos.zCoord_m, t.pos.heading_rad, 0.0, 0.0);
+                obj.setMonr(t.pos.xCoord_m, t.pos.yCoord_m, t.pos.zCoord_m, t.pos.heading_rad, 1.0, 1.0);
                 std::this_thread::sleep_for(std::chrono::milliseconds(50));
                 sendMonr = false;
             }
         }
+    }
+
+    while (1) {
+        obj.setMonr(endX, endY, endZ, endYaw, 0.0, 0.0);
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
     std::cout << "done\n";
