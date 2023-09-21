@@ -112,7 +112,6 @@ find_package(Boost REQUIRED COMPONENTS program_options)
 
 # Demo target, only build if not swigging
 add_executable(${ISOOBJECT_TEST} demoIsoObject.cpp)
-add_executable(${ISOOBJECT_INTEGRATION_TESTING} integrationTestingIsoObject.cpp)
 
 target_include_directories(${ISOOBJECT_TEST} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/inc
@@ -123,14 +122,6 @@ target_link_libraries(${ISOOBJECT_TEST} LINK_PUBLIC
     Boost::program_options
 )
 
-target_include_directories(${ISOOBJECT_INTEGRATION_TESTING} PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/inc
-)
-
-target_link_libraries(${ISOOBJECT_INTEGRATION_TESTING} LINK_PUBLIC
-    ${ISOOBJECT_LIBRARY}
-    Boost::program_options
-)
 endif()
 
 install(CODE "MESSAGE(STATUS \"Installing target ${ISOOBJECT_LIBRARY}\")")
