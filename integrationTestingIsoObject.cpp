@@ -210,13 +210,13 @@ int main(int argc, char** argv ) {
 
     auto traj = obj.getTrajectory();
     auto startX = traj[0].pos.xCoord_m;
-    auto endX = traj[traj.size()-1].pos.xCoord_m;
+    auto endX = traj.back().pos.xCoord_m;
     auto startY = traj[0].pos.yCoord_m;
-    auto endY = traj[traj.size()-1].pos.yCoord_m;
+    auto endY = traj.back().pos.yCoord_m;
     auto startZ = traj[0].pos.zCoord_m;
-    auto endZ = traj[traj.size()-1].pos.zCoord_m;
+    auto endZ = traj.back().pos.zCoord_m;
     auto startYaw = traj[0].pos.heading_rad;
-    auto endYaw = traj[traj.size()-1].pos.heading_rad;
+    auto endYaw = traj.back().pos.heading_rad;
 
     bool sendMonr = true;
     while (sendMonr) {
