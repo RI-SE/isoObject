@@ -190,51 +190,64 @@ private:
 };
 
 
-
-
+/**
+ * @brief ISO-object that will be used for integration testing. It can automatically get all
+ * the points from the trajectory when connected, and will set its location to the first point
+ * of the trajectory when armed. It will then follow the trajectory when running and set its
+ * location to the last point when done.
+ * 
+ * @param argc 
+ * @param argv 
+ * @return int 
+ */
 int main(int argc, char** argv ) {
     auto args = parseArguments(argc, argv);
 
     std::string ip = args["listen-ip"].as<std::string>();
 	myObject obj(ip);
 
-    // wait for onTraj
-    while (obj.getTrajectory().size() == 0) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
+    std::vector<TrajectoryWaypointType> traj;
+    double startX;
+    double endX;
+    double startY;
+    double endY;
+    double startZ;
+    double endZ;
+    double startYaw;
+    double endYaw;
 
-    // sleep for a while to get all trajectory points
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    auto finishedRunning = false;
+    while(1) {
+        auto state = obj.getCurrentStateName();
+        if (state == "Disarmed") {
+            // sleep for a while to get all trajectory points
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            traj = obj.getTrajectory();
+            startX = traj[0].pos.xCoord_m;
+            endX = traj.back().pos.xCoord_m;
+            startY = traj[0].pos.yCoord_m;
+            endY = traj.back().pos.yCoord_m;
+            startZ = traj[0].pos.zCoord_m;
+            endZ = traj.back().pos.zCoord_m;
+            startYaw = traj[0].pos.heading_rad;
+            endYaw = traj.back().pos.heading_rad;
 
-    
-
-    auto traj = obj.getTrajectory();
-    auto startX = traj[0].pos.xCoord_m;
-    auto endX = traj.back().pos.xCoord_m;
-    auto startY = traj[0].pos.yCoord_m;
-    auto endY = traj.back().pos.yCoord_m;
-    auto startZ = traj[0].pos.zCoord_m;
-    auto endZ = traj.back().pos.zCoord_m;
-    auto startYaw = traj[0].pos.heading_rad;
-    auto endYaw = traj.back().pos.heading_rad;
-
-    bool sendMonr = true;
-    while (sendMonr) {
-        obj.setMonr(startX, startY, startZ, startYaw, 1.0, 1.0);
-        if (obj.getCurrentStateName() == "Running") {
+            obj.setMonr(endX, endY, endZ, endYaw, 0.0, 0.0);
+            finishedRunning = false;
+        }
+        else if (state == "Armed") {
+            obj.setMonr(startX, startY, startZ, startYaw, 0.0, 0.0);
+        }
+        else if (finishedRunning) {
+            obj.setMonr(endX, endY, endZ, endYaw, 0.0, 0.0);
+        }
+        else if (state == "Running") {
             for (const auto& t : traj) {
                 obj.setMonr(t.pos.xCoord_m, t.pos.yCoord_m, t.pos.zCoord_m, t.pos.heading_rad, 1.0, 1.0);
                 std::this_thread::sleep_for(std::chrono::milliseconds(50));
-                sendMonr = false;
             }
+            finishedRunning = true;
         }
     }
-
-    while (1) {
-        obj.setMonr(endX, endY, endZ, endYaw, 0.0, 0.0);
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    }
-
-    std::cout << "done\n";
 }
 
