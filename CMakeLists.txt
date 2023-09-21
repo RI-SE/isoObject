@@ -28,7 +28,6 @@ endif()
 # Manage namespace of the project
 set(ISOOBJECT_LIBRARY ${PARENT_TARGET_NAMESPACE}${PROJECT_NAME})
 set(ISOOBJECT_TEST ${ISOOBJECT_LIBRARY}Demo)
-set(ISOOBJECT_INTEGRATION_TESTING ${ISOOBJECT_LIBRARY}IntegrationTesting)
 
 #ISO22133 library/headers
 add_subdirectory(iso22133)
