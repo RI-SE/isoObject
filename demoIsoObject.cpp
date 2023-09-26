@@ -23,7 +23,7 @@ static po::variables_map parseArguments(
 	desc.add_options()
 		("help,h", "print this message")
 		("listen-ip,i", po::value<std::string>()->default_value("0.0.0.0"), "The IP address that the isoObject will listen on.")
-        ("behaviour,b", po::value<std::string>()->default_value("default"), "The behaviour of the isoObject. Options are 'default' and 'circle'")
+        ("behaviour,b", po::value<std::string>()->default_value("follow-trajectory"), "The behaviour of the isoObject. Options are 'follow-trajectory' and 'circle'")
 	;
 	po::store(po::parse_command_line(argc, argv, desc), ret);
 	po::notify(ret);
@@ -199,7 +199,7 @@ std::string ip;
  * the trajectory when running and set its location to the last point when done.
  * 
  */
-void runDefault() {
+void runFollowTrajectory() {
     myObject obj(ip);
     std::vector<TrajectoryWaypointType> traj;
     double startX;
@@ -289,8 +289,8 @@ int main(int argc, char** argv ) {
     auto args = parseArguments(argc, argv);
     ip = args["listen-ip"].as<std::string>();
     std::string behaviour = args["behaviour"].as<std::string>();
-    if (behaviour == "default") {
-        runDefault();
+    if (behaviour == "follow-trajectory") {
+        runFollowTrajectory();
     }
     else if (behaviour == "circle") {
         runCircle();
