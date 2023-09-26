@@ -234,9 +234,15 @@ void runFollowTrajectory(myObject& obj) {
             obj.setMonr(endX, endY, endZ, endYaw, 0.0, 0.0);
         }
         else if (state == "Running") {
-            for (const auto& t : traj) {
-                obj.setMonr(t.pos.xCoord_m, t.pos.yCoord_m, t.pos.zCoord_m, t.pos.heading_rad, 1.0, 1.0);
-                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            for (int i = 0; i < traj.size() - 1; ++i) {
+                auto currentTraj = traj[i];
+                auto nextTraj = traj[i+1];
+                auto secondsDiff = nextTraj.relativeTime.tv_sec - currentTraj.relativeTime.tv_sec;
+                auto microsecondsDiff = nextTraj.relativeTime.tv_usec - currentTraj.relativeTime.tv_usec;
+                auto timeDiff = secondsDiff * 1000000 + microsecondsDiff;
+
+                obj.setMonr(currentTraj.pos.xCoord_m, currentTraj.pos.yCoord_m, currentTraj.pos.zCoord_m, currentTraj.pos.heading_rad, currentTraj.spd.lateral_m_s, currentTraj.spd.longitudinal_m_s);
+                std::this_thread::sleep_for(std::chrono::microseconds(timeDiff));
             }
             finishedRunning = true;
         }
