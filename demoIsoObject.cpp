@@ -296,7 +296,7 @@ int main(int argc, char** argv ) {
         runCircle();
     }
     else {
-        std::cout << "Unknown behaviour: " << behaviour << std::endl;
+        std::invalid_argument("Unknown behaviour");
     }
 }
 
