@@ -23,6 +23,7 @@ static po::variables_map parseArguments(
 	desc.add_options()
 		("help,h", "print this message")
 		("listen-ip,i", po::value<std::string>()->default_value("0.0.0.0"), "The IP address that the isoObject will listen on.")
+        ("behaviour,b", po::value<std::string>()->default_value("follow-trajectory"), "The behaviour of the isoObject. Options are 'follow-trajectory' and 'circle'")
 	;
 	po::store(po::parse_command_line(argc, argv, desc), ret);
 	po::notify(ret);
@@ -190,14 +191,63 @@ private:
 };
 
 
+/**
+ * @brief  ISO-object that automatically gets all the points from the trajectory when connected,
+ * and will set its location to the first point of the trajectory when armed. It will then follow
+ * the trajectory when running and set its location to the last point when done.
+ * 
+ */
+void runFollowTrajectory(myObject& obj) {
+    std::vector<TrajectoryWaypointType> traj;
+    double startX;
+    double endX;
+    double startY;
+    double endY;
+    double startZ;
+    double endZ;
+    double startYaw;
+    double endYaw;
 
+    auto finishedRunning = false;
+    while(1) {
+        auto state = obj.getCurrentStateName();
+        if (state == "Disarmed") {
+            // sleep for a while to get all trajectory points
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            traj = obj.getTrajectory();
+            startX = traj[0].pos.xCoord_m;
+            endX = traj.back().pos.xCoord_m;
+            startY = traj[0].pos.yCoord_m;
+            endY = traj.back().pos.yCoord_m;
+            startZ = traj[0].pos.zCoord_m;
+            endZ = traj.back().pos.zCoord_m;
+            startYaw = traj[0].pos.heading_rad;
+            endYaw = traj.back().pos.heading_rad;
 
-int main(int argc, char** argv ) {
-    auto args = parseArguments(argc, argv);
+            obj.setMonr(endX, endY, endZ, endYaw, 0.0, 0.0);
+            finishedRunning = false;
+        }
+        else if (state == "Armed") {
+            obj.setMonr(startX, startY, startZ, startYaw, 0.0, 0.0);
+        }
+        else if (finishedRunning) {
+            obj.setMonr(endX, endY, endZ, endYaw, 0.0, 0.0);
+        }
+        else if (state == "Running") {
+            for (const auto& t : traj) {
+                obj.setMonr(t.pos.xCoord_m, t.pos.yCoord_m, t.pos.zCoord_m, t.pos.heading_rad, 1.0, 1.0);
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            }
+            finishedRunning = true;
+        }
+    }
+}
 
-    std::string ip = args["listen-ip"].as<std::string>();
-	myObject obj(ip);
-
+/**
+ * @brief ISO-object that moves in a circle when connected.
+ * 
+ */
+void runCircle(myObject& obj) {
     double originX = 0.0;
     double originY = 0.0;
     double originZ = 0.0;
@@ -220,9 +270,30 @@ int main(int argc, char** argv ) {
             z = 0;
         }
         // Todo calculate heading and speed
-        obj.setMonr(x, y, z, 0.0, 0.0, 0.0);
+        obj.setMonr(x, y, z, angle + M_PI / 2, 0.0, 0.0);
     }
-    
-    std::cout << "done\n";
+}
+
+/**
+ * @brief 
+ * 
+ * @param argc 
+ * @param argv 
+ * @return int 
+ */
+int main(int argc, char** argv ) {
+    auto args = parseArguments(argc, argv);
+    auto ip = args["listen-ip"].as<std::string>();
+    myObject obj(ip);
+    std::string behaviour = args["behaviour"].as<std::string>();
+    if (behaviour == "follow-trajectory") {
+        runFollowTrajectory(obj);
+    }
+    else if (behaviour == "circle") {
+        runCircle(obj);
+    }
+    else {
+        std::invalid_argument("Unknown behaviour");
+    }
 }
 

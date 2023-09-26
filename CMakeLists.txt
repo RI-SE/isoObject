@@ -120,6 +120,7 @@ target_link_libraries(${ISOOBJECT_TEST} LINK_PUBLIC
     ${ISOOBJECT_LIBRARY}
     Boost::program_options
 )
+
 endif()
 
 install(CODE "MESSAGE(STATUS \"Installing target ${ISOOBJECT_LIBRARY}\")")
