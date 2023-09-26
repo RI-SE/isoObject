@@ -191,16 +191,13 @@ private:
 };
 
 
-std::string ip;
-
 /**
  * @brief  ISO-object that automatically gets all the points from the trajectory when connected,
  * and will set its location to the first point of the trajectory when armed. It will then follow
  * the trajectory when running and set its location to the last point when done.
  * 
  */
-void runFollowTrajectory() {
-    myObject obj(ip);
+void runFollowTrajectory(myObject& obj) {
     std::vector<TrajectoryWaypointType> traj;
     double startX;
     double endX;
@@ -250,8 +247,7 @@ void runFollowTrajectory() {
  * @brief ISO-object that moves in a circle when connected.
  * 
  */
-void runCircle() {
-    myObject obj(ip);
+void runCircle(myObject& obj) {
     double originX = 0.0;
     double originY = 0.0;
     double originZ = 0.0;
@@ -287,13 +283,14 @@ void runCircle() {
  */
 int main(int argc, char** argv ) {
     auto args = parseArguments(argc, argv);
-    ip = args["listen-ip"].as<std::string>();
+    auto ip = args["listen-ip"].as<std::string>();
+    myObject obj(ip);
     std::string behaviour = args["behaviour"].as<std::string>();
     if (behaviour == "follow-trajectory") {
-        runFollowTrajectory();
+        runFollowTrajectory(obj);
     }
     else if (behaviour == "circle") {
-        runCircle();
+        runCircle(obj);
     }
     else {
         std::invalid_argument("Unknown behaviour");
