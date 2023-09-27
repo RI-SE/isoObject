@@ -277,7 +277,7 @@ void TestObject::checkHeabLoop() {
 	using namespace std::chrono;
 	while (this->on) {
 		auto t = std::chrono::steady_clock::now();
-		checkHeabTimeout();
+		//checkHeabTimeout();
 		// Don't lock the mutex all the time
 		std::this_thread::sleep_until(t + expectedHeartbeatPeriod);
 	}
