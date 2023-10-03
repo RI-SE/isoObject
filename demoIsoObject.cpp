@@ -23,7 +23,7 @@ static po::variables_map parseArguments(
 	desc.add_options()
 		("help,h", "print this message")
 		("listen-ip,i", po::value<std::string>()->default_value("0.0.0.0"), "The IP address that the isoObject will listen on.")
-        ("behaviour,b", po::value<std::string>()->default_value("follow-trajectory"), "The behaviour of the isoObject. Options are 'follow-trajectory' and 'circle'")
+        ("behaviour,b", po::value<std::string>()->default_value("follow-trajectory"), "The behaviour of the isoObject. Options are 'follow-trajectory', 'dynamic', and 'circle'")
 	;
 	po::store(po::parse_command_line(argc, argv, desc), ret);
 	po::notify(ret);
@@ -249,6 +249,12 @@ void runFollowTrajectory(myObject& obj) {
     }
 }
 
+
+void runDynamic(myObject& obj) {
+    std::cerr << "YOU HAVE STARTED THE DYNAMIC MODE!!" << std::endl;
+    std::cerr << "Test mode: " << obj.getObjectSettings().testMode << std::endl;
+}
+
 /**
  * @brief ISO-object that moves in a circle when connected.
  * 
@@ -294,6 +300,9 @@ int main(int argc, char** argv ) {
     std::string behaviour = args["behaviour"].as<std::string>();
     if (behaviour == "follow-trajectory") {
         runFollowTrajectory(obj);
+    }
+    else if (behaviour == "dynamic") {
+        runDynamic(obj);
     }
     else if (behaviour == "circle") {
         runCircle(obj);
