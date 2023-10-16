@@ -190,6 +190,28 @@ private:
 
 };
 
+// Function that can parse both number and dot notation and hostnames into IP addresses
+std::string resolveIP (std::string listen_ip) {
+    addrinfo hints = {0};
+    addrinfo* result;
+    in_addr_t ip;
+    hints.ai_family = AF_INET; // Use AF_INET6 for IPv6
+    hints.ai_socktype = SOCK_STREAM;
+
+    int status = getaddrinfo(listen_ip.c_str(), nullptr, &hints, &result);
+    if (status != 0) {
+        std::cout << "Failed to resolve address for value %s, Default to 0.0.0.0" << listen_ip << std::endl;
+        return "0.0.0.0";
+    }
+
+    ip = ((sockaddr_in*)result->ai_addr)->sin_addr.s_addr;
+    freeaddrinfo(result);
+
+    // Convert binary IP to string for logging
+    char ip_str[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &ip, ip_str, INET_ADDRSTRLEN);
+    return ip_str;
+}
 
 /**
  * @brief  ISO-object that automatically gets all the points from the trajectory when connected,
@@ -289,7 +311,7 @@ void runCircle(myObject& obj) {
  */
 int main(int argc, char** argv ) {
     auto args = parseArguments(argc, argv);
-    auto ip = args["listen-ip"].as<std::string>();
+    auto ip = resolveIP(args["listen-ip"].as<std::string>());
     myObject obj(ip);
     std::string behaviour = args["behaviour"].as<std::string>();
     if (behaviour == "follow-trajectory") {
