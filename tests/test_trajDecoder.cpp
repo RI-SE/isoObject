@@ -23,7 +23,7 @@ class DecodeTraj : public ::testing::Test {
 			numberOfPointsInTraj,
 			points,
 			sizeof(encodeBuffer),
-			false);
+			debug);
 		ASSERT_GT(offset, 0);
 		points += offset;
 		for (int i = 0; i < 3; i++) {
@@ -40,14 +40,14 @@ class DecodeTraj : public ::testing::Test {
 				curvature,
 				points,
 				sizeof(encodeBuffer) - (points-encodeBuffer),
-				false);
+				debug);
 			ASSERT_GT(offset, 0);
 			points += offset;
 		}
 		offset = encodeTRAJMessageFooter(
 			points,
 			sizeof(encodeBuffer) - (points - encodeBuffer),
-			false
+			debug
 		);
 		ASSERT_GT(offset, 0);
 		points += offset;
