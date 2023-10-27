@@ -285,7 +285,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 
 	switch (msgHeader.messageID) {
 	case MESSAGE_ID_TRAJ:
-		bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer);
+		bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer, false);
 		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding TRAJ");
 		}

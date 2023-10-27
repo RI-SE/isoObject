@@ -8,6 +8,9 @@ you only need to create a new object instance and the rest takes care of itself.
 
 It supports swig, and can therefore be used in e.g. python and java. See the swig directory for a python example.
 
+## Dependencies
+Boost system program-options thread
+
 ## Building
 Clone the repository
 ```

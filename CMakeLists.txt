@@ -194,3 +194,21 @@ if (WITH_SWIG)
         endif()
     endif()
 endif()
+
+# Build tests 
+if (BUILD_TESTING)
+	enable_testing()
+	file(GLOB TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp)
+	add_executable(${ISOOBJECT_LIBRARY}_test
+		${TEST_SOURCES}
+	)
+	target_link_libraries(${ISOOBJECT_LIBRARY}_test
+		gtest_main
+		${ISOOBJECT_LIBRARY}
+	)
+	target_include_directories(${ISOOBJECT_LIBRARY}_test PUBLIC
+		${CMAKE_CURRENT_SOURCE_DIR}/inc
+	)
+	include(GoogleTest)
+	gtest_discover_tests(${ISOOBJECT_LIBRARY}_test)
+endif()

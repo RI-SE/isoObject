@@ -4,7 +4,7 @@
 #include "trajDecoder.hpp"
 #include "iso22133.h"
 
-ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>& dataBuffer) {
+ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>& dataBuffer, bool debug) {
     std::lock_guard<std::mutex> lock(this->guard);
     copiedData = dataBuffer;
     int tmpByteCounter;
@@ -12,7 +12,7 @@ ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>& dataBuffer) {
     if(!expectingTRAJPoints) {
         std::cout << "Receiving TRAJ" << std::endl;
         tmpByteCounter = decodeTRAJMessageHeader(&this->trajecoryHeader, 
-            copiedData.data(), copiedData.size(), 0);
+            copiedData.data(), copiedData.size(), debug);
         if(tmpByteCounter < 0) {
             throw std::invalid_argument("Error decoding TRAJ Header");	
         }
@@ -37,7 +37,7 @@ ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>& dataBuffer) {
     tmpSize = trajecoryHeader.nWaypoints - nPointsHandled;
     for(int i = 0; i < tmpSize; i++) {
         // Save the bytes remaining and return
-        if(copiedData.size() < ISO_TRAJ_WAYPOINT_SIZE) { 
+        if(copiedData.size() < sizeof(TrajectoryWaypointType)) { 
             unhandledBytes.resize(copiedData.size());
             unhandledBytes = copiedData; 	
             break;
@@ -45,7 +45,7 @@ ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>& dataBuffer) {
 
         // We have enough bytes, go ahead and decode waypoint
         tmpByteCounter = 
-            decodeTRAJMessagePoint(&waypoint, copiedData.data(), 0);
+            decodeTRAJMessagePoint(&waypoint, copiedData.data(), debug);
         if(tmpByteCounter < 0) {
             throw std::invalid_argument("Error decoding TRAJ Waypoint");
         }
