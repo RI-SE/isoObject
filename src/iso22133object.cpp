@@ -151,9 +151,9 @@ void TestObject::sendMonrLoop() {
 			if (this->transmitterID != TRANSMITTER_ID_UNAVAILABLE_VALUE){
 				sendMONR();
 			}
-			auto t = std::chrono::steady_clock::now();
-			std::this_thread::sleep_until(t + monrPeriod);
 		}
+		auto t = std::chrono::steady_clock::now();
+		std::this_thread::sleep_until(t + monrPeriod);
 	}
 }
 
@@ -180,6 +180,8 @@ void TestObject::receiveUDP() {
 				}
 				data.erase(data.begin(), data.begin() + nBytesHandled);
 			} while (data.size() > 0);
+		} else {
+			std::this_thread::sleep_for(heartbeatTimeout);
 		}
 	}
 }
