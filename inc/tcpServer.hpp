@@ -20,17 +20,24 @@ class TcpServer {
 	virtual ~TcpServer() = default;
 	void disconnect() {
 		try {
+			acceptor.cancel();
 			socket.shutdown(boost::asio::socket_base::shutdown_both);
 			socket.close();
-		} catch (boost::system::system_error& e) {}
+		} catch (boost::system::system_error& e) {
+			std::cerr << "Error when closing socket: " << e.what() << std::endl;
+		}
 	};
 
 	void acceptConnection() {
-		try {
-			acceptor.accept(socket);
-		} catch (boost::system::system_error& e) {
-			std::cerr << "TCP socket accept failed: " << e.what() << std::endl;
-		}
+		acceptor.async_accept(socket, [this](const boost::system::error_code& error) {
+			if (error) {
+				// Accepting failed, handle the error
+				// Print the error message for example
+				throw boost::system::system_error(boost::asio::error::eof);
+			}
+		});
+		context.run_one();
+		context.restart();
 	}
 
 	void setBufferSize(size_t size) { dataBuffer.resize(size); };
