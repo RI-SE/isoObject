@@ -85,9 +85,6 @@ void TestObject::disconnect() {
 
 void TestObject::receiveTCP() {
 	std::stringstream ss;
-	ss << "Started TCP thread." << std::endl;
-	std::cout << ss.str();
-
 	while (this->on) {
 		ss.str(std::string());
 		ss << "Awaiting TCP connection from ATOS..." << std::endl;
@@ -127,9 +124,6 @@ void TestObject::receiveTCP() {
 			state->handleEvent(*this, ISO22133::Events::L);
 		}
 	}
-	ss.str(std::string());
-	ss << "Exiting TCP thread." << std::endl;
-	std::cout << ss.str();
 }
 
 void TestObject::sendMONR(bool debug) {
@@ -162,10 +156,6 @@ void TestObject::sendGREM(HeaderType msgHeader, GeneralResponseStatus responseCo
 }
 
 void TestObject::sendMonrLoop() {
-	std::stringstream ss;
-	ss << "Started MONR thread." << std::endl;
-	std::cout << ss.str();
-
 	while (this->on) {
 		if (ctrlChannel.isOpen()) {
 			// Only send monr if transmitterID has been set by an OSEM message
@@ -176,18 +166,10 @@ void TestObject::sendMonrLoop() {
 			std::this_thread::sleep_until(t + monrPeriod);
 		}
 	}
-
-	ss.str(std::string());
-	ss << "Exiting MONR thread." << std::endl;
-	std::cout << ss.str();
 }
 
 void TestObject::receiveUDP() {
 	std::stringstream ss;
-	ss << "Started UDP communication thread." << std::endl;
-	ss << "Awaiting UDP data from ATOS..." << std::endl;
-	std::cout << ss.str();
-
 	awaitingFirstHeab = true;
 
 	while (this->on) {
@@ -197,12 +179,6 @@ void TestObject::receiveUDP() {
 			// Connection lost
 			if (data.size() <= 0) {
 				continue;
-			}
-
-			if (awaitingFirstHeab) {
-				ss.str(std::string());
-				ss << "Received UDP data from ATOS" << std::endl;
-				std::cout << ss.str();
 			}
 
 			int nBytesHandled = 0;
@@ -217,9 +193,6 @@ void TestObject::receiveUDP() {
 			} while (data.size() > 0);
 		}
 	}
-	ss.str(std::string());
-	ss << "Exiting UDP communication thread." << std::endl;
-	std::cout << ss.str();
 }
 
 void TestObject::checkHeabTimeout() {
@@ -237,10 +210,6 @@ void TestObject::checkHeabTimeout() {
 }
 
 void TestObject::checkHeabLoop() {
-	std::stringstream ss;
-	ss << "Started HEAB timeout thread." << std::endl;
-	std::cout << ss.str();
-
 	using namespace std::chrono;
 	while (this->on) {
 		auto t = std::chrono::steady_clock::now();
@@ -248,9 +217,6 @@ void TestObject::checkHeabLoop() {
 		// Don't lock the mutex all the time
 		std::this_thread::sleep_until(t + expectedHeartbeatPeriod);
 	}
-	ss.str(std::string());
-	ss << "Exiting HEAB timeout thread." << std::endl;
-	std::cout << ss.str();
 }
 
 void TestObject::onHeabTimeout() {
