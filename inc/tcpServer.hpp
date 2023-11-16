@@ -21,8 +21,10 @@ class TcpServer {
 	void disconnect() {
 		try {
 			acceptor.cancel();
-			socket.shutdown(boost::asio::socket_base::shutdown_both);
-			socket.close();
+			if (socket.is_open()){
+				socket.shutdown(boost::asio::socket_base::shutdown_both);
+				socket.close();
+			}
 		} catch (boost::system::system_error& e) {
 			std::cerr << "Error when closing socket: " << e.what() << std::endl;
 		}

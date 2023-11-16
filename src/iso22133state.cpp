@@ -212,10 +212,6 @@ void ISO22133::State::handleTRAJ(TestObject& obj, std::atomic<HeaderType>& msgHe
 	}
 }
 
-void ISO22133::Init::onExit(TestObject& obj) {
-	obj.startHandleUDP();
-}
-
 /**
  * @brief Sets TestObject ready to arm flag
  *

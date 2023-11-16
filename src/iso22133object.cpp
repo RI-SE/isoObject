@@ -36,6 +36,8 @@ TestObject::TestObject(const std::string& listenIP)
 	this->state = this->createInit();
 	this->startHandleTCP();
 	this->startHEABCheck();
+	this->startHandleUDP();
+	this->startSendMonr();
 	this->stateChangeSig.connect(&TestObject::onStateChange, this);
 	this->osemSig.connect(&TestObject::onOSEM, this);
 	this->heabSig.connect(&TestObject::onHEAB, this);
@@ -70,7 +72,6 @@ TestObject::~TestObject() {
 };
 
 void TestObject::disconnect() {
-	std::scoped_lock lock(disconnectMutex);
 	try {
 		ctrlChannel.disconnect();  // Close TCP socket
 	} catch (const std::exception& e) {
@@ -80,15 +81,6 @@ void TestObject::disconnect() {
 	processChannel.disconnect();  // Close UDP socket
 	awaitingFirstHeab = true;	  // Reset HEAB timeout check
 
-	try {
-		if (udpReceiveThread.joinable())
-			udpReceiveThread.join();
-		if (monrThread.joinable())
-			monrThread.join();
-	} catch (std::system_error& e) {
-		std::cerr << "Disconnect error: " << e.what() << std::endl;
-		throw e;
-	}
 }
 
 void TestObject::receiveTCP() {
@@ -174,13 +166,15 @@ void TestObject::sendMonrLoop() {
 	ss << "Started MONR thread." << std::endl;
 	std::cout << ss.str();
 
-	while (this->on && ctrlChannel.isOpen()) {
-		// Only send monr if transmitterID has been set by an OSEM message
-		if (this->transmitterID != TRANSMITTER_ID_UNAVAILABLE_VALUE){
-			sendMONR();
+	while (this->on) {
+		if (ctrlChannel.isOpen()) {
+			// Only send monr if transmitterID has been set by an OSEM message
+			if (this->transmitterID != TRANSMITTER_ID_UNAVAILABLE_VALUE){
+				sendMONR();
+			}
+			auto t = std::chrono::steady_clock::now();
+			std::this_thread::sleep_until(t + monrPeriod);
 		}
-		auto t = std::chrono::steady_clock::now();
-		std::this_thread::sleep_until(t + monrPeriod);
 	}
 
 	ss.str(std::string());
@@ -196,32 +190,32 @@ void TestObject::receiveUDP() {
 
 	awaitingFirstHeab = true;
 
-	while (this->on && ctrlChannel.isOpen()) {
-		auto data = processChannel.receive();
+	while (this->on) {
+		if (ctrlChannel.isOpen()) {
+			auto data = processChannel.receive();
 
-		// Connection lost
-		if (data.size() <= 0) {
-			continue;
-		}
-
-		if (awaitingFirstHeab) {
-			ss.str(std::string());
-			ss << "Received UDP data from ATOS" << std::endl;
-			std::cout << ss.str();
-
-			startSendMonr(); // UDP connection established, start sending MONR
-		}
-
-		int nBytesHandled = 0;
-		do {
-			try {
-				nBytesHandled = handleMessage(data);
-			} catch (const std::exception& e) {
-				std::cerr << e.what() << std::endl;
-				break;
+			// Connection lost
+			if (data.size() <= 0) {
+				continue;
 			}
-			data.erase(data.begin(), data.begin() + nBytesHandled);
-		} while (data.size() > 0);
+
+			if (awaitingFirstHeab) {
+				ss.str(std::string());
+				ss << "Received UDP data from ATOS" << std::endl;
+				std::cout << ss.str();
+			}
+
+			int nBytesHandled = 0;
+			do {
+				try {
+					nBytesHandled = handleMessage(data);
+				} catch (const std::exception& e) {
+					std::cerr << e.what() << std::endl;
+					break;
+				}
+				data.erase(data.begin(), data.begin() + nBytesHandled);
+			} while (data.size() > 0);
+		}
 	}
 	ss.str(std::string());
 	ss << "Exiting UDP communication thread." << std::endl;

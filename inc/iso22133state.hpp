@@ -149,7 +149,6 @@ private:
 class Init : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_INIT; }
-	virtual void onExit(TestObject&) override;
 private:
 	void handleTRAJ(TestObject&, std::atomic<HeaderType>&) final override { unexpectedMessageWarning("TRAJ"); }
 	void handleOSEM(TestObject&, ObjectSettingsType&) final override { unexpectedMessageWarning("OSEM"); }
