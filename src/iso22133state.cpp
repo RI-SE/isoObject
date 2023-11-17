@@ -124,7 +124,8 @@ void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 
 	obj.heartbeatTimeout = 10*obj.expectedHeartbeatPeriod;
 	msg.str(std::string());
-	msg << "Set HEAB timeout to" << obj.heartbeatTimeout.count() << std::endl;
+	msg << "Set HEAB timeout to " << obj.heartbeatTimeout.count() << " ms. ("
+		<< 1000 / obj.heartbeatTimeout.count() << " Hz) " << std::endl;
 	std::cout << msg.str();
 
 	obj.monrPeriod = std::chrono::milliseconds(1000 / (uint)osem.rate.monr);
