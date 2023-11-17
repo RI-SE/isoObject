@@ -31,13 +31,12 @@ ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>& dataBuffer, bool debug) {
 
     // Decode TRAJ waypoints
     int tmpSize;
-    int tmpCounter = nPointsHandled;
     TrajectoryWaypointType waypoint;
 
     tmpSize = trajecoryHeader.nWaypoints - nPointsHandled;
     for(int i = 0; i < tmpSize; i++) {
         // Save the bytes remaining and return
-        if(copiedData.size() < sizeof(TrajectoryWaypointType)) { 
+        if(copiedData.size() < sizeof(TRAJPointType)) { 
             unhandledBytes.resize(copiedData.size());
             unhandledBytes = copiedData; 	
             break;
