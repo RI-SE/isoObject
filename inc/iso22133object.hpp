@@ -54,6 +54,7 @@ public:
 	virtual ~TestObject();
 
 	void disconnect();
+	void shutdown();
 
 	void setPosition(const CartesianPosition& pos) { position = pos; }
 	void setSpeed(const SpeedType& spd) { speed = spd; }

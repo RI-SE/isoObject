@@ -60,6 +60,11 @@ TestObject::~TestObject() {
 	}
 };
 
+void TestObject::shutdown() {
+	disconnect();
+	this->on = false;
+}
+
 void TestObject::disconnect() {
 	try {
 		ctrlChannel.disconnect();  // Close TCP socket
