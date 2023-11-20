@@ -151,11 +151,11 @@ void TestObject::sendGREM(HeaderType msgHeader, GeneralResponseStatus responseCo
 
 void TestObject::sendMonrLoop() {
 	while (this->on) {
-		if (ctrlChannel.isOpen()) {
-			// Only send monr if transmitterID has been set by an OSEM message
-			if (this->transmitterID != TRANSMITTER_ID_UNAVAILABLE_VALUE){
-				sendMONR();
-			}
+		// Only send monr connection has been established if transmitterID has been set by an OSEM message
+		if (ctrlChannel.isOpen() &&
+			!awaitingFirstHeab &&
+			this->transmitterID != TRANSMITTER_ID_UNAVAILABLE_VALUE) {
+			sendMONR();
 		}
 		auto t = std::chrono::steady_clock::now();
 		std::this_thread::sleep_until(t + monrPeriod);
@@ -164,8 +164,6 @@ void TestObject::sendMonrLoop() {
 
 void TestObject::receiveUDP() {
 	std::stringstream ss;
-	awaitingFirstHeab = true;
-
 	while (this->on) {
 		if (ctrlChannel.isOpen()) {
 			auto data = processChannel.receive();
