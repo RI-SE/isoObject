@@ -25,6 +25,7 @@ class TcpServer {
 				socket.shutdown(boost::asio::socket_base::shutdown_both);
 				socket.close();
 			}
+			context.reset();
 		} catch (boost::system::system_error& e) {
 			std::cerr << "Error when closing socket: " << e.what() << std::endl;
 		}
@@ -35,7 +36,12 @@ class TcpServer {
 			if (error) {
 				// Accepting failed, handle the error
 				// Print the error message for example
-				throw boost::system::system_error(boost::asio::error::eof);
+				if (error == boost::asio::error::operation_aborted) {
+					std::cerr << "TCP Accept aborted" << std::endl;
+				} else {
+					std::cerr << "TCP Accept error: " << error.message() << std::endl;
+					throw boost::system::system_error(boost::asio::error::eof);
+				}
 			}
 		});
 		context.run_one();
