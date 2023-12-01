@@ -48,7 +48,7 @@ TestObject::TestObject(const std::string& listenIP)
 }
 
 TestObject::~TestObject() {
-	on = false;
+	shutdown();
 	try {
 		udpReceiveThread.join();
 		monrThread.join();
