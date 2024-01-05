@@ -68,6 +68,18 @@ public:
     }
 };
 
+class myRunning : public ISO22133::Running {
+public:
+    void onTrajectoryComplete(ISO22133::TestObject& obj) {
+        try {
+            std::cout << "Trajectory complete, entering PostRun" << std::endl;
+            this->handleEvent(obj, ISO22133::Events::Y);
+        }
+        catch(const std::runtime_error& e) {
+            std::cerr << e.what() << '\n';
+        }
+    }
+};
 
 
 class myObject : public ISO22133::TestObject {
@@ -274,6 +286,8 @@ void runFollowTrajectory(myObject& obj) {
                 std::this_thread::sleep_for(std::chrono::microseconds(timeDiff));
             }
             finishedRunning = true;
+            auto postrun = new myRunning();
+            postrun->onTrajectoryComplete(obj);
         }
     }
 }
