@@ -24,13 +24,12 @@ struct timeval * TimeSetToCurrentSystemTime(struct timeval *time)
 
 class SimulatedTestObject : public TestObject {
 	public:
-	SimulatedTestObject(int tcpSocket, int id) : TestObject(tcpSocket, id) {}
+	SimulatedTestObject(int tcpSocket, int id) : TestObject(tcpSocket, id) {
+		this->startHandleTCP();
+	}
 	int handleTCPMessage(char *buffer, int bufferLen) {
 		state->handleEvent(*this, ISO22133::Events::B);
-
 		int nBytesHandled = handleMessage(buffer, bufferLen);
-
-		this->startHandleTCP();
 		return nBytesHandled;
 	}
 	int handleUDPMessage(char *buffer, int bufferLen, int udpSocket, char *addr, const uint32_t port) {
