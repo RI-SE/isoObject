@@ -15,7 +15,6 @@ class DecodeTraj : public ::testing::Test {
 		bool debug = false;
 
 		MessageHeaderType header = {0};
-
 		auto offset = encodeTRAJMessageHeader(
 			&header,
 			trajectoryID,
