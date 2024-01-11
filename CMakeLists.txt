@@ -1,5 +1,8 @@
 project(ISO_object LANGUAGES C CXX)
 cmake_minimum_required(VERSION 3.14)
+# Dependencies
+find_package(GTest REQUIRED)
+
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -9,7 +12,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # It is useful e.g. when multiple copies of the same shared library exist in various paths (such as LD_LIBRARY_PATH, /usr/local/lib, etc..).
 # However, RPATH has higher priority than LD_LIBRARY_PATH, while RUNPATH has lower priority
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--disable-new-dtags")
-
+# Use this for debugging
+# set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 # Build flags
 set(BUILDING_FOR_ANDROID OFF CACHE BOOL "Building for Android")
@@ -27,7 +31,8 @@ endif()
 
 # Manage namespace of the project
 set(ISOOBJECT_LIBRARY ${PARENT_TARGET_NAMESPACE}${PROJECT_NAME})
-set(ISOOBJECT_TEST ${ISOOBJECT_LIBRARY}Demo)
+set(ISOOBJECT_DEMO ${ISOOBJECT_LIBRARY}Demo)
+set(ISOOBJECT_TEST ${ISOOBJECT_LIBRARY}Test)
 
 #ISO22133 library/headers
 add_subdirectory(iso22133)
@@ -110,13 +115,13 @@ if (NOT WITH_SWIG AND NOT BUILDING_FOR_ANDROID)
 find_package(Boost REQUIRED COMPONENTS program_options)
 
 # Demo target, only build if not swigging
-add_executable(${ISOOBJECT_TEST} demoIsoObject.cpp)
+add_executable(${ISOOBJECT_DEMO} demoIsoObject.cpp)
 
-target_include_directories(${ISOOBJECT_TEST} PUBLIC
+target_include_directories(${ISOOBJECT_DEMO} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/inc
 )
 
-target_link_libraries(${ISOOBJECT_TEST} LINK_PUBLIC
+target_link_libraries(${ISOOBJECT_DEMO} LINK_PUBLIC
     ${ISOOBJECT_LIBRARY}
     Boost::program_options
 )
@@ -130,6 +135,27 @@ install(TARGETS ${ISOOBJECT_LIBRARY}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
+
+# Tests
+
+# Only build tests if we are on x86_64 and not cross compiling
+if ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" AND ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "${CMAKE_HOST_SYSTEM_PROCESSOR}"))
+	enable_testing()
+	file(GLOB TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp)
+	add_executable(${ISOOBJECT_TEST}
+		${TEST_SOURCES}
+	)
+	target_link_libraries(${ISOOBJECT_TEST}
+		gtest_main
+		${ISOOBJECT_LIBRARY}
+	)
+	target_include_directories(${ISOOBJECT_TEST} PUBLIC
+		${CMAKE_CURRENT_SOURCE_DIR}
+		${CMAKE_CURRENT_SOURCE_DIR}/inc
+	)
+	include(GoogleTest)
+	gtest_discover_tests(${ISOOBJECT_TEST})
+endif()
 
 # SWIG
 if (WITH_SWIG)
@@ -190,7 +216,7 @@ if (WITH_SWIG)
         if(SWIG_WITH_PYTHON)
             execute_process(COMMAND python3 -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())" OUTPUT_VARIABLE PYTHON_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
             install(TARGETS ${ISO22133_SWIGGED} DESTINATION ${PYTHON_SITE_PACKAGES})
-            install(FILES ${CMAKE_BINARY_DIR}/isoObject_wrap.py DESTINATION ${PYTHON_SITE_PACKAGES})
+            install(FILES ${CMAKE_CURRENT_BINARY_DIR}/isoObject_wrap.py DESTINATION ${PYTHON_SITE_PACKAGES})
         endif()
     endif()
 endif()

@@ -7,6 +7,7 @@
 #include <functional>
 extern "C"{
 #include "iso22133.h"
+#include "header.h"
 }
 namespace ISO22133 {
 class TestObject;

@@ -15,29 +15,52 @@ TestObject::TestObject(const std::string& listenIP)
 	  trajDecoder(),
 	  ctrlChannel(listenIP, ISO_22133_DEFAULT_OBJECT_TCP_PORT),
 	  processChannel(listenIP, ISO_22133_OBJECT_UDP_PORT),
+	  transmitterID(TRANSMITTER_ID_UNAVAILABLE_VALUE),
+	  serverID(0),
+	  expectedMessageCounter(0),
+	  sentMessageCounter(0),
+	  socketsReceivedFromController(false),
 	  on(true) {
+	this->initialize();
+	this->startHandleTCP();
+	this->startHEABCheck();
+	this->startHandleUDP();
+	this->startSendMonr();
+}
+
+TestObject::TestObject(int tcpSocket)
+	: name("myTestObject"),
+	  trajDecoder(),
+	  ctrlChannel(tcpSocket),
+	  processChannel(),
+	  transmitterID(TRANSMITTER_ID_UNAVAILABLE_VALUE),
+	  serverID(0),
+	  expectedMessageCounter(0),
+	  sentMessageCounter(0),
+	  socketsReceivedFromController(true),
+	  on(true) {
+	this->initialize();
+	this->startHEABCheck();
+}
+
+void TestObject::initialize() {
 	CartesianPosition initPos;
 	SpeedType initSpd;
 	AccelerationType initAcc;
 	TestModeType initTm;
-	std::cout << "Listen IP: " << listenIP << std::endl;
-	localIP = listenIP;
+	localIP = "0.0.0.0";
 	initPos.isHeadingValid = false;
 	initPos.isPositionValid = false;
 	initSpd.isLateralValid = false;
 	initSpd.isLongitudinalValid = false;
 	initAcc.isLateralValid = false;
 	initAcc.isLongitudinalValid = false;
-	transmitterID = TRANSMITTER_ID_UNAVAILABLE_VALUE;
 	initTm = TEST_MODE_UNAVAILABLE;
 	this->setPosition(initPos);
 	this->setSpeed(initSpd);
 	this->setAcceleration(initAcc);
 	this->state = this->createInit();
-	this->startHandleTCP();
-	this->startHEABCheck();
-	this->startHandleUDP();
-	this->startSendMonr();
+
 	this->stateChangeSig.connect(&TestObject::onStateChange, this);
 	this->osemSig.connect(&TestObject::onOSEM, this);
 	this->heabSig.connect(&TestObject::onHEAB, this);
@@ -50,11 +73,15 @@ TestObject::TestObject(const std::string& listenIP)
 TestObject::~TestObject() {
 	shutdown();
 	try {
-		udpReceiveThread.join();
+		if (!this->socketsReceivedFromController) {
+			udpReceiveThread.join();
+		}
 		monrThread.join();
 		tcpReceiveThread.join();
 		heabTimeoutThread.join();
-		delayedStrtThread.join();
+		if (delayedStrtThread.joinable()) {
+			delayedStrtThread.join();
+		}
 	} catch (std::system_error& e) {
 		std::cerr << "Error joining threads in TestObject destructor: " << e.what() << std::endl;
 	}
@@ -68,39 +95,58 @@ void TestObject::shutdown() {
 void TestObject::disconnect() {
 	try {
 		ctrlChannel.disconnect();  // Close TCP socket
-	} catch (const std::exception& e) {
+	} catch (boost::system::system_error& e) {
 		std::cerr << "TCP socket close error: " << e.what() << '\n';
 	}
 
-	processChannel.disconnect();  // Close UDP socket
+	if (!this->socketsReceivedFromController) {
+		processChannel.disconnect();  // Close UDP socket
+	}
+	else {
+		this->on = false;
+	}
 	awaitingFirstHeab = true;	  // Reset HEAB timeout check
+}
 
+MessageHeaderType *TestObject::populateMessageHeader(MessageHeaderType *header) {
+	memset(header, 0, sizeof(MessageHeaderType));
+	header->transmitterID = this->transmitterID;
+	header->receiverID = this->serverID;
+	header->messageCounter = this->sentMessageCounter++;
+	return header;
 }
 
 void TestObject::receiveTCP() {
 	std::stringstream ss;
+
 	while (this->on) {
-		ss.str(std::string());
-		ss << "Awaiting TCP connection from ATOS..." << std::endl;
-		std::cout << ss.str();
-
-		try {
-			ctrlChannel.acceptConnection();
-		} catch (boost::system::system_error& e) {
+		// socketsReceivedFromController means that the TCP socket was 
+		// created by a controlling system that provides an already 
+		// open and ready to communicate socket
+		if (!this->socketsReceivedFromController) {
 			ss.str(std::string());
-			ss << "TCP accept failed: " << e.what() << std::endl;
+			ss << "Awaiting TCP connection from ATOS..." << std::endl;
 			std::cout << ss.str();
-			throw e;
-		}
-		ss.str(std::string());
-		ss << "TCP connection to ATOS running at " << ctrlChannel.getEndPoint().address().to_string()
-		   << " established." << std::endl;
-		std::cout << ss.str();
 
-		state->handleEvent(*this, ISO22133::Events::B);
+			try {
+				ctrlChannel.acceptConnection();
+			} catch (boost::system::system_error& e) {
+				ss.str(std::string());
+				ss << "TCP accept failed: " << e.what() << std::endl;
+				std::cout << ss.str();
+				throw e;
+			}
+			ss.str(std::string());
+			ss << "TCP connection to ATOS running at " << ctrlChannel.getEndPoint().address().to_string()
+			<< " established." << std::endl;
+			std::cout << ss.str();
+			state->handleEvent(*this, ISO22133::Events::B);
+		}
+
 		try {
 			while (true) {
 				auto data = ctrlChannel.receive();
+
 				int nBytesHandled = 0;
 				do {
 					try {
@@ -113,7 +159,7 @@ void TestObject::receiveTCP() {
 				} while (data.size() > 0);
 			}
 		} catch (boost::system::system_error&) {
-			std::cerr << "Connection to ATOS lost" << std::endl;
+			std::cerr << transmitterID << " lost connection to ATOS" << std::endl;
 			disconnect();
 			state->handleEvent(*this, ISO22133::Events::L);
 		}
@@ -127,7 +173,8 @@ void TestObject::sendMONR(bool debug) {
 	time.tv_sec = nanos / 1e9;
 	time.tv_usec = nanos / 1e3 - time.tv_sec * 1e6;
 
-	auto nBytesWritten = encodeMONRMessage(&time, this->position, this->speed, this->acceleration,
+	MessageHeaderType header;
+	auto nBytesWritten = encodeMONRMessage(this->populateMessageHeader(&header), &time, this->position, this->speed, this->acceleration,
 									this->driveDirection, this->state->getStateID(), this->readyToArm,
 									this->errorState, 0x0000, buffer.data(), buffer.size(), debug);
 
@@ -143,7 +190,9 @@ void TestObject::sendGREM(HeaderType msgHeader, GeneralResponseStatus responseCo
 	grem.receivedHeaderMessageID = msgHeader.messageID;
 	grem.receivedHeaderMessageCounter = msgHeader.messageCounter;
 	grem.responseCode = responseCode;
-	auto nBytesWritten = encodeGREMMessage(&grem, buffer.data(), buffer.size(), debug);
+
+	MessageHeaderType header;
+	auto nBytesWritten = encodeGREMMessage(this->populateMessageHeader(&header), &grem, buffer.data(), buffer.size(), debug);
 
 	if (nBytesWritten < 0) { throw(std::invalid_argument("Failed to encode GREM data"));}
 	ctrlChannel.send(buffer, static_cast<size_t>(nBytesWritten));
@@ -163,6 +212,9 @@ void TestObject::sendMonrLoop() {
 }
 
 void TestObject::receiveUDP() {
+	if (this->socketsReceivedFromController) {
+		return;
+	}
 	std::stringstream ss;
 	while (this->on) {
 		if (ctrlChannel.isOpen()) {
@@ -218,6 +270,19 @@ void TestObject::onHeabTimeout() {
 	this->state->handleEvent(*this, Events::L);
 }
 
+void TestObject::setProcessChannelEndpoint(int udpSocket, char *addr, const uint32_t port) { 
+	boost::asio::ip::udp::endpoint udpEp = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(addr), port);
+	processChannel.setEndpoint(udpSocket, udpEp);
+}
+
+int TestObject::handleMessage(char *buffer, int bufferLen) {
+	std::vector<char> data;
+	for (int i = 0; i < bufferLen; i++) {
+		data.push_back(buffer[i]);
+	}
+	return handleMessage(data);
+}
+
 int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 	std::lock_guard<std::mutex> lock(this->recvMutex);	// Both TCP and UDP threads end up in here
 	int bytesHandled = 0;
@@ -237,6 +302,14 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 		msgHeader.messageID = MESSAGE_ID_TRAJ;
 	}
 
+	if (expectedMessageCounter != msgHeader.messageCounter) {
+		std::stringstream ss;
+		ss << "Received message counter " << msgHeader.messageCounter << " does not match expected "
+		<< expectedMessageCounter << std::endl;
+		std::cerr << ss.str();
+	}
+
+	expectedMessageCounter = msgHeader.messageCounter + 1;
 	switch (msgHeader.messageID) {
 	case MESSAGE_ID_TRAJ:
 		bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer, false);
@@ -253,7 +326,6 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding OSEM");
 		}
-		std::cout << "Received OSEM \n";
 		this->state->handleOSEM(*this, OSEMstruct);
 		break;
 
@@ -278,7 +350,6 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 
 	case MESSAGE_ID_HEAB:
 		HeabMessageDataType HEABdata;
-
 		bytesHandled = decodeHEABMessage(dataBuffer.data(), dataBuffer.size(), currentTime, &HEABdata, debug);
 		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding HEAB");

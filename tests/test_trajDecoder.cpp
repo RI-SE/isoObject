@@ -14,7 +14,10 @@ class DecodeTraj : public ::testing::Test {
 		auto bufferLength = sizeof(encodeBuffer);
 		bool debug = false;
 
+		MessageHeaderType header = {0};
+
 		auto offset = encodeTRAJMessageHeader(
+			&header,
 			trajectoryID,
 			TRAJECTORY_INFO_RELATIVE_TO_OBJECT,
 			trajectoryName,
