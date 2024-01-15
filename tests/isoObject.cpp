@@ -48,7 +48,7 @@ class ATOSEmulator
 		messageCounter(messCnt),
 		transmitterID(transmitterID) {
 		}
-		~ATOSEmulator() {
+		~ControlCenterEmulator() {
 
 		}
 		void connect() {
