@@ -82,7 +82,7 @@ public:
 
 
 	/** SWIG Wrappers **/
-	bool isAwaitingFirstHeab() { return awaitingFirstHeab;}
+	bool isAwaitingFirstHeab() const { return awaitingFirstHeab;}
 	//! Set the endpoint for the process channel
 	void setProcessChannelEndpoint(int udpSocket, char *addr, const uint32_t port);
 	//! Wrapper for handling function that converts to char vector
