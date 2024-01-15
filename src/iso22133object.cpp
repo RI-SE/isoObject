@@ -16,7 +16,7 @@ TestObject::TestObject(const std::string& listenIP)
 	  ctrlChannel(listenIP, ISO_22133_DEFAULT_OBJECT_TCP_PORT),
 	  processChannel(listenIP, ISO_22133_OBJECT_UDP_PORT),
 	  transmitterID(TRANSMITTER_ID_UNAVAILABLE_VALUE),
-	  serverID(0),
+	  receiverID(DEFAULT_CONTROL_CENTER_ID),
 	  expectedMessageCounter(0),
 	  sentMessageCounter(0),
 	  socketsReceivedFromController(false),
