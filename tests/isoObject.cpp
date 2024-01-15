@@ -30,10 +30,6 @@ class SimulatedTestObject : public TestObject {
 	}
 	int handleUDPMessage(char *buffer, int bufferLen, int udpSocket, char *addr, const uint32_t port) {
 		if (isAwaitingFirstHeab()) {
-			std::stringstream ss;
-			ss.str(std::string());
-			ss << "Received UDP data from ATOS" << std::endl;
-			std::cout << ss.str();
 			this->setProcessChannelEndpoint(udpSocket, addr, port);
 			startSendMonr(); // UDP connection established, start sending MONR
 		}
