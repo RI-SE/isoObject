@@ -256,7 +256,6 @@ void TestObject::checkHeabTimeout() {
 }
 
 void TestObject::checkHeabLoop() {
-	using namespace std::chrono;
 	while (this->on) {
 		auto t = std::chrono::steady_clock::now();
 		checkHeabTimeout();
