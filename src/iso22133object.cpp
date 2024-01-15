@@ -111,7 +111,7 @@ void TestObject::disconnect() {
 MessageHeaderType *TestObject::populateMessageHeader(MessageHeaderType *header) {
 	memset(header, 0, sizeof(MessageHeaderType));
 	header->transmitterID = this->transmitterID;
-	header->receiverID = this->serverID;
+	header->receiverID = this->receiverID;
 	header->messageCounter = this->sentMessageCounter++;
 	return header;
 }
