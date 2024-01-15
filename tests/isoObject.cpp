@@ -323,8 +323,8 @@ protected:
 
 	std::vector<ip::tcp::socket*> sockets;
 	std::map<int, ip::udp::endpoint> udpEndpoints;
-	ATOSEmulator obj1Conn;
-	ATOSEmulator obj2Conn;
+	ControlCenterEmulator obj1Conn;
+	ControlCenterEmulator obj2Conn;
 	ControllerEmulator listener;
 	SimulatedTestObject *obj1;
 	SimulatedTestObject *obj2;
