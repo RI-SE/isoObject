@@ -46,6 +46,9 @@ class TcpServer {
 	};
 
 	void acceptConnection() {
+		if (!this->acceptIncoming) {
+			throw std::runtime_error("Cannot accept connections on a socket that is not listening");
+		}
 		acceptor.async_accept(socket, [this](const boost::system::error_code& error) {
 			if (error) {
 				// Accepting failed, handle the error

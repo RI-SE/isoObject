@@ -28,6 +28,8 @@ class Aborting;
 class PreArming;
 class PreRunning;
 
+
+#define DEFAULT_CONTROL_CENTER_ID 0 // 0 is reserved for the control center
 /**
  * @brief The TestObject class is an abstract form of  a
  *          ISO22133 object. It needs to be ineherited and
@@ -50,7 +52,7 @@ class TestObject {
 
 public:
 	TestObject(const std::string& listenIP = "0.0.0.0");
-	TestObject(int tcpSocket);
+	TestObject(int tcpSocketNativeHandle);
 	virtual ~TestObject();
 
 	void disconnect();
@@ -77,7 +79,7 @@ public:
 	GeographicPositionType getOrigin() const { return origin; }
 	std::string getLocalIP() const { return localIP; }
 	uint32_t getTransmitterID() const { return transmitterID; }
-	uint32_t getServerID() const { return serverID; }
+	uint32_t getReceiverID() const { return receiverID; }
 	ObjectSettingsType getObjectSettings() const { return objectSettings; }
 
 
@@ -193,10 +195,15 @@ private:
 	void setNetworkDelay(std::chrono::milliseconds);
 
 	//! Get the Next message counter to send
-	char getMessageCounter() { return sentMessageCounter = (sentMessageCounter + 1) % 256; }
+	char getNextSentMessageCounter() { return sentMessageCounter = (sentMessageCounter + 1) % 256; }
 
 	//! Check if the received message counter is correct and update regardless to the next expected
-	void checkAndUpdateMessageCounter(const char receivedMessageCounter);
+	void checkAndUpdateMessageCounter(const char receivedMessageCounter) {
+		if (receivedMessageCounter != expectedMessageCounter) {
+			std::cout << "Message counter mismatch. Expected: " << (int)expectedMessageCounter << " Received: " << (int)receivedMessageCounter << std::endl;
+		}
+		expectedMessageCounter = (expectedMessageCounter + 1) % 256;
+	}
 
 	sigslot::signal<>heabTimeout;
 	std::mutex recvMutex;
@@ -224,7 +231,7 @@ private:
 	std::atomic<ObjectStateID> objectState  { ISO_OBJECT_STATE_UNKNOWN };
 	std::atomic<int> readyToArm { OBJECT_READY_TO_ARM_UNAVAILABLE };
 	std::atomic<int> transmitterID;
-	std::atomic<int> serverID;
+	std::atomic<int> receiverID;
 	std::atomic<char> expectedMessageCounter;
 	std::atomic<char> sentMessageCounter;
 	std::atomic<bool> socketsReceivedFromController { false };

@@ -37,10 +37,10 @@ class SimulatedTestObject : public TestObject {
 	}
 };
 
-class ATOSEmulator
+class ControlCenterEmulator
 {
 	public:
-		ATOSEmulator(const std::string& ip = "0.0.0.0", int id = 1, int transmitterID = -1, char messCnt = 0) : 
+		ControlCenterEmulator(const std::string& ip = "0.0.0.0", int id = 1, int transmitterID = -1, char messCnt = 0) : 
 		listenIP(ip),
 		tcpSocket(context),
 		udpSocket(context, ip::udp::v4()),
@@ -100,8 +100,8 @@ class ATOSEmulator
 			sendUDP(transmitBuffer);
 		}
 
-		void sendOSEM() {
-			ObjectSettingsType objSettings;
+		void buildOSEM(ObjectSettingsType &objSettings) {
+			
 			objSettings.desiredID.transmitter = receiverID;
 			objSettings.desiredID.controlCentre = transmitterID;
 			objSettings.desiredID.subTransmitter = this->transmitterID;
@@ -127,8 +127,11 @@ class ATOSEmulator
 
 			objSettings.timeServer.ip = 0;
 			objSettings.timeServer.port = 0;
+		}
 
-
+		void sendOSEM() {
+			ObjectSettingsType objSettings;
+			buildOSEM(objSettings);
 			std::vector<char> transmitBuffer(1024);
 			MessageHeaderType header;
 			header.receiverID = this->receiverID;
@@ -205,17 +208,17 @@ class ControllerEmulator
 		int timeout;
 };
 
-class IsoObjectCreateMultiple : public ::testing::Test
+class test_multipleSimulatedISOObjects : public ::testing::Test
 {
 protected:
-	IsoObjectCreateMultiple():
+	test_multipleSimulatedISOObjects():
 	obj1Conn("127.0.0.1", 1, 0xF00F),
 	obj2Conn("127.0.0.1", 2, 0xF00F)
 	{
-		threadListener = std::thread(&IsoObjectCreateMultiple::tcpListen, this);
+		threadListener = std::thread(&test_multipleSimulatedISOObjects::tcpListen, this);
 		obj1Conn.connect();
 		threadListener.join();
-		threadListener = std::thread(&IsoObjectCreateMultiple::tcpListen, this);
+		threadListener = std::thread(&test_multipleSimulatedISOObjects::tcpListen, this);
 		obj2Conn.connect();
 		threadListener.join();
 		obj1 = new SimulatedTestObject(sockets[0]->native_handle());
@@ -238,13 +241,13 @@ protected:
 		spd.isLongitudinalValid = true;
 		obj1->setSpeed(spd);
 		obj2->setSpeed(spd);
-		threadListener = std::thread(&IsoObjectCreateMultiple::udpReceive, this);
+		threadListener = std::thread(&test_multipleSimulatedISOObjects::udpReceive, this);
 	
 	}
 	void SetUp() override {}
 
 	void TearDown() override {}
-	virtual ~IsoObjectCreateMultiple() {
+	virtual ~test_multipleSimulatedISOObjects() {
 		listenToUDP = false;
 		obj1Conn.sendUDPNoop();
 		obj1Conn.disconnect();
@@ -334,7 +337,7 @@ protected:
 	bool listenToUDP = true;
 };
 
-TEST_F(IsoObjectCreateMultiple, HEAB_Sent_And_MONR_Not_received_due_to_no_OSEM) {
+TEST_F(test_multipleSimulatedISOObjects, HEAB_Sent_And_MONR_Not_received_due_to_no_OSEM) {
 	ip::udp::endpoint ep1, ep2;
 	std::vector<char> receivedData1(4096);
 	std::vector<char> receivedData2(4096);
@@ -368,7 +371,7 @@ TEST_F(IsoObjectCreateMultiple, HEAB_Sent_And_MONR_Not_received_due_to_no_OSEM) 
 	timeoutThread2.join();
 }
 
-TEST_F(IsoObjectCreateMultiple, OSEM_Sent_MONR_Received_as_READY) {
+TEST_F(test_multipleSimulatedISOObjects, OSEM_Sent_MONR_Received_as_READY) {
 	ip::udp::endpoint ep1, ep2;
 	std::vector<char> receivedData1(4096);
 	std::vector<char> receivedData2(4096);
