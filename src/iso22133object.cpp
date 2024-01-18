@@ -269,9 +269,21 @@ void TestObject::onHeabTimeout() {
 	this->state->handleEvent(*this, Events::L);
 }
 
-void TestObject::setProcessChannelEndpoint(int udpSocket, char *addr, const uint32_t port) { 
-	boost::asio::ip::udp::endpoint udpEp = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(addr), port);
-	processChannel.setEndpoint(udpSocket, udpEp);
+int TestObject::handleTCPMessage(char *buffer, int bufferLen) {
+	state->handleEvent(*this, ISO22133::Events::B);
+	int num_bytes_handled = this->handleMessage(buffer, bufferLen);
+	this->startHandleTCP();
+	return num_bytes_handled;
+}
+
+int TestObject::handleUDPMessage(char *buffer, int bufferLen, int udpSocket, char *addr, const uint32_t port) {
+	if (awaitingFirstHeab) {
+		boost::asio::ip::udp::endpoint udpEp = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(addr), port);
+		processChannel.setEndpoint(udpSocket, udpEp);;
+		this->startSendMonr();
+	}
+
+	return this->handleMessage(buffer, bufferLen);
 }
 
 int TestObject::handleMessage(char *buffer, int bufferLen) {
@@ -301,12 +313,12 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 		msgHeader.messageID = MESSAGE_ID_TRAJ;
 	}
 
-	if (expectedMessageCounter != msgHeader.messageCounter) {
-		std::stringstream ss;
-		ss << "Received message counter " << msgHeader.messageCounter << " does not match expected "
-		<< expectedMessageCounter << std::endl;
-		std::cerr << ss.str();
-	}
+	// if (expectedMessageCounter != msgHeader.messageCounter) {
+	// 	std::stringstream ss;
+	// 	ss << "Received message counter " << msgHeader.messageCounter << " does not match expected "
+	// 	<< expectedMessageCounter << std::endl;
+	// 	std::cerr << ss.str();
+	// }
 
 	expectedMessageCounter = msgHeader.messageCounter + 1;
 	switch (msgHeader.messageID) {

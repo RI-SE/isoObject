@@ -69,6 +69,7 @@ public:
 	void setErrorState(const char err) { errorState = err; }
 
 	std::string getCurrentStateName() const { return state->getName(); }
+	int getCurrentStateID() const { return state->getStateID(); }
 	std::string getName() const { return name; }
 	CartesianPosition getPosition() const { return position; }
 	SpeedType getSpeed() const { return speed; }
@@ -82,15 +83,11 @@ public:
 	uint32_t getReceiverID() const { return receiverID; }
 	ObjectSettingsType getObjectSettings() const { return objectSettings; }
 
-
 	/** SWIG Wrappers **/
-	bool isAwaitingFirstHeab() const { return awaitingFirstHeab;}
-	//! Set the endpoint for the process channel
-	void setProcessChannelEndpoint(int udpSocket, char *addr, const uint32_t port);
-	//! Wrapper for handling function that converts to char vector
-	int handleMessage(char *buffer, int bufferLen);
-	//! Wrapper for state change requests
-	void requestStateChange(ISO22133::Events::EventType event) { state->handleEvent(*this, event); }
+	//! Wrapper for handling tcp messages when using an iso connector for simulation
+	int handleTCPMessage(char *buffer, int bufferLen);
+	//! Wrapper for handling udp message when using an iso connector for simulation
+	int handleUDPMessage(char *buffer, int bufferLen, int udpSocket, char *addr, const uint32_t port);
 
 	//! Used to start the threads
 	void startHandleTCP() { tcpReceiveThread = std::thread(&TestObject::receiveTCP, this); }
@@ -99,6 +96,9 @@ public:
 	void startSendMonr()  { monrThread = std::thread(&TestObject::sendMonrLoop, this); }
 
 protected:
+	//! Wrapper for handling function that converts to char vector
+	int handleMessage(char *buffer, int bufferLen);
+
 	//! Fill message header with receiver/transmitter id and messageCounter. Returns pointer to input header.
 	MessageHeaderType *populateMessageHeader(MessageHeaderType *header);
 
