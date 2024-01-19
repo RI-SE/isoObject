@@ -83,13 +83,13 @@ public:
 	uint32_t getReceiverID() const { return receiverID; }
 	ObjectSettingsType getObjectSettings() const { return objectSettings; }
 
-#ifdef WITH_SWIG
+
 	/** SWIG Wrappers **/
 	//! Wrapper for handling tcp messages when using an iso connector for simulation
 	int handleTCPMessage(char *buffer, int bufferLen);
 	//! Wrapper for handling udp message when using an iso connector for simulation
 	int handleUDPMessage(char *buffer, int bufferLen, int udpSocket, char *addr, const uint32_t port);
-#endif
+
 
 	//! Used to start the threads
 	void startHandleTCP() { tcpReceiveThread = std::thread(&TestObject::receiveTCP, this); }
