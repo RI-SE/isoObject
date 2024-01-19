@@ -28,13 +28,6 @@ class SimulatedTestObject : public TestObject {
 		this->startHandleTCP();
 		state->handleEvent(*this, ISO22133::Events::B);
 	}
-	int handleUDPMessage(char *buffer, int bufferLen, int udpSocket, char *addr, const uint32_t port) {
-		if (isAwaitingFirstHeab()) {
-			this->setProcessChannelEndpoint(udpSocket, addr, port);
-			startSendMonr(); // UDP connection established, start sending MONR
-		}
-		return handleMessage(buffer, bufferLen);
-	}
 };
 
 class ControlCenterEmulator
