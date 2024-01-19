@@ -132,3 +132,8 @@ ISO22133::PreArming* myObject::createPreArming() const override {
     return dynamic_cast<ISO22133::PreArming*>(new myPreArming);
 }
 ```
+
+## Future Work
+
+### IsoObject for simulation
+To improve performance and reliability, the work done in other repos to create a isolated iso-object for simulation can be extracted from their respective repository and this one and converted to a c++ version. The current python one is suffering from performance issues when communicating with ATOS.
