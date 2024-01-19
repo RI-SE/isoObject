@@ -269,6 +269,7 @@ void TestObject::onHeabTimeout() {
 	this->state->handleEvent(*this, Events::L);
 }
 
+#ifdef WITH_SWIG
 int TestObject::handleTCPMessage(char *buffer, int bufferLen) {
 	state->handleEvent(*this, ISO22133::Events::B);
 	int num_bytes_handled = this->handleMessage(buffer, bufferLen);
@@ -285,6 +286,7 @@ int TestObject::handleUDPMessage(char *buffer, int bufferLen, int udpSocket, cha
 
 	return this->handleMessage(buffer, bufferLen);
 }
+#endif
 
 int TestObject::handleMessage(char *buffer, int bufferLen) {
 	std::vector<char> data;
