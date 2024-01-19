@@ -28,6 +28,8 @@ class Aborting;
 class PreArming;
 class PreRunning;
 
+
+#define DEFAULT_CONTROL_CENTER_ID 0 // 0 is reserved for the control center
 /**
  * @brief The TestObject class is an abstract form of  a
  *          ISO22133 object. It needs to be ineherited and
@@ -50,9 +52,11 @@ class TestObject {
 
 public:
 	TestObject(const std::string& listenIP = "0.0.0.0");
+	TestObject(int tcpSocketNativeHandle);
 	virtual ~TestObject();
 
 	void disconnect();
+	void shutdown();
 
 	void setPosition(const CartesianPosition& pos) { position = pos; }
 	void setSpeed(const SpeedType& spd) { speed = spd; }
@@ -65,6 +69,7 @@ public:
 	void setErrorState(const char err) { errorState = err; }
 
 	std::string getCurrentStateName() const { return state->getName(); }
+	int getCurrentStateID() const { return state->getStateID(); }
 	std::string getName() const { return name; }
 	CartesianPosition getPosition() const { return position; }
 	SpeedType getSpeed() const { return speed; }
@@ -75,11 +80,29 @@ public:
 	GeographicPositionType getOrigin() const { return origin; }
 	std::string getLocalIP() const { return localIP; }
 	uint32_t getTransmitterID() const { return transmitterID; }
+	uint32_t getReceiverID() const { return receiverID; }
 	ObjectSettingsType getObjectSettings() const { return objectSettings; }
 
+#ifdef WITH_SWIG
+	/** SWIG Wrappers **/
+	//! Wrapper for handling tcp messages when using an iso connector for simulation
+	int handleTCPMessage(char *buffer, int bufferLen);
+	//! Wrapper for handling udp message when using an iso connector for simulation
+	int handleUDPMessage(char *buffer, int bufferLen, int udpSocket, char *addr, const uint32_t port);
+#endif
 
+	//! Used to start the threads
+	void startHandleTCP() { tcpReceiveThread = std::thread(&TestObject::receiveTCP, this); }
+	void startHandleUDP() { udpReceiveThread = std::thread(&TestObject::receiveUDP, this); }
+	void startHEABCheck() { heabTimeoutThread = std::thread(&TestObject::checkHeabLoop, this); }
+	void startSendMonr()  { monrThread = std::thread(&TestObject::sendMonrLoop, this); }
 
 protected:
+	//! Wrapper for handling function that converts to char vector
+	int handleMessage(char *buffer, int bufferLen);
+
+	//! Fill message header with receiver/transmitter id and messageCounter. Returns pointer to input header.
+	MessageHeaderType *populateMessageHeader(MessageHeaderType *header);
 
 	//! Pure virtual safety function that must be implemented by the user.
 	virtual void handleAbort() { throw std::logic_error("Use of unimplemented abort handler"); }
@@ -115,7 +138,6 @@ protected:
 	//! Must be overridden if modifying the Pre-Running state
 	virtual PreRunning* createPreRunning() const { return new PreRunning; }
 
-
 	//! Signals for events
 	sigslot::signal<> stateChangeSig;
 	sigslot::signal<ObjectSettingsType&> osemSig;
@@ -146,6 +168,8 @@ protected:
 
 	ISO22133::State* state;
 private:
+	//! Initializer for commonalities of the constructs
+	void initialize();
 
 	//! TCP receiver loop that should be run in its own thread.
 	void receiveTCP();
@@ -155,12 +179,6 @@ private:
 	void checkHeabLoop();
 	//! MONR sending loop that should be run in its own thread.
 	void sendMonrLoop();
-	
-	//! Used to start the threads
-	void startHandleTCP() { tcpReceiveThread = std::thread(&TestObject::receiveTCP, this); }
-	void startHandleUDP() { udpReceiveThread = std::thread(&TestObject::receiveUDP, this); }
-	void startHEABCheck() { heabTimeoutThread = std::thread(&TestObject::checkHeabLoop, this); }
-	void startSendMonr()  { monrThread = std::thread(&TestObject::sendMonrLoop, this); }
 	
 	//! Function for handling received ISO messages. Calls corresponding
 	//! handler in the current state.
@@ -178,11 +196,21 @@ private:
 	//! Set estimated network delay from HEAB times
 	void setNetworkDelay(std::chrono::milliseconds);
 
+	//! Get the Next message counter to send
+	char getNextSentMessageCounter() { return sentMessageCounter = (sentMessageCounter + 1) % 256; }
+
+	//! Check if the received message counter is correct and update regardless to the next expected
+	void checkAndUpdateMessageCounter(const char receivedMessageCounter) {
+		if (receivedMessageCounter != expectedMessageCounter) {
+			std::cout << "Message counter mismatch. Expected: " << (int)expectedMessageCounter << " Received: " << (int)receivedMessageCounter << std::endl;
+		}
+		expectedMessageCounter = (expectedMessageCounter + 1) % 256;
+	}
+
 	sigslot::signal<>heabTimeout;
 	std::mutex recvMutex;
 	std::mutex heabMutex;
 	std::mutex netwrkDelayMutex;
-    std::mutex disconnectMutex;
 	std::string localIP;
 	std::thread tcpReceiveThread;
 	std::thread udpReceiveThread;
@@ -205,8 +233,13 @@ private:
 	std::atomic<ObjectStateID> objectState  { ISO_OBJECT_STATE_UNKNOWN };
 	std::atomic<int> readyToArm { OBJECT_READY_TO_ARM_UNAVAILABLE };
 	std::atomic<int> transmitterID;
+	std::atomic<int> receiverID;
+	std::atomic<char> expectedMessageCounter;
+	std::atomic<char> sentMessageCounter;
+	std::atomic<bool> socketsReceivedFromController { false };
 	std::atomic<char> errorState { 0 };
 	std::atomic<bool> awaitingFirstHeab { true };
+	std::atomic<bool> osemReceived { false };
 	std::atomic<bool> on { true };
 
 	std::chrono::milliseconds estimatedNetworkDelay = std::chrono::milliseconds(0);

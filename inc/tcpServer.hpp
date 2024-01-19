@@ -14,23 +14,55 @@
  */
 class TcpServer {
    public:
-	TcpServer(std::string ip, uint32_t port) : acceptor(context, boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::from_string(ip), port)), socket(context) {
+	TcpServer(std::string ip, uint32_t port) :
+	acceptor(context, boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::from_string(ip), port)),
+	socket(context),
+	acceptIncoming(true) {
 		setBufferSize(defaultBufferSize);
 	};
+
+	TcpServer(int sock) : 
+	socket(context),
+	acceptor(context),
+	acceptIncoming(false) {
+		setBufferSize(defaultBufferSize);
+		socket.assign(boost::asio::ip::tcp::v4(), sock);
+	};
+
 	virtual ~TcpServer() = default;
 	void disconnect() {
 		try {
-			socket.shutdown(boost::asio::socket_base::shutdown_both);
-			socket.close();
-		} catch (boost::system::system_error& e) {}
+			if (this->acceptIncoming) {
+				acceptor.cancel();
+			}
+			if (socket.is_open()){
+				socket.shutdown(boost::asio::socket_base::shutdown_both);
+				socket.close();
+			}
+			context.reset();
+		} catch (boost::system::system_error& e) {
+			std::cerr << "Error when closing socket: " << e.what() << std::endl;
+		}
 	};
 
 	void acceptConnection() {
-		try {
-			acceptor.accept(socket);
-		} catch (boost::system::system_error& e) {
-			std::cerr << "TCP socket accept failed: " << e.what() << std::endl;
+		if (!this->acceptIncoming) {
+			throw std::runtime_error("Cannot accept connections on a socket that is not listening");
 		}
+		acceptor.async_accept(socket, [this](const boost::system::error_code& error) {
+			if (error) {
+				// Accepting failed, handle the error
+				// Print the error message for example
+				if (error == boost::asio::error::operation_aborted) {
+					std::cerr << "TCP Accept aborted" << std::endl;
+				} else {
+					std::cerr << "TCP Accept error: " << error.message() << std::endl;
+					throw boost::system::system_error(boost::asio::error::eof);
+				}
+			}
+		});
+		context.run_one();
+		context.restart();
 	}
 
 	void setBufferSize(size_t size) { dataBuffer.resize(size); };
@@ -77,6 +109,7 @@ class TcpServer {
    private:
 	std::vector<char> dataBuffer;
 	size_t defaultBufferSize = 4096;
+	bool acceptIncoming;
 
 	boost::asio::io_context context;
 	boost::asio::ip::tcp::acceptor acceptor;

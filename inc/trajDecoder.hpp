@@ -6,6 +6,7 @@
 #include <atomic>
 
 #include "iso22133.h"
+#include "traj.h"
 
 /**
  * @brief Class for decoding TRAJ messages. Stores TRAJ data and

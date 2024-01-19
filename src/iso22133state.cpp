@@ -109,12 +109,11 @@ void ISO22133::State::handleOSTM(TestObject& obj, ObjectCommandType& ostm) {
 void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 	obj.origin = osem.coordinateSystemOrigin;
 	obj.transmitterID = osem.desiredID.transmitter;
+	obj.receiverID = osem.desiredID.controlCentre;
 
 	std::stringstream msg;	// Remove risk of not printing the whole message due to threading
 	msg << "Got OSEM - set transmitter ID to " << obj.transmitterID << std::endl;
 	std::cout << msg.str();
-	// This sets the transmitter ID for ISO22133 encoder
-	setTransmitterID(obj.transmitterID);
 
 	obj.expectedHeartbeatPeriod = std::chrono::milliseconds(1000 / (uint)osem.rate.heab);
 	msg.str(std::string());
@@ -124,7 +123,8 @@ void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 
 	obj.heartbeatTimeout = 10*obj.expectedHeartbeatPeriod;
 	msg.str(std::string());
-	msg << "Set HEAB timeout to" << obj.heartbeatTimeout.count() << std::endl;
+	msg << "Set HEAB timeout to " << obj.heartbeatTimeout.count() << " ms. ("
+		<< 1000 / obj.heartbeatTimeout.count() << " Hz) " << std::endl;
 	std::cout << msg.str();
 
 	obj.monrPeriod = std::chrono::milliseconds(1000 / (uint)osem.rate.monr);
@@ -210,10 +210,6 @@ void ISO22133::State::handleTRAJ(TestObject& obj, std::atomic<HeaderType>& msgHe
 		// Acknowledge TRAJ chunk with GREM when in online planned mode
 		obj.sendGREM(msgHeader, GREM_CHUNK_RECEIVED, false);
 	}
-}
-
-void ISO22133::Init::onExit(TestObject& obj) {
-	obj.startHandleUDP();
 }
 
 /**
