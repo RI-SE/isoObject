@@ -5,6 +5,7 @@
 #include <mutex>
 #include <iostream>
 #include <functional>
+#include <atomic>
 extern "C"{
 #include "iso22133.h"
 #include "header.h"
