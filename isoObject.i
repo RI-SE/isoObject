@@ -19,7 +19,7 @@
 %rename(LessThan) operator<(const Transition &lhs, const Transition &rhs);
 
 %typemap(in) (char *buffer, int bufferLen) {
-    Py_ssize_t len;
+    Py_size_t len;
     PyBytes_AsStringAndSize($input, &$1, &len);
     $2 = (int)len;
 }
@@ -50,7 +50,7 @@ namespace std {
 }; 
 
 typedef double double_t;
-typedef long int ssize_t;
+typedef long int size_t;
 
 struct timeval {
 long int tv_sec;
