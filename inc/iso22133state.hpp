@@ -1,11 +1,18 @@
 #pragma once
 
+#ifdef ISO_OBJECT_EXPORTS
+#define ISO22133STATE_API __declspec(dllexport)
+#define ISO22133DISARMED_API __declspec(dllexport)
+#else 
+#define ISO22133STATE_API __declspec(dllimport)
+#define ISO22133DISARMED_API __declspec(dllimport)
+#endif
+
 #include <set>
 #include <map>
 #include <mutex>
 #include <iostream>
 #include <functional>
-#include <atomic>
 extern "C"{
 #include "iso22133.h"
 #include "header.h"
@@ -91,7 +98,7 @@ static const std::map<ObjectStateID, std::string> stateNames = {
  *			ISO 22133. It is not intended to be used outside of
  *			iso22133object.h
  */
-class State {
+class ISO22133STATE_API State {
 	friend class TestObject;
 public:
 	State() {}
@@ -163,7 +170,7 @@ public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_ARMED; }
 };
 
-class Disarmed : public State {
+class ISO22133DISARMED_API Disarmed : public State {
 public:
 	virtual ObjectStateID getStateID() const final override { return ISO_OBJECT_STATE_DISARMED; }
 	virtual void onEnter(TestObject& obj);

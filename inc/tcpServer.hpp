@@ -1,5 +1,5 @@
 #pragma once
-
+#include <malloc.h> // Workaround for include issue caused by some boost lib?
 #include <boost/asio.hpp>
 #include <boost/system/system_error.hpp>
 #include <vector>

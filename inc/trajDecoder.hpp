@@ -5,8 +5,8 @@
 #include <mutex>
 #include <atomic>
 
-#include "iso22133.h"
 #include "traj.h"
+#include "iso22133.h"
 
 /**
  * @brief Class for decoding TRAJ messages. Stores TRAJ data and
@@ -16,7 +16,7 @@ class TrajDecoder {
 public: 
     TrajDecoder(bool debug) : debug(debug), expectingTRAJPoints(false) {};
     TrajDecoder() : debug(false), expectingTRAJPoints(false) {};
-    ssize_t DecodeTRAJ(std::vector<char>&, bool debug = false);
+    size_t DecodeTRAJ(std::vector<char>&, bool debug = false);
     bool ExpectingTrajPoints() const { return this->expectingTRAJPoints; }
     TrajectoryHeaderType getTrajHeader() const;
     std::vector<TrajectoryWaypointType> getTraj() const;
