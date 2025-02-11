@@ -1,18 +1,31 @@
 #pragma once
 
+#ifdef ISO_OBJECT_EXPORTS
+#define ISO22133OBJECT_API __declspec(dllexport)
+#else 
+#define ISO22133OBJECT_API __declspec(dllimport)
+#endif
+
 #include <string>
 #include <iostream>
 #include <thread> 
 #include <mutex>
 #include <atomic>
+#include <chrono>
 
 #include "header.h"
 #include "iso22133.h"
 #include "iso22133state.hpp"
 #include "trajDecoder.hpp"
 #include "signal.hpp"
-#include "tcpServer.hpp"
-#include "udpServer.hpp"
+#ifndef __INTELLISENSE__
+	#include "tcpServer.hpp"
+	#include "udpServer.hpp"
+#endif
+#ifdef __INTELLISENSE__ // Workaround for intellisense bug with boost for VS2017
+	#include "tcpServer_temp.hpp"
+	#include "udpServer_temp.hpp"
+#endif
 
 namespace ISO22133 {
 class State;
@@ -36,7 +49,7 @@ class PreRunning;
  *          the inheriting class must implement the pure
  *          virtual functions.
  */
-class TestObject {
+class ISO22133OBJECT_API TestObject {
 	friend class State;
 	friend class Unknown;
 	friend class Off;
@@ -96,6 +109,27 @@ public:
 	void startHandleUDP() { udpReceiveThread = std::thread(&TestObject::receiveUDP, this); }
 	void startHEABCheck() { heabTimeoutThread = std::thread(&TestObject::checkHeabLoop, this); }
 	void startSendMonr()  { monrThread = std::thread(&TestObject::sendMonrLoop, this); }
+
+	void abortRunning()
+	{
+
+        try {
+           state->handleEvent(*this, ISO22133::Events::W);
+        }
+        catch(const std::runtime_error& e) {
+           std::cerr << e.what() << '\n';
+        }
+	}
+
+	void confirmArming()
+	{
+		try {
+           state->handleEvent(*this, ISO22133::Events::N);
+        }
+        catch(const std::runtime_error& e) {
+           std::cerr << e.what() << '\n';
+        }
+	}
 
 protected:
 	//! Wrapper for handling function that converts to char vector
@@ -248,7 +282,7 @@ private:
 
 namespace std::chrono {
 template <typename Duration>
-struct timeval to_timeval(Duration&& d) {
+timeval to_timeval(Duration&& d) {
 	std::chrono::seconds const sec = std::chrono::duration_cast<std::chrono::seconds>(d);
 	struct timeval tv;
 	tv.tv_sec = sec.count();

@@ -4,7 +4,7 @@
 #include "trajDecoder.hpp"
 #include "iso22133.h"
 
-ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>& dataBuffer, bool debug) {
+size_t TrajDecoder::DecodeTRAJ(std::vector<char>& dataBuffer, bool debug) {
     std::lock_guard<std::mutex> lock(this->guard);
     copiedData = dataBuffer;
     int tmpByteCounter;

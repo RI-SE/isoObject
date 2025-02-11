@@ -10,7 +10,7 @@
  * @param event Event according to ISO22133::EventType
  */
 void ISO22133::State::handleEvent(TestObject& obj, const ISO22133::Events::EventType event) {
-	std::scoped_lock lock(eventMutex);
+	std::unique_lock<std::mutex> lock(eventMutex);
 	auto transition
 		= std::find_if(language.begin(), language.end(), [&event, this](const ISO22133::Transition& tr) {
 			  return event == tr.event && this->getStateID() == tr.source;
@@ -64,6 +64,7 @@ void ISO22133::State::handleEvent(TestObject& obj, const ISO22133::Events::Event
 		obj.state = obj.createUnknown();
 		break;
 	}
+	lock.unlock();
 	delete temp;
 
 	std::cout << "Entering state: " << obj.state->getName() << std::endl;
@@ -115,7 +116,7 @@ void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 	msg << "Got OSEM - set transmitter ID to " << obj.transmitterID << std::endl;
 	std::cout << msg.str();
 
-	obj.expectedHeartbeatPeriod = std::chrono::milliseconds(1000 / (uint)osem.rate.heab);
+	obj.expectedHeartbeatPeriod = std::chrono::milliseconds(1000 / (u_int)osem.rate.heab);
 	msg.str(std::string());
 	msg << "Setting HEAB period to " << obj.expectedHeartbeatPeriod.count() << " ms. ("
 		<< 1000 / obj.expectedHeartbeatPeriod.count() << " Hz) " << std::endl;
@@ -127,7 +128,7 @@ void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 		<< 1000 / obj.heartbeatTimeout.count() << " Hz) " << std::endl;
 	std::cout << msg.str();
 
-	obj.monrPeriod = std::chrono::milliseconds(1000 / (uint)osem.rate.monr);
+	obj.monrPeriod = std::chrono::milliseconds(1000 / (u_int)osem.rate.monr);
 	msg.str(std::string());
 	msg << "Setting MONR period to " << obj.monrPeriod.count() << " ms. ("
 		<< 1000 / obj.monrPeriod.count() << " Hz) " << std::endl;
@@ -162,7 +163,7 @@ void ISO22133::State::handleSTRT(TestObject& obj, StartMessageType& strt) {
 	);
 
 	struct timeval diff;
-	timersub(&strt.startTime, &currentTime, &diff);
+	timersub_w(&strt.startTime, &currentTime, &diff);
 	uint32_t diffmySec = diff.tv_sec*1e6 + diff.tv_usec;
 	int diffint = diff.tv_sec*1e6 + diff.tv_usec;
 	
