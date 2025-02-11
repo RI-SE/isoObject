@@ -395,8 +395,8 @@ void TestObject::handleHEAB(HeabMessageDataType& heab) {
 	// Requires the system clocks of ATOS 
 	// and object to be synced!!
 	auto heabTime = seconds(heab.dataTimestamp.tv_sec) + microseconds(heab.dataTimestamp.tv_usec);
-	auto networkDelay = system_clock::now().time_since_epoch() - heabTime;
-	setNetworkDelay(duration_cast<milliseconds>(networkDelay));
+	auto networkDelay = duration_cast<microseconds>(system_clock::now().time_since_epoch()) - heabTime;
+	setNetworkDelay(networkDelay);
 
 	if (networkDelay > maxSafeNetworkDelay) {
 		std::stringstream ss;
@@ -426,15 +426,15 @@ void TestObject::handleHEAB(HeabMessageDataType& heab) {
 	return;
 }
 
-std::chrono::milliseconds TestObject::getNetworkDelay() {
+std::chrono::microseconds TestObject::getNetworkDelay() {
 	std::scoped_lock lock(netwrkDelayMutex);
 	if (awaitingFirstHeab) {
-		return std::chrono::milliseconds(0);
+		return std::chrono::microseconds(0);
 	}
 	return estimatedNetworkDelay;
 }
 
-void TestObject::setNetworkDelay(std::chrono::milliseconds delay) {
+void TestObject::setNetworkDelay(std::chrono::microseconds delay) {
 	std::scoped_lock lock(netwrkDelayMutex);
 	estimatedNetworkDelay = delay;
 }

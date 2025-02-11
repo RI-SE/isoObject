@@ -164,7 +164,7 @@ protected:
 	std::chrono::milliseconds maxSafeNetworkDelay = std::chrono::milliseconds(200);
 
 	//! Used to get estimated network delay 
-	std::chrono::milliseconds getNetworkDelay();
+	std::chrono::microseconds getNetworkDelay();
 
 	ISO22133::State* state;
 private:
@@ -194,7 +194,7 @@ private:
 	void checkHeabTimeout();
 
 	//! Set estimated network delay from HEAB times
-	void setNetworkDelay(std::chrono::milliseconds);
+	void setNetworkDelay(std::chrono::microseconds);
 
 	//! Get the Next message counter to send
 	char getNextSentMessageCounter() { return sentMessageCounter = (sentMessageCounter + 1) % 256; }
@@ -242,7 +242,7 @@ private:
 	std::atomic<bool> osemReceived { false };
 	std::atomic<bool> on { true };
 
-	std::chrono::milliseconds estimatedNetworkDelay = std::chrono::milliseconds(0);
+	std::chrono::microseconds estimatedNetworkDelay = std::chrono::microseconds(0);
 };
 } // namespace ISO22133
 
