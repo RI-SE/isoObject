@@ -165,9 +165,7 @@ void ISO22133::State::handleSTRT(TestObject& obj, StartMessageType& strt) {
 	timersub(&strt.startTime, &currentTime, &diff);
 	int diff_us = diff.tv_sec*1e6 + diff.tv_usec;
 
-	// Start time already passed. Request abort from Control Center
-	// resolution is 0,25ms (250 microseconds) in ISO spec.
-	const int tolerance_us = -250;
+	const int tolerance_us = -1000;
 	if(diff_us > 0) {
 		
 		std::stringstream ss;
