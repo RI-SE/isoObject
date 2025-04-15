@@ -33,6 +33,7 @@ set(ISOOBJECT_TEST ${ISOOBJECT_LIBRARY}Demo)
 add_subdirectory(iso22133)
 set(ISO22133_LIBRARY ISO22133)
 
+find_package(GTest REQUIRED)
 
 # Set the RPATH to the install directory
 SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib/")
@@ -203,6 +204,7 @@ if (BUILD_TESTING)
 		${TEST_SOURCES}
 	)
 	target_link_libraries(${ISOOBJECT_LIBRARY}_test
+		gtest
 		gtest_main
 		${ISOOBJECT_LIBRARY}
 	)
