@@ -1,4 +1,7 @@
 #include "trajDecoder.hpp"
+
+#include <cstring>
+
 #include <gtest/gtest.h>
 
 class DecodeTraj : public ::testing::Test {
