@@ -5,7 +5,7 @@
 #include <iostream>
 #include <vector>
 
-// These namespace declarations does not work in SWIG :( 
+// These namespace declarations does not work in SWIG :(
 // using namespace boost::asio;
 // using ip::udp;
 
@@ -15,7 +15,7 @@
  */
 class UdpServer {
    public:
-	UdpServer(const std::string &ip, uint32_t port) : 
+	UdpServer(const std::string &ip, uint32_t port) :
 	socket(context, boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::from_string(ip), port)) {
 		setBufferSize(defaultBufferSize);
 	};
@@ -35,7 +35,7 @@ class UdpServer {
 		// This call may throw but shutdown is still successful.
 		try {
 			socket.shutdown(boost::asio::socket_base::shutdown_receive);
-		} catch (const boost::system::system_error& e) {} 
+		} catch (const boost::system::system_error& e) {}
 	};
 
 	std::vector<char> receive() {

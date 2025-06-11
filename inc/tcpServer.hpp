@@ -4,7 +4,7 @@
 #include <boost/system/system_error.hpp>
 #include <vector>
 
-// These namespace declarations does not work in SWIG :( 
+// These namespace declarations does not work in SWIG :(
 // using namespace boost::asio;
 // using boost::asio::ip::tcp;
 
@@ -21,7 +21,7 @@ class TcpServer {
 		setBufferSize(defaultBufferSize);
 	};
 
-	TcpServer(int sock) : 
+	TcpServer(int sock) :
 	socket(context),
 	acceptor(context),
 	acceptIncoming(false) {
@@ -94,7 +94,7 @@ class TcpServer {
 	void send(std::vector<char> data, size_t nbytes) {
 		std::vector<char> sendBuffer(data);
 		sendBuffer.resize(nbytes);
-		socket.async_send(boost::asio::buffer(sendBuffer, nbytes), 
+		socket.async_send(boost::asio::buffer(sendBuffer, nbytes),
 			[](const boost::system::error_code& error, std::size_t bytes_transferred) {
 				if (error) {
 					// Sending failed, handle the error

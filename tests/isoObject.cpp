@@ -33,7 +33,7 @@ class SimulatedTestObject : public TestObject {
 class ControlCenterEmulator
 {
 	public:
-		ControlCenterEmulator(const std::string& ip = "0.0.0.0", int id = 1, int transmitterID = -1, char messCnt = 0) : 
+		ControlCenterEmulator(const std::string& ip = "0.0.0.0", int id = 1, int transmitterID = -1, char messCnt = 0) :
 		listenIP(ip),
 		tcpSocket(context),
 		udpSocket(context, ip::udp::v4()),
@@ -94,7 +94,7 @@ class ControlCenterEmulator
 		}
 
 		void buildOSEM(ObjectSettingsType &objSettings) {
-			
+
 			objSettings.desiredID.transmitter = receiverID;
 			objSettings.desiredID.controlCentre = transmitterID;
 			objSettings.desiredID.subTransmitter = this->transmitterID;
@@ -104,7 +104,7 @@ class ControlCenterEmulator
 			objSettings.coordinateSystemRotation_rad = 0.0;
 
 			TimeSetToCurrentSystemTime(&objSettings.currentTime);
-			
+
 			objSettings.heabTimeout.tv_usec = 20000;
 			objSettings.heabTimeout.tv_sec = 0;
 
@@ -160,13 +160,13 @@ class ControlCenterEmulator
 class ControllerEmulator
 {
 	public:
-		ControllerEmulator(const std::string& listenIP = "127.0.0.1") : 
+		ControllerEmulator(const std::string& listenIP = "127.0.0.1") :
 		acceptor(context, ip::tcp::endpoint(ip::address_v4::from_string(listenIP), ISO_22133_DEFAULT_OBJECT_TCP_PORT)),
 		udpSocket(context, ip::udp::endpoint(ip::address_v4::from_string(listenIP), ISO_22133_OBJECT_UDP_PORT)) {}
 		virtual ~ControllerEmulator() = default;
 		/*
 		* Remember to delete the socket after!!
-		* Not done here! 
+		* Not done here!
 		*/
 		ip::tcp::socket *acceptConnection() {
 			io_context cont;
@@ -193,7 +193,7 @@ class ControllerEmulator
 		void sendUDPNoop(ip::udp::endpoint &ep) {
 			udpSocket.send_to(buffer(std::vector<char>(1)), ep);
 		}
-	
+
 	private:
 		io_context context;
 		ip::tcp::acceptor acceptor;
@@ -235,7 +235,7 @@ protected:
 		obj1->setSpeed(spd);
 		obj2->setSpeed(spd);
 		threadListener = std::thread(&test_multipleSimulatedISOObjects::udpReceive, this);
-	
+
 	}
 	void SetUp() override {}
 
@@ -311,7 +311,7 @@ protected:
 							break;
 						}
 						data.erase(data.begin(), data.begin() + nBytesHandled);
-					} 
+					}
 				}
 			}
 		} catch(const std::exception& e) {}
@@ -334,7 +334,7 @@ TEST_F(test_multipleSimulatedISOObjects, HEAB_Sent_And_MONR_Not_received_due_to_
 	ip::udp::endpoint ep1, ep2;
 	std::vector<char> receivedData1(4096);
 	std::vector<char> receivedData2(4096);
-	
+
 
 	obj1Conn.sendHeartbeat(ControlCenterStatusType::CONTROL_CENTER_STATUS_INIT);
 	bool sent1 = false;
@@ -375,7 +375,7 @@ TEST_F(test_multipleSimulatedISOObjects, OSEM_Sent_MONR_Received_as_READY) {
 		if (!sent1) {
 			this->sendUDPNoopToClient(1);
 		}
-	});	
+	});
 	obj1Conn.sendHeartbeat(ControlCenterStatusType::CONTROL_CENTER_STATUS_INIT);
 	std::size_t received = obj1Conn.receiveUDP(receivedData1, ep1);
 	sent1 = true;

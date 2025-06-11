@@ -120,8 +120,8 @@ void TestObject::receiveTCP() {
 	std::stringstream ss;
 
 	while (this->on) {
-		// socketsReceivedFromController means that the TCP socket was 
-		// created by a controlling system that provides an already 
+		// socketsReceivedFromController means that the TCP socket was
+		// created by a controlling system that provides an already
 		// open and ready to communicate socket
 		if (!this->socketsReceivedFromController) {
 			ss.str(std::string());
@@ -392,7 +392,7 @@ void TestObject::handleHEAB(HeabMessageDataType& heab) {
 
 	// Check network delay: difference between
 	// timestamp in HEAB and local time
-	// Requires the system clocks of ATOS 
+	// Requires the system clocks of ATOS
 	// and object to be synced!!
 	auto heabTime = seconds(heab.dataTimestamp.tv_sec) + microseconds(heab.dataTimestamp.tv_usec);
 	auto networkDelay = system_clock::now().time_since_epoch() - heabTime;

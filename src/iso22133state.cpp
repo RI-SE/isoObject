@@ -154,10 +154,10 @@ void ISO22133::State::handleSTRT(TestObject& obj, StartMessageType& strt) {
 		this->handleEvent(obj, ISO22133::Events::S);
 		return;
 	}
-	
+
 	// Current time with compensation for network delay
 	auto currentTime =  std::chrono::to_timeval(
-		std::chrono::system_clock::now().time_since_epoch() - 
+		std::chrono::system_clock::now().time_since_epoch() -
 		obj.getNetworkDelay()
 	);
 
@@ -165,7 +165,7 @@ void ISO22133::State::handleSTRT(TestObject& obj, StartMessageType& strt) {
 	timersub(&strt.startTime, &currentTime, &diff);
 	uint32_t diffmySec = diff.tv_sec*1e6 + diff.tv_usec;
 	int diffint = diff.tv_sec*1e6 + diff.tv_usec;
-	
+
 	// Start time already passed. Request abort from Control Center
 	// resolution is 0,25ms (250 microseconds) in ISO spec.
 	if(diffint > -250) {
@@ -180,7 +180,7 @@ void ISO22133::State::handleSTRT(TestObject& obj, StartMessageType& strt) {
 			// after the handleEvent() calls
 			obj.strtSig(strt);
 			this->handleEvent(obj, ISO22133::Events::S);
-		});		
+		});
 	}
 	else {
 		std::stringstream ss;
@@ -190,7 +190,7 @@ void ISO22133::State::handleSTRT(TestObject& obj, StartMessageType& strt) {
 		ss << "Estimated network delay: " << obj.getNetworkDelay().count() << " mySecs." << std::endl;
 		std::cout << ss.str();
 		uint8_t error = 0;
-		error |= 1 << 7; // Abort request is MSB of error mask 
+		error |= 1 << 7; // Abort request is MSB of error mask
 		obj.setErrorState(error);
 		return;
 	}
@@ -199,7 +199,7 @@ void ISO22133::State::handleSTRT(TestObject& obj, StartMessageType& strt) {
 
 /**
  * @brief Signals that a new TRAJ is available and sends GREM if in online planned mode
- *		  and object is receiving TRAJ chunks. 
+ *		  and object is receiving TRAJ chunks.
  * @param obj
  * @param msgHeader
  */

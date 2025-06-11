@@ -53,7 +53,7 @@ class DecodeTraj : public ::testing::Test {
 		ASSERT_GT(offset, 0);
 		points += offset;
     }
-    
+
     char encodeBuffer[1024];
 	int const nTrajPoints = 10;
 	int trajectoryID = 666;

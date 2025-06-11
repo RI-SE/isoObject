@@ -38,8 +38,8 @@ class myDisarmed : public ISO22133::Disarmed {
 public:
     /**
      * @brief Called once when entering state
-     * 
-     * @param obj 
+     *
+     * @param obj
      */
     void onEnter(ISO22133::TestObject& obj) override {
         std::cout << "Entering disarmed" << std::endl;
@@ -47,7 +47,7 @@ public:
 
     /**
      * @brief Called once when leaving state
-     * 
+     *
      */
     void onExit(ISO22133::TestObject&) override{
         std::cout << "Leaving disarmed" << std::endl;
@@ -75,10 +75,10 @@ public:
     std::vector<TrajectoryWaypointType> trajectory;
 
     void setMonr(double x,
-                 double y, 
-                 double z, 
-                 double heading_rad, 
-                 double lateral_m_s, 
+                 double y,
+                 double z,
+                 double heading_rad,
+                 double lateral_m_s,
                  double lonitudinal_m_s) {
         // Initialize required fields in MONR
         CartesianPosition pos;
@@ -100,10 +100,10 @@ public:
         this->setPosition(pos);
         this->setSpeed(spd);
     }
-    myObject(std::string ip) : 
-                ISO22133::TestObject(ip), 
+    myObject(std::string ip) :
+                ISO22133::TestObject(ip),
                 dummyMember(0) {
-        ObjectSettingsType osem; 
+        ObjectSettingsType osem;
         osem.testMode = TEST_MODE_UNAVAILABLE;
         setMonr(1,2,3,0.4,5,6);
         setObjectSettings(osem);
@@ -111,16 +111,16 @@ public:
     /**
      * @brief User must override this function for handling internal
      * abort prerequisites of the test object
-     * 
+     *
      */
 	void handleAbort() { std::cout << "Bromsa!" << std::endl;}
-    
+
     /**
-     * @brief Create a myDisarmed object. 
-     * This is an example of how to override the state creation 
+     * @brief Create a myDisarmed object.
+     * This is an example of how to override the state creation
      * functions to get the new state
-     * 
-     * @return ISO22133::Disarmed* 
+     *
+     * @return ISO22133::Disarmed*
      */
     ISO22133::Disarmed* createDisarmed() const override {
 		return dynamic_cast<ISO22133::Disarmed*>(new myDisarmed);
@@ -181,7 +181,7 @@ public:
                 std::cout << "Handled DCMM Message" << std::endl;
             }
             break;
-        
+
         default:
             break;
         }
@@ -225,7 +225,7 @@ std::string resolveIP (std::string listen_ip) {
  * @brief  ISO-object that automatically gets all the points from the trajectory when connected,
  * and will set its location to the first point of the trajectory when armed. It will then follow
  * the trajectory when running and set its location to the last point when done.
- * 
+ *
  */
 void runFollowTrajectory(myObject& obj) {
     std::vector<TrajectoryWaypointType> traj;
@@ -282,7 +282,7 @@ void runFollowTrajectory(myObject& obj) {
 /**
  * @brief ISO-object that can be used with dynamic trajectories. The ISO-object works in the same way as runFollowTrajectory, but it will get
  * a new trajectory at runtime, instead of the full trajectory when connecting.
- * 
+ *
  */
 void runDynamic(myObject& obj) {
     std::vector<TrajectoryWaypointType> traj;
@@ -296,7 +296,7 @@ void runDynamic(myObject& obj) {
     double endYaw;
 
     auto finishedRunning = false;
-    while(1) {
+    while (true) {
         auto state = obj.getCurrentStateName();
         if (state == "Disarmed") {
             // sleep for a while to get all trajectory points
@@ -346,7 +346,7 @@ void runDynamic(myObject& obj) {
 
 /**
  * @brief ISO-object that moves in a circle when connected.
- * 
+ *
  */
 void runCircle(myObject& obj) {
     double originX = 0.0;
@@ -357,7 +357,7 @@ void runCircle(myObject& obj) {
     double x = 0.0;
     double y = 0.0;
     double z = 0.0;
-    
+
     while (true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         angle += 0.005;
@@ -370,17 +370,18 @@ void runCircle(myObject& obj) {
         if (z < 0) {
             z = 0;
         }
+
         // Todo calculate heading and speed
         obj.setMonr(x, y, z, angle + M_PI / 2, 0.0, 0.0);
     }
 }
 
 /**
- * @brief 
- * 
- * @param argc 
- * @param argv 
- * @return int 
+ * @brief
+ *
+ * @param argc
+ * @param argv
+ * @return int
  */
 int main(int argc, char** argv ) {
     auto args = parseArguments(argc, argv);
@@ -400,4 +401,3 @@ int main(int argc, char** argv ) {
         std::invalid_argument("Unknown behaviour");
     }
 }
-

@@ -10,10 +10,10 @@
 
 /**
  * @brief Class for decoding TRAJ messages. Stores TRAJ data and
- * keeps track of unhandled bytes. 
+ * keeps track of unhandled bytes.
  */
 class TrajDecoder {
-public: 
+public:
     TrajDecoder(bool debug) : debug(debug), expectingTRAJPoints(false) {};
     TrajDecoder() : debug(false), expectingTRAJPoints(false) {};
     ssize_t DecodeTRAJ(std::vector<char>&, bool debug = false);
@@ -31,5 +31,3 @@ private:
     std::vector<TrajectoryWaypointType> trajectoryWaypoints;
     TrajectoryHeaderType trajecoryHeader;
 };
-
-

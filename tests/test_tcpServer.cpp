@@ -18,7 +18,7 @@ using namespace boost::asio;
 class tcpServer_connect_new_socket : public ::testing::Test
 {
 protected:
-	void SetUp() override 
+	void SetUp() override
 
 
     {
@@ -43,7 +43,7 @@ protected:
 TEST_F(tcpServer_connect_new_socket, connect)
 {
     // Connect to server
-    
+
     io_service io_service;
     ip::tcp::socket socket(io_service);
     ip::tcp::endpoint endpoint(ip::address::from_string("127.0.0.1"), 1234);
@@ -59,7 +59,7 @@ class tcpServer_on_existing_socket : public ::testing::Test
 {
 protected:
     tcpServer_on_existing_socket() : connecterSocket(io_service), listener(io_service) {}
-	void SetUp() override 
+	void SetUp() override
     {
         server = NULL;
         std::shared_future<void> readyFuture(readyPromise.get_future());

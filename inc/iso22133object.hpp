@@ -2,7 +2,7 @@
 
 #include <string>
 #include <iostream>
-#include <thread> 
+#include <thread>
 #include <mutex>
 #include <atomic>
 
@@ -163,7 +163,7 @@ protected:
 	std::chrono::milliseconds heartbeatTimeout = 10*expectedHeartbeatPeriod;
 	std::chrono::milliseconds maxSafeNetworkDelay = std::chrono::milliseconds(200);
 
-	//! Used to get estimated network delay 
+	//! Used to get estimated network delay
 	std::chrono::milliseconds getNetworkDelay();
 
 	ISO22133::State* state;
@@ -179,7 +179,7 @@ private:
 	void checkHeabLoop();
 	//! MONR sending loop that should be run in its own thread.
 	void sendMonrLoop();
-	
+
 	//! Function for handling received ISO messages. Calls corresponding
 	//! handler in the current state.
 	int handleMessage(std::vector<char>&);
@@ -263,4 +263,3 @@ inline bool operator< (const timeval &lhs, const timeval &rhs) {
 inline bool operator> (const timeval &lhs, const timeval &rhs) {
 	return (lhs.tv_sec + lhs.tv_usec/1e6) > (rhs.tv_sec + rhs.tv_usec/1e6);
 }
-
