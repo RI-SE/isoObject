@@ -364,12 +364,10 @@ void runCircle(myObject& obj) {
         if (angle > 2 * M_PI) {
             angle = 0.0;
         }
-        x = originX + radius * cos(angle);
-        y = originY + radius * sin(angle);
-        z = originZ + radius/2 * sin(angle);
-        if (z < 0) {
-            z = 0;
-        }
+        x = originX + radius * std::cos(angle);
+        y = originY + radius * std::sin(angle);
+        z = originZ + radius/2 * std::sin(angle);
+        z = std::max(0.0, z);
 
         // Todo calculate heading and speed
         obj.setMonr(x, y, z, angle + M_PI / 2, 0.0, 0.0);

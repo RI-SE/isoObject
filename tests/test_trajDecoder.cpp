@@ -9,7 +9,7 @@ class DecodeTraj : public ::testing::Test {
 		auto trajectoryName = "some description";
 		auto nameLength = strlen(trajectoryName)-1;
 		auto numberOfPointsInTraj = 3;
-		memset(encodeBuffer, 0, sizeof(encodeBuffer));
+		std::memset(encodeBuffer, 0, sizeof(encodeBuffer));
 		auto points = encodeBuffer;
 		auto bufferLength = sizeof(encodeBuffer);
 		bool debug = false;

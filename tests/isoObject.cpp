@@ -99,7 +99,7 @@ class ControlCenterEmulator
 			objSettings.desiredID.controlCentre = transmitterID;
 			objSettings.desiredID.subTransmitter = this->transmitterID;
 
-			memset(&objSettings.coordinateSystemOrigin, 0, sizeof(objSettings.coordinateSystemOrigin));
+			std::memset(&objSettings.coordinateSystemOrigin, 0, sizeof(objSettings.coordinateSystemOrigin));
 			objSettings.coordinateSystemType = COORDINATE_SYSTEM_WGS84;
 			objSettings.coordinateSystemRotation_rad = 0.0;
 
@@ -298,8 +298,8 @@ protected:
 							}
 							if (obj != nullptr) {
 								char address[ep.address().to_string().length() +1];
-								memset(address, 0, sizeof(address));
-								memcpy(address, ep.address().to_string().c_str(), ep.address().to_string().length());
+								std::memset(address, 0, sizeof(address));
+								std::memcpy(address, ep.address().to_string().c_str(), ep.address().to_string().length());
 								int handled = obj->handleUDPMessage(data.data(), data.size(), listener.getUDPSocket()->native_handle(), address, ep.port());
 								nBytesHandled += handled;
 							}
