@@ -15,7 +15,7 @@ class TestObject;
 
 // TODO this should be in iso22133.h
 // typedef ObjectStateType ObjectStateID;
-typedef enum {
+enum ObjectStateID {
 	ISO_OBJECT_STATE_UNKNOWN		   = -1,
 	ISO_OBJECT_STATE_OFF			   = 0,
 	ISO_OBJECT_STATE_INIT			   = 1,
@@ -27,10 +27,10 @@ typedef enum {
 	ISO_OBJECT_STATE_ABORTING		   = 7,
 	ISO_OBJECT_STATE_PRE_ARMING		   = 8,
 	ISO_OBJECT_STATE_PRE_RUNNING	   = 9
-} ObjectStateID;
+};
 
 namespace Events {
-typedef enum {
+enum EventType {
 	D, //!< system started
 	L, //!< control center connection lost
 	B, //!< control center connection established
@@ -46,7 +46,7 @@ typedef enum {
 	E, //!< internal error detected
 	F, //!< disarm requested
 	X  //!< emergency stop reset
-} EventType;
+};
 
 static const std::map<EventType, std::string> descriptions = {{D, "system started"},
 															  {L, "control center connection lost"},
@@ -253,11 +253,11 @@ public:
 	}
 };
 
-typedef struct {
+struct Transition {
 	ObjectStateID source;
 	Events::EventType event;
 	ObjectStateID target;
-} Transition;
+};
 
 inline bool operator<(const Transition& lhs, const Transition& rhs) {
 	return std::tie(lhs.source, lhs.event, lhs.target) < std::tie(rhs.source, rhs.event, rhs.target);
