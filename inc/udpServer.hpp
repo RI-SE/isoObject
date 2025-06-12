@@ -18,27 +18,27 @@ public:
 	UdpServer(const std::string& ip, uint32_t port) :
 	  socket(context, boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::from_string(ip), port)) {
 		setBufferSize(defaultBufferSize);
-	};
+	}
 	UdpServer() :
 	  socket(context) {
 		setBufferSize(defaultBufferSize);
-	};
+	}
 
 	void setEndpoint(int native_socket, boost::asio::ip::udp::endpoint& ep) {
 		socket.assign(boost::asio::ip::udp::v4(), native_socket);
 		senderEndpoint = ep;
-	};
+	}
 
 	void setBufferSize(size_t size) {
 		dataBuffer.resize(size);
-	};
+	}
 
 	void disconnect() {
 		// This call may throw but shutdown is still successful.
 		try {
 			socket.shutdown(boost::asio::socket_base::shutdown_receive);
 		} catch (const boost::system::system_error& e) {}
-	};
+	}
 
 	std::vector<char> receive() {
 		try {
@@ -53,7 +53,7 @@ public:
 			std::cerr << ss.str();
 			throw e;
 		}
-	};
+	}
 
 	size_t send(std::vector<char> data, size_t nbytes) {
 		try {
@@ -67,7 +67,7 @@ public:
 			std::cerr << ss.str();
 			throw e;
 		}
-	};
+	}
 
 private:
 	std::vector<char> dataBuffer;

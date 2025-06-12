@@ -19,7 +19,7 @@ public:
 	  socket(context),
 	  acceptIncoming(true) {
 		setBufferSize(defaultBufferSize);
-	};
+	}
 
 	TcpServer(int sock) :
 	  socket(context),
@@ -27,7 +27,7 @@ public:
 	  acceptIncoming(false) {
 		setBufferSize(defaultBufferSize);
 		socket.assign(boost::asio::ip::tcp::v4(), sock);
-	};
+	}
 
 	virtual ~TcpServer() = default;
 	void disconnect() {
@@ -43,7 +43,7 @@ public:
 		} catch (boost::system::system_error& e) {
 			std::cerr << "Error when closing socket: " << e.what() << std::endl;
 		}
-	};
+	}
 
 	void acceptConnection() {
 		if (!this->acceptIncoming) {
@@ -67,18 +67,18 @@ public:
 
 	void setBufferSize(size_t size) {
 		dataBuffer.resize(size);
-	};
+	}
 	size_t getBuffferSize() const {
 		return dataBuffer.size();
-	};
+	}
 
 	boost::asio::ip::tcp::endpoint getEndPoint() const {
 		return socket.remote_endpoint();
-	};
+	}
 
 	bool isOpen() const {
 		return socket.is_open();
-	};
+	}
 
 	std::vector<char> receive() {
 		try {
@@ -97,7 +97,7 @@ public:
 				throw e;
 			}
 		}
-	};
+	}
 
 	void send(std::vector<char> data, size_t nbytes) {
 		std::vector<char> sendBuffer(data);
@@ -111,7 +111,7 @@ public:
 								  throw boost::system::system_error(boost::asio::error::eof);
 							  }
 						  });
-	};
+	}
 
 private:
 	std::vector<char> dataBuffer;

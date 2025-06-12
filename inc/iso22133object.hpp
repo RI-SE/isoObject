@@ -228,12 +228,12 @@ protected:
 	//! overriding and implementing them if needed.
 	//! Preferable using threads as to not slow down
 	//! the main thread.
-	virtual void onStateChange() {};
-	virtual void onOSEM(ObjectSettingsType& osem) {};
-	virtual void onHEAB(HeabMessageDataType& heab) {};
-	virtual void onTRAJ() {};
-	virtual void onOSTM(ObjectCommandType& ostm) {};
-	virtual void onSTRT(StartMessageType& strt) {};
+	virtual void onStateChange() {}
+	virtual void onOSEM(ObjectSettingsType& osem) {}
+	virtual void onHEAB(HeabMessageDataType& heab) {}
+	virtual void onTRAJ() {}
+	virtual void onOSTM(ObjectCommandType& ostm) {}
+	virtual void onSTRT(StartMessageType& strt) {}
 
 	std::chrono::milliseconds expectedHeartbeatPeriod = std::chrono::milliseconds(1000 / HEAB_FREQUENCY_HZ);
 	std::chrono::milliseconds monrPeriod			  = std::chrono::milliseconds(1000 / MONR_EXPECTED_FREQUENCY_HZ);

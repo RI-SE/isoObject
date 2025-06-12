@@ -16,10 +16,10 @@ class TrajDecoder {
 public:
 	TrajDecoder(bool debug) :
 	  debug(debug),
-	  expectingTRAJPoints(false) {};
+	  expectingTRAJPoints(false) {}
 	TrajDecoder() :
 	  debug(false),
-	  expectingTRAJPoints(false) {};
+	  expectingTRAJPoints(false) {}
 	ssize_t DecodeTRAJ(std::vector<char>&, bool debug = false);
 	bool ExpectingTrajPoints() const {
 		return this->expectingTRAJPoints;
