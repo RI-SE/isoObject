@@ -339,8 +339,8 @@ struct timeval to_timeval(Duration&& d) {
 } // namespace std::chrono
 
 inline bool operator<(const timeval& lhs, const timeval& rhs) {
-	return (lhs.tv_sec + lhs.tv_usec / 1e6) < (rhs.tv_sec + rhs.tv_usec / 1e6);
+	return (lhs.tv_sec < rhs.tv_sec) || ((lhs.tv_sec == rhs.tv_sec) && (lhs.tv_usec < rhs.tv_usec));
 }
 inline bool operator>(const timeval& lhs, const timeval& rhs) {
-	return (lhs.tv_sec + lhs.tv_usec / 1e6) > (rhs.tv_sec + rhs.tv_usec / 1e6);
+	return rhs < lhs;
 }
