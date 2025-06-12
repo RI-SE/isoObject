@@ -300,10 +300,7 @@ int TestObject::handleUDPMessage(char* buffer, int bufferLen, int udpSocket, cha
 }
 
 int TestObject::handleMessage(char* buffer, int bufferLen) {
-	std::vector<char> data;
-	for (int i = 0; i < bufferLen; i++) {
-		data.push_back(buffer[i]);
-	}
+	std::vector<char> data(buffer, buffer + bufferLen);
 	return handleMessage(data);
 }
 
