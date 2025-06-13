@@ -1,5 +1,5 @@
 FROM alpine:latest AS builder
-RUN apk add --no-cache cmake make git boost-dev=1.84.0-r2 g++
+RUN apk add --no-cache cmake make git boost-dev=1.84.0-r3 g++
 WORKDIR /app
 COPY . .
 WORKDIR /app/build
