@@ -113,12 +113,12 @@ public:
 	 *
 	 * @return ISO22133::Disarmed*
 	 */
-	ISO22133::Disarmed* createDisarmed() const override {
-		return dynamic_cast<ISO22133::Disarmed*>(new myDisarmed);
+	std::unique_ptr<ISO22133::Disarmed> createDisarmed() const override {
+		return std::make_unique<myDisarmed>();
 	}
 
-	ISO22133::PreArming* createPreArming() const override {
-		return dynamic_cast<ISO22133::PreArming*>(new myPreArming);
+	std::unique_ptr<ISO22133::PreArming> createPreArming() const override {
+		return std::make_unique<myPreArming>();
 	}
 
 	//! overridden on*message* function.

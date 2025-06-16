@@ -171,48 +171,48 @@ protected:
 	// Example of override:
 	// return dynamic_cast<ISO22133::PreArming*>(new myPreArming);
 	//! Must be overridden if modifying the Unknown state
-	virtual Unknown* createUnknown() const {
-		return new Unknown;
+	virtual std::unique_ptr<Unknown> createUnknown() const {
+		return std::make_unique<Unknown>();
 	}
 	//! Must be overridden if modifying the Off state
-	virtual Off* createOff() const {
-		return new Off;
+	virtual std::unique_ptr<Off> createOff() const {
+		return std::make_unique<Off>();
 	}
 	//! Must be overridden if modifying the Init state
-	virtual Init* createInit() const {
-		return new Init;
+	virtual std::unique_ptr<Init> createInit() const {
+		return std::make_unique<Init>();
 	}
 	//! Must be overridden if modifying the Armed state
-	virtual Armed* createArmed() const {
-		return new Armed;
+	virtual std::unique_ptr<Armed> createArmed() const {
+		return std::make_unique<Armed>();
 	}
 	//! Must be overridden if modifying the Disarmed state
-	virtual Disarmed* createDisarmed() const {
-		return new Disarmed;
+	virtual std::unique_ptr<Disarmed> createDisarmed() const {
+		return std::make_unique<Disarmed>();
 	}
 	//! Must be overridden if modifying the Running state
-	virtual Running* createRunning() const {
-		return new Running;
+	virtual std::unique_ptr<Running> createRunning() const {
+		return std::make_unique<Running>();
 	}
 	//! Must be overridden if modifying the Postrun state
-	virtual PostRun* createPostRun() const {
-		return new PostRun;
+	virtual std::unique_ptr<PostRun> createPostRun() const {
+		return std::make_unique<PostRun>();
 	}
 	//! Must be overridden if modifying the Remote Controlled state
-	virtual RemoteControlled* createRemoteControlled() const {
-		return new RemoteControlled;
+	virtual std::unique_ptr<RemoteControlled> createRemoteControlled() const {
+		return std::make_unique<RemoteControlled>();
 	}
 	//! Must be overridden if modifying the Abort state
-	virtual Aborting* createAborting() const {
-		return new Aborting;
+	virtual std::unique_ptr<Aborting> createAborting() const {
+		return std::make_unique<Aborting>();
 	}
 	//! Must be overridden if modifying the Pre-Arm state
-	virtual PreArming* createPreArming() const {
-		return new PreArming;
+	virtual std::unique_ptr<PreArming> createPreArming() const {
+		return std::make_unique<PreArming>();
 	}
 	//! Must be overridden if modifying the Pre-Running state
-	virtual PreRunning* createPreRunning() const {
-		return new PreRunning;
+	virtual std::unique_ptr<PreRunning> createPreRunning() const {
+		return std::make_unique<PreRunning>();
 	}
 
 	//! Signals for events
@@ -243,7 +243,7 @@ protected:
 	//! Used to get estimated network delay
 	std::chrono::milliseconds getNetworkDelay();
 
-	ISO22133::State* state;
+	std::unique_ptr<ISO22133::State> state;
 
 private:
 	//! Initializer for commonalities of the constructs

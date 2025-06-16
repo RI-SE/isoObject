@@ -24,7 +24,6 @@ void ISO22133::State::handleEvent(TestObject& obj, const ISO22133::Events::Event
 
 	std::cout << "Leaving state: " << obj.state->getName() << std::endl;
 	obj.state->onExit(obj);
-	State* temp = obj.state;
 
 	switch (transition->target) {
 		case ISO_OBJECT_STATE_OFF:
@@ -63,7 +62,6 @@ void ISO22133::State::handleEvent(TestObject& obj, const ISO22133::Events::Event
 			obj.state = obj.createUnknown();
 			break;
 	}
-	delete temp;
 
 	std::cout << "Entering state: " << obj.state->getName() << std::endl;
 	obj.stateChangeSig();
