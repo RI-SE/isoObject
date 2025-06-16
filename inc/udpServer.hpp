@@ -15,7 +15,7 @@
  */
 class UdpServer {
 public:
-	UdpServer(const std::string& ip, uint32_t port) :
+	UdpServer(const std::string& ip, std::uint32_t port) :
 	  socket(context, boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::from_string(ip), port)) {
 		setBufferSize(defaultBufferSize);
 	}
@@ -29,7 +29,7 @@ public:
 		senderEndpoint = ep;
 	}
 
-	void setBufferSize(size_t size) {
+	void setBufferSize(std::size_t size) {
 		dataBuffer.resize(size);
 	}
 
@@ -55,7 +55,7 @@ public:
 		}
 	}
 
-	size_t send(std::vector<char> data, size_t nbytes) {
+	std::size_t send(std::vector<char> data, size_t nbytes) {
 		try {
 			std::vector<char> sendBuffer(data);
 			sendBuffer.resize(nbytes);
@@ -71,7 +71,7 @@ public:
 
 private:
 	std::vector<char> dataBuffer;
-	size_t defaultBufferSize = 4096;
+	std::size_t defaultBufferSize = 4096;
 
 	boost::asio::io_context context;
 	boost::asio::ip::udp::socket socket;

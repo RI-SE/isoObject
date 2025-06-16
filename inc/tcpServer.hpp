@@ -14,7 +14,7 @@
  */
 class TcpServer {
 public:
-	TcpServer(std::string ip, uint32_t port) :
+	TcpServer(std::string ip, std::uint32_t port) :
 	  acceptor(context, boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::from_string(ip), port)),
 	  socket(context),
 	  acceptIncoming(true) {
@@ -65,10 +65,10 @@ public:
 		context.restart();
 	}
 
-	void setBufferSize(size_t size) {
+	void setBufferSize(std::size_t size) {
 		dataBuffer.resize(size);
 	}
-	size_t getBuffferSize() const {
+	std::size_t getBuffferSize() const {
 		return dataBuffer.size();
 	}
 
@@ -99,7 +99,7 @@ public:
 		}
 	}
 
-	void send(std::vector<char> data, size_t nbytes) {
+	void send(std::vector<char> data, std::size_t nbytes) {
 		std::vector<char> sendBuffer(data);
 		sendBuffer.resize(nbytes);
 		socket.async_send(boost::asio::buffer(sendBuffer, nbytes),
@@ -115,7 +115,7 @@ public:
 
 private:
 	std::vector<char> dataBuffer;
-	size_t defaultBufferSize = 4096;
+	std::size_t defaultBufferSize = 4096;
 	bool acceptIncoming;
 
 	boost::asio::io_context context;
