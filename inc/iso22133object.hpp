@@ -118,10 +118,10 @@ public:
 	std::string getLocalIP() const {
 		return localIP;
 	}
-	uint32_t getTransmitterID() const {
+	std::uint32_t getTransmitterID() const {
 		return transmitterID;
 	}
-	uint32_t getReceiverID() const {
+	std::uint32_t getReceiverID() const {
 		return receiverID;
 	}
 	ObjectSettingsType getObjectSettings() const {
@@ -132,7 +132,7 @@ public:
 	//! Wrapper for handling tcp messages when using an iso connector for simulation
 	int handleTCPMessage(char* buffer, int bufferLen);
 	//! Wrapper for handling udp message when using an iso connector for simulation
-	int handleUDPMessage(char* buffer, int bufferLen, int udpSocket, char* addr, const uint32_t port);
+	int handleUDPMessage(char* buffer, int bufferLen, int udpSocket, char* addr, const std::uint32_t port);
 
 	//! Used to start the threads
 	void startHandleTCP() {

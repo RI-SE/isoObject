@@ -133,7 +133,6 @@ void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 	std::cout << msg.str();
 
 	obj.osemSig(osem);
-	return;
 }
 
 /**
@@ -160,8 +159,8 @@ void ISO22133::State::handleSTRT(TestObject& obj, StartMessageType& strt) {
 
 	struct timeval diff;
 	timersub(&strt.startTime, &currentTime, &diff);
-	uint32_t diffmySec = diff.tv_sec * 1e6 + diff.tv_usec;
-	int diffint		   = diff.tv_sec * 1e6 + diff.tv_usec;
+	std::uint32_t diffmySec = diff.tv_sec * 1e6 + diff.tv_usec;
+	int diffint				= diff.tv_sec * 1e6 + diff.tv_usec;
 
 	// Start time already passed. Request abort from Control Center
 	// resolution is 0,25ms (250 microseconds) in ISO spec.
@@ -187,12 +186,10 @@ void ISO22133::State::handleSTRT(TestObject& obj, StartMessageType& strt) {
 		ss << "Current time: " << currentTime.tv_sec << " seconds, " << currentTime.tv_usec << " mySecs." << std::endl;
 		ss << "Estimated network delay: " << obj.getNetworkDelay().count() << " mySecs." << std::endl;
 		std::cout << ss.str();
-		uint8_t error = 0;
+		std::uint8_t error = 0;
 		error |= 1 << 7; // Abort request is MSB of error mask
 		obj.setErrorState(error);
-		return;
 	}
-	return;
 }
 
 /**

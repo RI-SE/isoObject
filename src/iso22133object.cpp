@@ -287,7 +287,7 @@ int TestObject::handleTCPMessage(char* buffer, int bufferLen) {
 	return num_bytes_handled;
 }
 
-int TestObject::handleUDPMessage(char* buffer, int bufferLen, int udpSocket, char* addr, const uint32_t port) {
+int TestObject::handleUDPMessage(char* buffer, int bufferLen, int udpSocket, char* addr, const std::uint32_t port) {
 	if (awaitingFirstHeab) {
 		boost::asio::ip::udp::endpoint udpEp =
 		  boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(addr), port);
@@ -431,7 +431,6 @@ void TestObject::handleHEAB(HeabMessageDataType& heab) {
 			break;
 	}
 	ccStatus = heab.controlCenterStatus;
-	return;
 }
 
 std::chrono::milliseconds TestObject::getNetworkDelay() {
