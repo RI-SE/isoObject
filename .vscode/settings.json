@@ -95,6 +95,12 @@
         "source_location": "cpp",
         "typeindex": "cpp",
         "complex": "cpp",
-        "iomanip": "cpp"
-    }
+        "iomanip": "cpp",
+        "span": "cpp",
+        "cfenv": "cpp"
+    },
+    "editor.formatOnSave": true,
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+    "files.trimTrailingWhitespace": true,
 }

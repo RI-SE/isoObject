@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.14)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 
 # Tell the linker to use RPATH instead of RUNPATH
 # RPATH/RUNPATH tells a binary where to look for libraries at runtime
@@ -31,6 +33,7 @@ endif()
 # Manage namespace of the project
 set(ISOOBJECT_LIBRARY ${PARENT_TARGET_NAMESPACE}${PROJECT_NAME})
 set(ISOOBJECT_TEST ${ISOOBJECT_LIBRARY}Demo)
+set(ISOOBJECT_NCOM ${ISOOBJECT_LIBRARY}Ncom)
 
 #ISO22133 library/headers
 add_subdirectory(iso22133)
@@ -67,9 +70,9 @@ target_include_directories(${ISOOBJECT_LIBRARY} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/sigslot/include/sigslot
     ${CMAKE_CURRENT_SOURCE_DIR}/iso22133
 )
-set(ISO_OBJ_LIBS 
+set(ISO_OBJ_LIBS
     ${ISO22133_LIBRARY} atomic pthread Boost::system)
-set(ISO_OBJ_LIBS_ANDROID 
+set(ISO_OBJ_LIBS_ANDROID
     ${ISO22133_LIBRARY} atomic ${boost_system})
 if (BUILDING_FOR_ANDROID)
     target_link_libraries(${ISOOBJECT_LIBRARY}
@@ -114,6 +117,7 @@ find_package(Boost REQUIRED COMPONENTS program_options)
 
 # Demo target, only build if not swigging
 add_executable(${ISOOBJECT_TEST} demoIsoObject.cpp)
+add_executable(${ISOOBJECT_NCOM} ncomIsoObject.cpp)
 
 target_include_directories(${ISOOBJECT_TEST} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/inc
@@ -122,6 +126,17 @@ target_include_directories(${ISOOBJECT_TEST} PUBLIC
 target_link_libraries(${ISOOBJECT_TEST} LINK_PUBLIC
     ${ISOOBJECT_LIBRARY}
     Boost::program_options
+)
+
+add_subdirectory(oxts-utils)
+
+target_include_directories(${ISOOBJECT_NCOM} PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc
+)
+target_link_libraries(${ISOOBJECT_NCOM} LINK_PUBLIC
+    ${ISOOBJECT_LIBRARY}
+    Boost::program_options
+    ncom_to_monr
 )
 
 endif()
@@ -198,7 +213,7 @@ if (WITH_SWIG)
     endif()
 endif()
 
-# Build tests 
+# Build tests
 if (BUILD_TESTING)
 	enable_testing()
 	file(GLOB TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp)

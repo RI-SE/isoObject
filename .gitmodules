@@ -4,3 +4,6 @@
 [submodule "sigslot"]
 	path = sigslot
 	url = https://github.com/palacaze/sigslot.git
+[submodule "oxts-utils"]
+	path = oxts-utils
+	url = git@github.com:RI-SE/OxTS-utils.git
