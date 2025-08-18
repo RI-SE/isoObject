@@ -121,7 +121,7 @@ void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 		<< 1000 / obj.expectedHeartbeatPeriod.count() << " Hz) " << std::endl;
 	std::cout << msg.str();
 
-	obj.heartbeatTimeout = 10*obj.expectedHeartbeatPeriod;
+	obj.heartbeatTimeout = 100*obj.expectedHeartbeatPeriod;
 	msg.str(std::string());
 	msg << "Set HEAB timeout to " << obj.heartbeatTimeout.count() << " ms. ("
 		<< 1000 / obj.heartbeatTimeout.count() << " Hz) " << std::endl;

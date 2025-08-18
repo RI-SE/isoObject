@@ -11,7 +11,7 @@
 %rename(timevalGreaterThan) operator> (const timeval &lhs, const timeval &rhs);
 #endif
 
-%pointer_functions(uint32_t, uint32ptr);
+//%pointer_functions(uint32_t, uint32ptr);
 %include <std_vector.i>
 %include <stdint.i>
 %include <cpointer.i>

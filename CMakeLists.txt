@@ -210,6 +210,7 @@ if (BUILD_TESTING)
 		${TEST_SOURCES}
 	)
 	target_link_libraries(${ISOOBJECT_LIBRARY}_test
+		gtest
 		gtest_main
 		${ISOOBJECT_LIBRARY}
 	)
