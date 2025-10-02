@@ -69,6 +69,7 @@ void ISO22133::State::handleEvent(TestObject& obj, const ISO22133::Events::Event
 	std::cout << "Entering state: " << obj.state->getName() << std::endl;
 	obj.stateChangeSig();
 	obj.state->onEnter(obj);
+
 }
 
 /**

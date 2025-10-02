@@ -104,7 +104,7 @@ public:
                 ISO22133::TestObject(ip), 
                 dummyMember(0) {
         ObjectSettingsType osem; 
-        osem.testMode = TEST_MODE_UNAVAILABLE;
+        osem.testMode = TEST_MODE_PREPLANNED;
         setMonr(1,2,3,0.4,5,6);
         setObjectSettings(osem);
     }

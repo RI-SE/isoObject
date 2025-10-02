@@ -94,7 +94,7 @@ public:
 	//! Used to start the threads
 	void startHandleTCP() { tcpReceiveThread = std::thread(&TestObject::receiveTCP, this); }
 	void startHandleUDP() { udpReceiveThread = std::thread(&TestObject::receiveUDP, this); }
-	void startHEABCheck() { heabTimeoutThread = std::thread(&TestObject::checkHeabLoop, this); }
+	void startHEABCheck() { communicationTimeoutThread = std::thread(&TestObject::checkHeabLoop, this); }
 	void startSendMonr()  { monrThread = std::thread(&TestObject::sendMonrLoop, this); }
 
 protected:
@@ -161,7 +161,7 @@ protected:
 	std::chrono::milliseconds expectedHeartbeatPeriod = std::chrono::milliseconds(1000 / HEAB_FREQUENCY_HZ);
 	std::chrono::milliseconds monrPeriod = std::chrono::milliseconds(1000 / MONR_EXPECTED_FREQUENCY_HZ);
 	std::chrono::milliseconds heartbeatTimeout = 10*expectedHeartbeatPeriod;
-	std::chrono::milliseconds maxSafeNetworkDelay = std::chrono::milliseconds(200);
+	std::chrono::milliseconds maxSafeNetworkDelay = std::chrono::milliseconds(10000);
 
 	//! Used to get estimated network delay 
 	std::chrono::milliseconds getNetworkDelay();
@@ -189,9 +189,9 @@ private:
 	//! Sends GREM message on control channel
 	void sendGREM(HeaderType header, GeneralResponseStatus responseCode, bool debug = false);
 	//! Called if HEAB messages do not arrive on time
-	void onHeabTimeout();
+	void onCommunicationTimeout();
 	//! Function that checks if HEABs arrive on time
-	void checkHeabTimeout();
+	void checkCommunicationTimeout();
 
 	//! Set estimated network delay from HEAB times
 	void setNetworkDelay(std::chrono::milliseconds);
@@ -207,7 +207,7 @@ private:
 		expectedMessageCounter = (expectedMessageCounter + 1) % 256;
 	}
 
-	sigslot::signal<>heabTimeout;
+	sigslot::signal<>communicationTimeout;
 	std::mutex recvMutex;
 	std::mutex heabMutex;
 	std::mutex netwrkDelayMutex;
@@ -215,7 +215,7 @@ private:
 	std::thread tcpReceiveThread;
 	std::thread udpReceiveThread;
 	std::thread monrThread;
-	std::thread heabTimeoutThread;
+	std::thread communicationTimeoutThread;
 	std::thread delayedStrtThread;
 	std::string name = "unnamed";
 	TcpServer ctrlChannel;

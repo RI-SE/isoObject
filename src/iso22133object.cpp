@@ -48,6 +48,9 @@ void TestObject::initialize() {
 	SpeedType initSpd;
 	AccelerationType initAcc;
 	TestModeType initTm;
+	EmergencyBehaviorType emergencyBehavior;
+	ComLostType comLost;
+	xyzTrajPointResolutionType xyzTrajPointResolution;
 	localIP = "0.0.0.0";
 	initPos.isHeadingValid = false;
 	initPos.isPositionValid = false;
@@ -55,7 +58,7 @@ void TestObject::initialize() {
 	initSpd.isLongitudinalValid = false;
 	initAcc.isLateralValid = false;
 	initAcc.isLongitudinalValid = false;
-	initTm = TEST_MODE_UNAVAILABLE;
+	initTm = TEST_MODE_PREPLANNED;
 	this->setPosition(initPos);
 	this->setSpeed(initSpd);
 	this->setAcceleration(initAcc);
@@ -67,7 +70,7 @@ void TestObject::initialize() {
 	this->ostmSig.connect(&TestObject::onOSTM, this);
 	this->trajSig.connect(&TestObject::onTRAJ, this);
 	this->strtSig.connect(&TestObject::onSTRT, this);
-	this->heabTimeout.connect(&TestObject::onHeabTimeout, this);
+	this->communicationTimeout.connect(&TestObject::onCommunicationTimeout, this);
 }
 
 TestObject::~TestObject() {
@@ -78,7 +81,7 @@ TestObject::~TestObject() {
 		}
 		monrThread.join();
 		tcpReceiveThread.join();
-		heabTimeoutThread.join();
+		communicationTimeoutThread.join();
 		if (delayedStrtThread.joinable()) {
 			delayedStrtThread.join();
 		}
@@ -241,7 +244,7 @@ void TestObject::receiveUDP() {
 	}
 }
 
-void TestObject::checkHeabTimeout() {
+void TestObject::checkCommunicationTimeout() {
 	using namespace std::chrono;
 	std::scoped_lock lock(heabMutex);
 	// Check time difference of received HEAB and last HEAB
@@ -251,20 +254,20 @@ void TestObject::checkHeabTimeout() {
 		ss << "Heartbeat timeout: " << duration_cast<milliseconds>(timeSinceHeab).count()
 		   << " ms since last heartbeat exceeds limit of " << heartbeatTimeout.count() << " ms." << std::endl;
 		std::cerr << ss.str();
-		heabTimeout();
+		communicationTimeout();
 	}
 }
 
 void TestObject::checkHeabLoop() {
 	while (this->on) {
 		auto t = std::chrono::steady_clock::now();
-		checkHeabTimeout();
+		checkCommunicationTimeout();
 		// Don't lock the mutex all the time
 		std::this_thread::sleep_until(t + expectedHeartbeatPeriod);
 	}
 }
 
-void TestObject::onHeabTimeout() {
+void TestObject::onCommunicationTimeout() {
 	disconnect();
 	this->state->handleEvent(*this, Events::L);
 }
@@ -333,7 +336,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 		break;
 	case MESSAGE_ID_OSEM:
 		ObjectSettingsType OSEMstruct;
-		bytesHandled = decodeOSEMMessage(&OSEMstruct, dataBuffer.data(), dataBuffer.size(), debug);
+		bytesHandled = decodeOSEMMessage(&OSEMstruct, dataBuffer.data(), dataBuffer.size(), true);
 		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding OSEM");
 		}
@@ -361,7 +364,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 
 	case MESSAGE_ID_HEAB:
 		HeabMessageDataType HEABdata;
-		bytesHandled = decodeHEABMessage(dataBuffer.data(), dataBuffer.size(), currentTime, &HEABdata, debug);
+		bytesHandled = decodeHEABMessage(dataBuffer.data(), dataBuffer.size(), currentTime, &HEABdata, true);
 		if (bytesHandled < 0) {
 			throw std::invalid_argument("Error decoding HEAB");
 		}
