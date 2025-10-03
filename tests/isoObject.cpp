@@ -105,8 +105,8 @@ public:
 
 		TimeSetToCurrentSystemTime(&objSettings.currentTime);
 
-		objSettings.heabTimeout.tv_usec = 20000;
-		objSettings.heabTimeout.tv_sec	= 0;
+		objSettings.communicationTimeout.tv_usec = 20000;
+		objSettings.communicationTimeout.tv_sec	= 0;
 
 		objSettings.rate.heab  = 10;
 		objSettings.rate.monr  = 100;
