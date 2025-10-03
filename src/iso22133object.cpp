@@ -54,7 +54,7 @@ void TestObject::initialize() {
 	initSpd.isLongitudinalValid = false;
 	initAcc.isLateralValid		= false;
 	initAcc.isLongitudinalValid = false;
-	initTm						= TEST_MODE_UNAVAILABLE;
+	initTm						= TEST_MODE_PREPLANNED;
 	this->setPosition(initPos);
 	this->setSpeed(initSpd);
 	this->setAcceleration(initAcc);
@@ -332,7 +332,7 @@ int TestObject::handleMessage(std::vector<char>& dataBuffer) {
 	expectedMessageCounter = msgHeader.messageCounter + 1;
 	switch (msgHeader.messageID) {
 		case MESSAGE_ID_TRAJ:
-			bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer, false);
+			bytesHandled = this->trajDecoder.DecodeTRAJ(dataBuffer, debug);
 			if (bytesHandled < 0) {
 				throw std::invalid_argument("Error decoding TRAJ");
 			}
