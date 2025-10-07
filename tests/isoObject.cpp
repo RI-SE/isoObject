@@ -105,10 +105,10 @@ public:
 
 		TimeSetToCurrentSystemTime(&objSettings.currentTime);
 
-		objSettings.heabTimeout.tv_usec = 20000;
-		objSettings.heabTimeout.tv_sec	= 0;
+		objSettings.communicationTimeout.tv_usec = 20000;
+		objSettings.communicationTimeout.tv_sec	= 0;
 
-		objSettings.rate.heab  = 10;
+		objSettings.rate.heabTimeout  = 10;
 		objSettings.rate.monr  = 100;
 		objSettings.rate.monr2 = 1;
 
@@ -131,7 +131,7 @@ public:
 		header.messageCounter = this->messageCounter;
 		header.transmitterID  = this->transmitterID;
 		auto nBytesWritten =
-		  encodeOSEMMessage(&header, &objSettings, transmitBuffer.data(), transmitBuffer.size(), false);
+		  encodeOSEMMessage(&header, &objSettings, transmitBuffer.data(), transmitBuffer.size(), true);
 		transmitBuffer.resize(nBytesWritten);
 		sendTCP(transmitBuffer);
 	}

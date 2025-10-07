@@ -114,11 +114,11 @@ void ISO22133::State::handleOSEM(TestObject& obj, ObjectSettingsType& osem) {
 	msg << "Got OSEM - set transmitter ID to " << obj.transmitterID << std::endl;
 	std::cout << msg.str();
 
-	obj.expectedHeartbeatPeriod = std::chrono::milliseconds(1000 / (uint)osem.rate.heab);
-	msg.str(std::string());
-	msg << "Setting HEAB period to " << obj.expectedHeartbeatPeriod.count() << " ms. ("
-		<< 1000 / obj.expectedHeartbeatPeriod.count() << " Hz) " << std::endl;
-	std::cout << msg.str();
+	//obj.expectedHeartbeatPeriod = std::chrono::milliseconds((uint32_t)(osem.rate.communicationTimeout * 1000));
+	//msg.str(std::string());
+	//msg << "Setting HEAB period to " << obj.expectedHeartbeatPeriod.count() << " ms. ("
+	//	<< 1000 / obj.expectedHeartbeatPeriod.count() << " Hz) " << std::endl;
+	//std::cout << msg.str();
 
 	obj.heartbeatTimeout = 10 * obj.expectedHeartbeatPeriod;
 	msg.str(std::string());
