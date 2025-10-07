@@ -27,7 +27,7 @@ ssize_t TrajDecoder::DecodeTRAJ(std::vector<char>& dataBuffer, bool debug) {
 	}
 
 	// Decode TRAJ waypoints
-	int const tmpSize{trajecoryHeader.nWaypoints - nPointsHandled};
+	uint32_t const tmpSize{trajecoryHeader.nWaypoints - nPointsHandled};
 	TrajectoryWaypointType waypoint;
 
 	for (int i = 0; i < tmpSize; i++) {
