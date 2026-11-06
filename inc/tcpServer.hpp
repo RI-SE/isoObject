@@ -15,7 +15,7 @@
 class TcpServer {
 public:
 	TcpServer(std::string ip, std::uint32_t port) :
-	  acceptor(context, boost::asio::ip::tcp::endpoint(boost::asio::ip::address_v4::from_string(ip), port)),
+	  acceptor(context, boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address_v4(ip), port)),
 	  socket(context),
 	  acceptIncoming(true) {
 		setBufferSize(defaultBufferSize);
@@ -39,7 +39,7 @@ public:
 				socket.shutdown(boost::asio::socket_base::shutdown_both);
 				socket.close();
 			}
-			context.reset();
+			context.restart();
 		} catch (boost::system::system_error& e) {
 			std::cerr << "Error when closing socket: " << e.what() << std::endl;
 		}

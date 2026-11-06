@@ -42,7 +42,7 @@ public:
 	void connect() {
 		try {
 			tcpSocket.connect(
-			  ip::tcp::endpoint(ip::address_v4::from_string(listenIP), ISO_22133_DEFAULT_OBJECT_TCP_PORT));
+			  ip::tcp::endpoint(ip::make_address_v4(listenIP), ISO_22133_DEFAULT_OBJECT_TCP_PORT));
 		} catch (boost::system::system_error err) {
 			EXPECT_EQ(1, 2) << "TCP Connection failed";
 		}
@@ -51,7 +51,7 @@ public:
 		tcpSocket.send(buffer(data));
 	}
 	void sendUDP(const std::vector<char>& data) {
-		ip::udp::endpoint receiverEP(ip::address_v4::from_string(listenIP), ISO_22133_OBJECT_UDP_PORT);
+		ip::udp::endpoint receiverEP(ip::make_address_v4(listenIP), ISO_22133_OBJECT_UDP_PORT);
 		udpSocket.send_to(buffer(data), receiverEP);
 	}
 	void disconnect() {
@@ -161,8 +161,8 @@ private:
 class ControllerEmulator {
 public:
 	ControllerEmulator(const std::string& listenIP = "127.0.0.1") :
-	  acceptor(context, ip::tcp::endpoint(ip::address_v4::from_string(listenIP), ISO_22133_DEFAULT_OBJECT_TCP_PORT)),
-	  udpSocket(context, ip::udp::endpoint(ip::address_v4::from_string(listenIP), ISO_22133_OBJECT_UDP_PORT)) {}
+	  acceptor(context, ip::tcp::endpoint(ip::make_address_v4(listenIP), ISO_22133_DEFAULT_OBJECT_TCP_PORT)),
+	  udpSocket(context, ip::udp::endpoint(ip::make_address_v4(listenIP), ISO_22133_OBJECT_UDP_PORT)) {}
 	virtual ~ControllerEmulator() = default;
 	/*
 	 * Remember to delete the socket after!!

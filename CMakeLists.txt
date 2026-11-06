@@ -52,7 +52,14 @@ if (BUILDING_FOR_ANDROID) # Boost is found in variables set by android toolchain
 
     include_directories(${ANDROID_BOOST_INCLUDE_DIR})
 else() # Find boost normally
-    find_package(Boost REQUIRED COMPONENTS system)
+    # Boost.System is header-only since Boost 1.69 and its CMake package was
+    # removed in Boost 1.89, so only request the component on older versions.
+    find_package(Boost REQUIRED OPTIONAL_COMPONENTS system)
+    if (TARGET Boost::system)
+        set(BOOST_SYSTEM_TARGET Boost::system)
+    else()
+        set(BOOST_SYSTEM_TARGET Boost::headers)
+    endif()
 endif()
 
 # Library target
@@ -68,7 +75,7 @@ target_include_directories(${ISOOBJECT_LIBRARY} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/iso22133
 )
 set(ISO_OBJ_LIBS 
-    ${ISO22133_LIBRARY} atomic pthread Boost::system)
+    ${ISO22133_LIBRARY} atomic pthread ${BOOST_SYSTEM_TARGET})
 set(ISO_OBJ_LIBS_ANDROID 
     ${ISO22133_LIBRARY} atomic ${boost_system})
 if (BUILDING_FOR_ANDROID)
