@@ -290,7 +290,7 @@ int TestObject::handleTCPMessage(char* buffer, int bufferLen) {
 int TestObject::handleUDPMessage(char* buffer, int bufferLen, int udpSocket, char* addr, const std::uint32_t port) {
 	if (awaitingFirstHeab) {
 		boost::asio::ip::udp::endpoint udpEp =
-		  boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(addr), port);
+		  boost::asio::ip::udp::endpoint(boost::asio::ip::make_address(addr), port);
 		processChannel.setEndpoint(udpSocket, udpEp);
 		;
 		this->startSendMonr();

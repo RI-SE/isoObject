@@ -40,9 +40,9 @@ protected:
 TEST_F(tcpServer_connect_new_socket, connect) {
 	// Connect to server
 
-	io_service io_service;
+	io_context io_service;
 	ip::tcp::socket socket(io_service);
-	ip::tcp::endpoint endpoint(ip::address::from_string("127.0.0.1"), 1234);
+	ip::tcp::endpoint endpoint(ip::make_address("127.0.0.1"), 1234);
 	try {
 		socket.connect(endpoint);
 	} catch (boost::system::system_error& e) {
@@ -59,7 +59,7 @@ protected:
 		server = NULL;
 		std::shared_future<void> readyFuture(readyPromise.get_future());
 		// Start server
-		ip::tcp::endpoint ep(ip::address_v4::from_string("127.0.0.1"), 1234);
+		ip::tcp::endpoint ep(ip::make_address_v4("127.0.0.1"), 1234);
 		listener.open(ep.protocol());
 		listener.set_option(ip::tcp::acceptor::reuse_address(true));
 		listener.bind(ep);
